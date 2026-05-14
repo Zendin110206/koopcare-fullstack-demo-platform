@@ -497,7 +497,7 @@ app.get("/health", async (_request, response) => {
     status: "ok",
     service: "KoopCare Fullstack Demo API",
     environment,
-    version: "0.2.0",
+    version: "0.3.0",
     storage: {
       type: "json_file",
       path: dataFilePath,

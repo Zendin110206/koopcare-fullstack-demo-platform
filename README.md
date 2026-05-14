@@ -33,16 +33,18 @@ This repository is intentionally separate from the team repositories. It is a co
 Current phase:
 
 ```text
-Local MVP financing workflow.
+Local MVP financing workflow with product-grade web experience.
 ```
 
 The repository currently contains a runnable React web app and Express API with an end-to-end local demo flow:
 
-- a user can submit a financing application;
+- a reviewer lands on a polished KoopCare overview page;
+- a member can move into a guided financing application flow;
 - the API validates and stores the application in local JSON storage;
 - the API attempts to call the KoopCare MLOps API for scoring;
 - if the ML API is unavailable, the API uses a transparent demo fallback scorer so the workflow remains testable;
-- an admin can review, rescore, approve, or reject applications.
+- an admin can search, filter, inspect detail, rescore, approve, or reject applications;
+- a system page explains the current service boundaries and runtime status.
 
 This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and public hosting remain planned milestones.
 
@@ -68,16 +70,19 @@ The current model artifact is suitable for prototype integration, but it is not 
 
 Current user-facing workflow:
 
+- review the product overview and KoopCare value proposition;
 - complete a financing application form;
 - submit application data to the backend;
-- receive an immediate AI assessment for admin review.
+- move directly into the admin review state after submission for local demo review.
 
 ### Admin Web
 
 Current admin workflow:
 
+- scan portfolio-level queue metrics;
+- search and filter submitted financing applications;
 - review submitted financing applications;
-- inspect AI recommendation and risk indicators;
+- inspect applicant detail, AI recommendation, risk indicators, model source, and human-review note;
 - approve or reject the application;
 - refresh the scoring result when needed.
 
@@ -255,11 +260,13 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 1. Bootstrap repository and documentation.
 2. Scaffold React web and Express API apps.
 3. Build local MVP financing workflow with JSON persistence.
-4. Add MySQL development database and migration strategy.
-5. Add authentication and role separation.
-6. Strengthen AI assessment persistence and audit logs.
-7. Prepare public demo deployment.
-8. Add optional advanced product features such as chatbot assistance.
+4. Harden the local MVP runtime and validation behavior.
+5. Upgrade the web experience into a product-grade landing, member, admin, and system workspace.
+6. Add MySQL development database and migration strategy.
+7. Add authentication and role separation.
+8. Strengthen AI assessment persistence and audit logs.
+9. Prepare public demo deployment.
+10. Add optional advanced product features such as chatbot assistance.
 
 ## Security and Privacy
 

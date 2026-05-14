@@ -66,7 +66,56 @@ Output:
 - score refresh;
 - approve/reject actions.
 
-## Progress 04 - Local Database Setup
+## Progress 04 - Maintenance Audit and Runtime Hardening
+
+Status:
+
+```text
+done
+```
+
+Goal:
+
+```text
+Make the local MVP safer to continue from before adding larger product features.
+```
+
+Output:
+
+- root-based environment loading;
+- consistent JSON storage path;
+- integer validation for sensitive numeric fields;
+- ML API response validation;
+- JSON error handler;
+- CI naming cleanup;
+- version alignment to `0.2.0`.
+
+## Progress 05 - Product Experience Upgrade
+
+Status:
+
+```text
+done
+```
+
+Goal:
+
+```text
+Make the local MVP read like a real KoopCare product, not only a technical demo.
+```
+
+Output:
+
+- product overview landing page;
+- guided member application workspace;
+- admin queue metrics;
+- search and status filters;
+- selected application detail panel;
+- richer AI recommendation card;
+- system readiness page;
+- version alignment to `0.3.0`.
+
+## Progress 06 - Local Database Setup
 
 Status:
 
@@ -88,7 +137,7 @@ Planned output:
 - initial migration strategy;
 - seed data plan.
 
-## Progress 05 - Authentication and Roles
+## Progress 07 - Authentication and Roles
 
 Goal:
 
@@ -104,7 +153,7 @@ Planned output:
 - role-based route protection;
 - safer local secrets.
 
-## Progress 06 - Audit Log and Review Detail
+## Progress 08 - Audit Trail and Review History
 
 Goal:
 
@@ -114,10 +163,12 @@ Make admin decisions more inspectable.
 
 Planned output:
 
-- application detail view;
 - audit trail.
+- decision history per application;
+- reviewer notes history;
+- event timeline for scoring and decision changes.
 
-## Progress 07 - Production-Style ML Integration Hardening
+## Progress 09 - Production-Style ML Integration Hardening
 
 Goal:
 
@@ -132,24 +183,7 @@ Planned output:
 - configurable strict mode with no fallback;
 - richer error states.
 
-## Progress 08 - AI Recommendation UI Detail
-
-Goal:
-
-```text
-Display AI recommendation with more reviewer context.
-```
-
-Planned output:
-
-- AI recommendation card;
-- probability default;
-- risk level;
-- confidence;
-- model version;
-- human review disclaimer.
-
-## Progress 09 - Public Demo Readiness
+## Progress 10 - Public Demo Readiness
 
 Goal:
 

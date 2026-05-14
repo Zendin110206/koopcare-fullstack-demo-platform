@@ -114,3 +114,31 @@ invalid decimal integer input returns 400
 ML API unavailable path returns demo_rule_based_fallback
 admin decision endpoint still works
 ```
+
+## 2026-05-15 - Progress 05 - Product Experience Upgrade
+
+Upgraded the web app from a basic local MVP dashboard into a more complete product experience.
+
+Changed:
+
+- replaced the simple tabbed interface with a polished product overview, guided member application page, admin workspace, and system readiness page;
+- added stronger first-screen product positioning for KoopCare;
+- added queue metrics, search, status filters, selected-case detail, risk distribution, and decision controls to the admin workspace;
+- expanded the AI recommendation panel with eligibility score, risk, confidence, default probability, model source, model version, and human-review note;
+- rewrote the web stylesheet for responsive desktop and mobile layouts;
+- updated public documentation to describe the current product surface;
+- aligned package and API health versions to `0.3.0`.
+
+Validation:
+
+```text
+npm run check
+npm audit --audit-level=moderate
+GET http://localhost:5002/health
+GET http://127.0.0.1:5174
+POST /api/v1/applications
+POST /api/v1/applications/:id/decision
+invalid age input returns 400
+```
+
+The runtime test confirmed that the upgraded UI did not break the backend workflow. The local app can still submit an application, create a transparent fallback AI assessment when the Python MLOps API is not running, and save an admin decision.

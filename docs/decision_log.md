@@ -92,3 +92,18 @@ Rationale:
 - the fallback is explicitly marked as `demo_rule_based_fallback`;
 - the UI and docs still treat AI as advisory only;
 - real production deployment should use stricter model availability rules.
+
+## 2026-05-15 - Upgrade Product Experience Before Database Work
+
+Decision:
+
+```text
+Improve the web experience before replacing JSON storage with MySQL.
+```
+
+Rationale:
+
+- the existing API foundation is already stable enough for a local MVP;
+- a portfolio reviewer should understand the product from the first screen, not only from technical docs;
+- a stronger landing page, member form, admin queue, and detail panel make later database work easier to review;
+- the database milestone remains planned, but user experience now reflects the intended KoopCare product direction.

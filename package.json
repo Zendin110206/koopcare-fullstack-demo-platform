@@ -1,6 +1,6 @@
 {
   "name": "koopcare-fullstack-demo-platform",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Independent fullstack demo platform for KoopCare user and admin financing workflows with ML credit scoring integration.",
   "license": "MIT",

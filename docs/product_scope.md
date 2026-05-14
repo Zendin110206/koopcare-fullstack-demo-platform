@@ -9,6 +9,7 @@ KoopCare Fullstack Demo Platform is a portfolio-grade web application that demon
 The target demo flow:
 
 ```text
+Reviewer opens the KoopCare product overview.
 User submits a financing application.
 Backend stores the application.
 Backend requests AI risk recommendation.
@@ -21,8 +22,9 @@ User sees the application status.
 
 Initial product scope:
 
-- user web flow;
-- admin web flow;
+- product overview landing page;
+- guided user web flow;
+- admin queue and detail workflow;
 - backend API;
 - local JSON persistence for the first MVP;
 - MySQL database as the next persistence milestone;

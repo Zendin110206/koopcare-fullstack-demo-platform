@@ -6,13 +6,17 @@ React + Vite + TypeScript frontend for the KoopCare fullstack demo.
 
 The current local MVP includes:
 
-- user financing application form;
+- product overview landing page;
+- guided member financing application form;
 - backend-backed application submission;
 - immediate AI assessment creation;
-- admin review queue table;
+- admin queue metrics;
+- admin review queue table with search and status filters;
+- selected application detail panel;
+- AI recommendation card with risk, confidence, model source, and human-review note;
 - score refresh action;
 - approve and reject actions;
-- system status panel backed by the demo API;
+- system readiness panel backed by the demo API;
 - clear AI governance copy.
 
 The current version persists application data through the API's local JSON storage. MySQL persistence and authentication are planned follow-up milestones.

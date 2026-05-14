@@ -42,12 +42,15 @@ The web app will contain both user and admin surfaces.
 
 User surface:
 
+- product overview landing page;
 - application form;
 - application status view;
 - simple profile/session experience.
 
 Admin surface:
 
+- queue metrics;
+- search and status filters;
 - application list;
 - application detail;
 - AI recommendation panel;
@@ -163,6 +166,10 @@ The current local MVP implements:
 ```text
 React web app at http://127.0.0.1:5174
 Express API at http://localhost:5002
+Product overview page
+Guided member application page
+Admin queue, filters, and detail panel
+System readiness page
 GET /health
 GET /api/v1/demo/summary
 GET /api/v1/demo/applications

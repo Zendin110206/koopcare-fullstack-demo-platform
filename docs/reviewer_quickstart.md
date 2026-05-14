@@ -14,10 +14,12 @@ You can review:
 - repository structure;
 - runnable React web app;
 - runnable Express API;
-- user financing application submission;
+- product overview landing page;
+- guided user financing application submission;
 - local JSON-backed persistence;
-- admin review queue;
+- admin queue metrics, search, filters, and detail panel;
 - score refresh, approve, and reject actions;
+- system readiness page;
 - ML API integration behavior with transparent fallback.
 
 ## What Is Not Available Yet
@@ -53,11 +55,13 @@ http://localhost:5002/health
 Try the MVP:
 
 1. Open the web app.
-2. Use the `User Application` tab.
-3. Submit the prefilled financing form.
-4. The app switches to `Admin Review`.
-5. Review the new application.
-6. Click `Score`, `Approve`, or `Reject`.
+2. Review the `Overview` page to understand the product.
+3. Use `Apply` to submit the prefilled financing form.
+4. The app switches to `Admin`.
+5. Review the new application through the queue and detail panel.
+6. Use search or status filters if needed.
+7. Click `Refresh Score`, `Approve`, or `Reject`.
+8. Open `System` to inspect the local runtime boundaries.
 
 The backend stores local state in:
 
