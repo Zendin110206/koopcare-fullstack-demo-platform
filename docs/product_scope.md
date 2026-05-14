@@ -24,7 +24,8 @@ Initial product scope:
 - user web flow;
 - admin web flow;
 - backend API;
-- MySQL database;
+- local JSON persistence for the first MVP;
+- MySQL database as the next persistence milestone;
 - loan application lifecycle;
 - MLOps API integration;
 - AI assessment storage;
@@ -41,6 +42,7 @@ The early phases will not implement:
 - real payment gateway;
 - real WhatsApp OTP;
 - production Google OAuth approval;
+- production authentication and authorization;
 - production KYC document storage;
 - model retraining;
 - automatic credit approval;
@@ -84,4 +86,3 @@ AI recommendation: Eligible for review.
 AI risk level: Medium.
 Final decision: Pending officer review.
 ```
-

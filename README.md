@@ -2,9 +2,9 @@
 
 # KoopCare Fullstack Demo Platform
 
-[![Project Status](https://img.shields.io/badge/status-bootstrap-blue)](#project-status)
+[![Project Status](https://img.shields.io/badge/status-local%20MVP-success)](#project-status)
 [![CI](https://github.com/Zendin110206/koopcare-fullstack-demo-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Zendin110206/koopcare-fullstack-demo-platform/actions/workflows/ci.yml)
-[![Stack](https://img.shields.io/badge/stack-React%20%2B%20Express%20%2B%20MySQL-informational)](#planned-stack)
+[![Stack](https://img.shields.io/badge/stack-React%20%2B%20Express%20%2B%20JSON%20MVP-informational)](#stack)
 [![AI Integration](https://img.shields.io/badge/AI-FastAPI%20ML%20Inference-success)](#ml-integration)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -33,10 +33,18 @@ This repository is intentionally separate from the team repositories. It is a co
 Current phase:
 
 ```text
-Runnable web and API scaffold.
+Local MVP financing workflow.
 ```
 
-The repository currently contains a runnable React web app, a runnable Express API, documentation, initial configuration, and a staged roadmap. Database persistence, authentication, ML API integration, and public deployment will be added incrementally in later progress checkpoints.
+The repository currently contains a runnable React web app and Express API with an end-to-end local demo flow:
+
+- a user can submit a financing application;
+- the API validates and stores the application in local JSON storage;
+- the API attempts to call the KoopCare MLOps API for scoring;
+- if the ML API is unavailable, the API uses a transparent demo fallback scorer so the workflow remains testable;
+- an admin can review, rescore, approve, or reject applications.
+
+This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and public hosting remain planned milestones.
 
 ## Product Principle
 
@@ -54,49 +62,55 @@ https://github.com/Zendin110206/koopcare-mlops-credit-scoring-api
 
 The current model artifact is suitable for prototype integration, but it is not presented as a production-ready cooperative credit model. Real production use would require data validation, model governance, security review, domain review, and retraining or recalibration with appropriate cooperative financing data.
 
-## Planned Product Surface
+## Product Surface
 
 ### User Web
 
-Planned user-facing workflow:
+Current user-facing workflow:
 
-- sign in or use a demo account;
 - complete a financing application form;
 - submit application data to the backend;
-- view application status.
+- receive an immediate AI assessment for admin review.
 
 ### Admin Web
 
-Planned admin workflow:
+Current admin workflow:
 
-- sign in as a cooperative officer;
 - review submitted financing applications;
 - inspect AI recommendation and risk indicators;
 - approve or reject the application;
-- keep a clear audit trail for human decisions.
+- refresh the scoring result when needed.
 
 ### API Backend
+
+Current backend responsibilities:
+
+- request validation;
+- local JSON-backed financing application persistence;
+- ML API integration with timeout handling;
+- transparent rule-based fallback scoring for local demo reliability;
+- admin decision workflow;
+- safe response shaping for frontend clients.
 
 Planned backend responsibilities:
 
 - authentication and authorization;
-- request validation;
-- loan application persistence;
-- ML API integration;
-- AI assessment storage;
-- admin decision workflow;
-- safe response shaping for frontend clients.
+- MySQL-backed persistence;
+- structured audit logs;
+- deployment-ready configuration.
 
-## Planned Architecture
+## Architecture
 
 ```text
 User Web
   -> API Backend
-  -> MySQL Database
+  -> Local JSON Storage for MVP
+  -> MySQL Database later
 
 Admin Web
   -> API Backend
-  -> MySQL Database
+  -> Local JSON Storage for MVP
+  -> MySQL Database later
 
 API Backend
   -> KoopCare MLOps API
@@ -105,14 +119,15 @@ API Backend
 
 The frontend never calls the ML API directly. The backend owns ML integration, validation, business rules, persistence, and auditability.
 
-## Planned Stack
+## Stack
 
 - React
 - Vite
 - TypeScript
 - Node.js
 - Express
-- MySQL
+- local JSON storage for the current MVP
+- MySQL planned for the next persistence milestone
 - Docker Compose
 - FastAPI ML inference API integration
 
@@ -206,7 +221,7 @@ Local URLs:
 Web app: http://127.0.0.1:5174
 API health: http://localhost:5002/health
 Demo summary API: http://localhost:5002/api/v1/demo/summary
-Demo applications API: http://localhost:5002/api/v1/demo/applications
+Applications API: http://localhost:5002/api/v1/applications
 ```
 
 Validate the project:
@@ -239,12 +254,12 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 
 1. Bootstrap repository and documentation.
 2. Scaffold React web and Express API apps.
-3. Add Docker Compose and MySQL development database.
-4. Build user financing application flow.
-5. Build admin review workflow.
-6. Integrate backend with KoopCare MLOps API.
-7. Display AI recommendation in the admin review screen.
-8. Prepare public demo deployment.
+3. Build local MVP financing workflow with JSON persistence.
+4. Add MySQL development database and migration strategy.
+5. Add authentication and role separation.
+6. Strengthen AI assessment persistence and audit logs.
+7. Prepare public demo deployment.
+8. Add optional advanced product features such as chatbot assistance.
 
 ## Security and Privacy
 

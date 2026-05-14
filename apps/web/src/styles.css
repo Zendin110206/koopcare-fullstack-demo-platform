@@ -30,6 +30,11 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .app-shell {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
@@ -306,6 +311,13 @@ textarea:focus {
   border-color: #fecaca;
 }
 
+.notice.success {
+  margin-bottom: 16px;
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -332,6 +344,55 @@ th {
 td {
   color: #263238;
   font-weight: 650;
+}
+
+td strong,
+td small {
+  display: block;
+}
+
+td small {
+  max-width: 260px;
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 220px;
+}
+
+.small-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: #264653;
+  background: #ffffff;
+  border: 1px solid #cbd5d1;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.small-action.approve {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.small-action.reject {
+  color: #7f1d1d;
+  background: #fef2f2;
+  border-color: #fecaca;
 }
 
 .body-copy {

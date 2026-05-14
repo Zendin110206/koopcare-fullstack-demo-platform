@@ -4,14 +4,18 @@ React + Vite + TypeScript frontend for the KoopCare fullstack demo.
 
 ## Current Surface
 
-Progress 02 introduces a runnable app shell with:
+The current local MVP includes:
 
-- user financing application draft panel;
-- admin review queue panel;
+- user financing application form;
+- backend-backed application submission;
+- immediate AI assessment creation;
+- admin review queue table;
+- score refresh action;
+- approve and reject actions;
 - system status panel backed by the demo API;
 - clear AI governance copy.
 
-The form is not persisted yet. Database and real submission handling will be added in later checkpoints.
+The current version persists application data through the API's local JSON storage. MySQL persistence and authentication are planned follow-up milestones.
 
 ## Local Development
 

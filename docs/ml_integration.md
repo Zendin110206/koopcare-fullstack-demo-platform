@@ -34,6 +34,30 @@ The backend is responsible for:
 - storing AI assessment metadata;
 - returning product-safe response fields to the frontend.
 
+## Current MVP Behavior
+
+The current Express API already attempts to call:
+
+```text
+POST ${ML_API_BASE_URL}/predict
+```
+
+If the FastAPI MLOps service is running, the backend uses its response.
+
+If the MLOps service is not running, the backend uses a transparent rule-based fallback. The fallback keeps the local product demo usable, but it must not be described as a real credit model.
+
+The fallback response is marked with:
+
+```text
+source: demo_rule_based_fallback
+```
+
+The real ML API response is marked with:
+
+```text
+source: ml_api
+```
+
 ## Important Score Semantics
 
 The MLOps API returns:
@@ -62,6 +86,12 @@ prob_default * 100
 
 directly into a higher-is-better score.
 
+The current MVP follows this rule and exposes:
+
+```text
+eligibilityScore = round((1 - probDefault) * 100)
+```
+
 ## Human Review
 
 The UI must communicate that AI is advisory.
@@ -86,4 +116,3 @@ AI Rejected
 ## Model Limitation
 
 The current model artifact is a prototype artifact. It is useful for demonstrating end-to-end integration, but it should not be presented as a final production model for real cooperative financing decisions.
-

@@ -1,6 +1,6 @@
 # Architecture
 
-This document defines the planned technical architecture for KoopCare Fullstack Demo Platform.
+This document defines the technical architecture for KoopCare Fullstack Demo Platform.
 
 ## Goals
 
@@ -9,7 +9,8 @@ The architecture should support a realistic end-to-end demo:
 - user-facing financing application flow;
 - admin-facing review workflow;
 - backend-owned business logic;
-- MySQL-backed persistence;
+- local JSON persistence for the MVP;
+- MySQL-backed persistence in the next database milestone;
 - ML inference through a separate FastAPI service;
 - clear boundaries between prototype AI recommendation and human final decision.
 
@@ -19,12 +20,14 @@ The architecture should support a realistic end-to-end demo:
 User Browser
   -> Web App
   -> API Backend
-  -> MySQL Database
+  -> Local JSON Storage for MVP
+  -> MySQL Database later
 
 Admin Browser
   -> Web App
   -> API Backend
-  -> MySQL Database
+  -> Local JSON Storage for MVP
+  -> MySQL Database later
 
 API Backend
   -> KoopCare MLOps API
@@ -64,9 +67,17 @@ Responsibilities:
 - store AI assessments;
 - enforce that AI is advisory only.
 
-### Database
+### Persistence
 
-The database stores application state.
+The current MVP stores application state in a local JSON file:
+
+```text
+apps/api/.data/applications.local.json
+```
+
+This is intentionally simple for early local testing. It allows reviewers to submit, score, approve, and reject applications without installing MySQL first.
+
+The planned production-like database layer is MySQL.
 
 Initial tables planned:
 
@@ -145,9 +156,9 @@ MLOps API: 8000
 
 These ports intentionally avoid the current ports used by the existing MLOps and admin repositories.
 
-## Current Progress 02 Runtime
+## Current Runtime
 
-Progress 02 implements:
+The current local MVP implements:
 
 ```text
 React web app at http://127.0.0.1:5174
@@ -155,6 +166,10 @@ Express API at http://localhost:5002
 GET /health
 GET /api/v1/demo/summary
 GET /api/v1/demo/applications
+GET /api/v1/applications
+POST /api/v1/applications
+POST /api/v1/applications/:id/score
+POST /api/v1/applications/:id/decision
 ```
 
-The runtime still uses demo in-memory data. MySQL persistence is intentionally deferred to Progress 03.
+The runtime uses JSON file storage for the local MVP. MySQL persistence is intentionally deferred to the next database milestone.

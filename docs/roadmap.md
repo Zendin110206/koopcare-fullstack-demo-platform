@@ -41,7 +41,32 @@ Planned output:
 - user/admin workspace shell;
 - workspace scripts.
 
-## Progress 03 - Local Database Setup
+## Progress 03 - Local MVP Application Workflow
+
+Status:
+
+```text
+done
+```
+
+Goal:
+
+```text
+Make the web and API behave like a real local product demo.
+```
+
+Output:
+
+- user application form;
+- create application endpoint;
+- local JSON persistence;
+- ML API call attempt through the backend;
+- transparent fallback scoring when ML API is unavailable;
+- admin review queue;
+- score refresh;
+- approve/reject actions.
+
+## Progress 04 - Local Database Setup
 
 Status:
 
@@ -52,7 +77,7 @@ next
 Goal:
 
 ```text
-Add MySQL-backed local development.
+Replace JSON runtime storage with MySQL-backed local development.
 ```
 
 Planned output:
@@ -63,58 +88,56 @@ Planned output:
 - initial migration strategy;
 - seed data plan.
 
-## Progress 04 - User Financing Application Flow
+## Progress 05 - Authentication and Roles
 
 Goal:
 
 ```text
-Allow a user to submit a demo financing application.
+Separate user and admin access.
 ```
 
 Planned output:
 
-- user application form;
-- backend validation;
-- create application endpoint;
-- database persistence.
+- demo login;
+- user session;
+- admin session;
+- role-based route protection;
+- safer local secrets.
 
-## Progress 05 - Admin Review Flow
+## Progress 06 - Audit Log and Review Detail
 
 Goal:
 
 ```text
-Allow an admin to review submitted applications.
+Make admin decisions more inspectable.
 ```
 
 Planned output:
 
-- admin application list;
 - application detail view;
-- approve/reject actions;
 - audit trail.
 
-## Progress 06 - ML API Integration
+## Progress 07 - Production-Style ML Integration Hardening
 
 Goal:
 
 ```text
-Connect the backend to the KoopCare MLOps API.
+Strengthen the existing backend-to-MLOps integration.
 ```
 
 Planned output:
 
-- ML API client;
-- request mapping;
-- response mapping;
-- timeout and error handling;
-- AI assessment persistence.
+- explicit ML health display;
+- clearer request/response audit fields;
+- configurable strict mode with no fallback;
+- richer error states.
 
-## Progress 07 - AI Recommendation UI
+## Progress 08 - AI Recommendation UI Detail
 
 Goal:
 
 ```text
-Display AI recommendation clearly in the admin review workflow.
+Display AI recommendation with more reviewer context.
 ```
 
 Planned output:
@@ -126,7 +149,7 @@ Planned output:
 - model version;
 - human review disclaimer.
 
-## Progress 08 - Public Demo Readiness
+## Progress 09 - Public Demo Readiness
 
 Goal:
 

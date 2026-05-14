@@ -61,3 +61,34 @@ Rationale:
 - English README files are more accessible to wider reviewers;
 - local Indonesian learning notes can still live under ignored `local_context/`.
 
+## 2026-05-14 - Use Local JSON Storage for the First MVP Workflow
+
+Decision:
+
+```text
+Use local JSON file storage before adding MySQL.
+```
+
+Rationale:
+
+- the user-to-admin workflow can be tested immediately on any laptop;
+- reviewers do not need a database installation for the first demo;
+- the storage boundary remains isolated inside the API;
+- MySQL can replace the JSON adapter in a later milestone without changing the product flow.
+
+This is not the final persistence strategy. MySQL remains the planned production-style storage layer.
+
+## 2026-05-14 - Keep a Transparent Scoring Fallback for Local Demo Reliability
+
+Decision:
+
+```text
+If the MLOps API is unavailable, the backend may use a clearly labeled demo fallback scorer.
+```
+
+Rationale:
+
+- the fullstack workflow remains testable even when the Python ML service is not running;
+- the fallback is explicitly marked as `demo_rule_based_fallback`;
+- the UI and docs still treat AI as advisory only;
+- real production deployment should use stricter model availability rules.
