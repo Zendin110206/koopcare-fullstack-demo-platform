@@ -2,7 +2,15 @@
 
 This directory is reserved for database schema, migrations, and seed data.
 
-Planned database:
+Current persistence:
+
+```text
+apps/api/.data/applications.local.json
+```
+
+The current local MVP intentionally uses JSON file storage so the user and admin workflow can be tested without installing a database.
+
+Planned database milestone:
 
 ```text
 MySQL
@@ -17,5 +25,4 @@ ai_assessments
 admin_audit_logs
 ```
 
-The database layer is not implemented yet in Progress 01.
-
+The MySQL layer is not implemented yet.

@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  scaffold-check:
+  project-check:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,5 +25,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run scaffold check
+      - name: Run project check
         run: npm run check

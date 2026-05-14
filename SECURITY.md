@@ -1,6 +1,6 @@
 # Security Notes
 
-This repository is currently a demo project in the bootstrap phase.
+This repository is currently a local MVP demo project.
 
 Do not commit:
 
@@ -25,4 +25,3 @@ Before any public demo deployment, review:
 - demo data safety.
 
 AI recommendations must be presented as decision support only. The product must not imply that the model makes final financing decisions.
-

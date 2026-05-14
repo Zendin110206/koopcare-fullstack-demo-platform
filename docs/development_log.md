@@ -83,3 +83,34 @@ npm run check
 ```
 
 The MVP is still not a production system. Authentication, MySQL persistence, deployment, stronger audit logs, and public demo hardening remain future milestones.
+
+## 2026-05-15 - Maintenance Audit and Runtime Hardening
+
+Audited the local MVP before moving to the next milestone.
+
+Hardened:
+
+- API environment loading now resolves from the repository root instead of relying on the shell working directory;
+- default JSON storage now resolves to `apps/api/.data/applications.local.json` consistently;
+- integer-only fields such as age, tenor, family size, and children are now validated as integers;
+- ML API responses are validated before being mapped into product-facing assessment fields;
+- internal API errors return JSON instead of an unstructured server response;
+- CI job labels now refer to project checks instead of scaffold checks;
+- package versions were aligned to `0.2.0`;
+- stale directory README files were updated from bootstrap wording to current MVP wording.
+
+Validation:
+
+```text
+npm run check
+npm audit --audit-level=moderate
+isolated fallback API runtime test
+```
+
+The isolated fallback test confirmed:
+
+```text
+invalid decimal integer input returns 400
+ML API unavailable path returns demo_rule_based_fallback
+admin decision endpoint still works
+```

@@ -1,11 +1,18 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import type { ErrorRequestHandler } from "express";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-dotenv.config({ path: "../../.env" });
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirectory = path.dirname(currentFilePath);
+const apiRoot = path.resolve(currentDirectory, "..");
+const repoRoot = path.resolve(apiRoot, "..", "..");
+
+dotenv.config({ path: path.join(repoRoot, ".env") });
 dotenv.config();
 
 type ApplicationStatus = "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
@@ -86,13 +93,13 @@ type MlPredictionResponse = {
 
 const app = express();
 
-const port = Number(process.env.API_PORT ?? 5002);
+const port = parseEnvNumber(process.env.API_PORT, 5002);
 const environment = process.env.APP_ENV ?? "development";
 const mlApiBaseUrl = process.env.ML_API_BASE_URL ?? "http://127.0.0.1:8000";
-const mlApiTimeoutMs = Number(process.env.ML_API_TIMEOUT_MS ?? 5000);
-const dataFilePath = process.env.DATA_FILE_PATH
-  ? path.resolve(process.env.DATA_FILE_PATH)
-  : path.resolve(process.cwd(), ".data", "applications.local.json");
+const mlApiTimeoutMs = parseEnvNumber(process.env.ML_API_TIMEOUT_MS, 5000);
+const dataFilePath = process.env.DATA_FILE_PATH?.trim()
+  ? resolveProjectPath(process.env.DATA_FILE_PATH.trim())
+  : path.resolve(apiRoot, ".data", "applications.local.json");
 
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
@@ -103,6 +110,20 @@ function nowIso() {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function parseEnvNumber(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function resolveProjectPath(value: string) {
+  return path.isAbsolute(value) ? value : path.resolve(repoRoot, value);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -138,6 +159,16 @@ function parseNumber(value: unknown, field: string, options: { min?: number; max
 
   if (options.max !== undefined && numberValue > options.max) {
     throw new Error(`${field} must be at most ${options.max}.`);
+  }
+
+  return numberValue;
+}
+
+function parseInteger(value: unknown, field: string, options: { min?: number; max?: number } = {}) {
+  const numberValue = parseNumber(value, field, options);
+
+  if (!Number.isInteger(numberValue)) {
+    throw new Error(`${field} must be an integer.`);
   }
 
   return numberValue;
@@ -255,7 +286,11 @@ async function ensureDataFile() {
 
   try {
     await readFile(dataFilePath, "utf8");
-  } catch {
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+
     await writeApplications(createSeedApplications());
   }
 }
@@ -263,7 +298,13 @@ async function ensureDataFile() {
 async function readApplications() {
   await ensureDataFile();
   const content = await readFile(dataFilePath, "utf8");
-  return JSON.parse(content) as FinancingApplication[];
+  const parsed = JSON.parse(content) as unknown;
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Application data file must contain an array.");
+  }
+
+  return parsed as FinancingApplication[];
 }
 
 async function writeApplications(applications: FinancingApplication[]) {
@@ -279,16 +320,16 @@ function buildApplication(input: CreateApplicationRequest): FinancingApplication
     applicantName: parseString(input.applicantName, "applicantName"),
     phoneNumber: parseString(input.phoneNumber, "phoneNumber"),
     gender: parseGender(input.gender),
-    age: parseNumber(input.age, "age", { min: 18, max: 75 }),
+    age: parseInteger(input.age, "age", { min: 18, max: 75 }),
     businessType: parseString(input.businessType, "businessType"),
     monthlyIncome: parseNumber(input.monthlyIncome, "monthlyIncome", { min: 1 }),
     requestedAmount: parseNumber(input.requestedAmount, "requestedAmount", { min: 500_000 }),
-    tenorMonths: parseNumber(input.tenorMonths, "tenorMonths", { min: 1, max: 36 }),
+    tenorMonths: parseInteger(input.tenorMonths, "tenorMonths", { min: 1, max: 36 }),
     purpose: parseString(input.purpose, "purpose"),
-    yearsInBusiness: parseNumber(input.yearsInBusiness, "yearsInBusiness", { min: 0, max: 60 }),
-    existingLoanCount: parseNumber(input.existingLoanCount, "existingLoanCount", { min: 0, max: 20 }),
-    familyMembers: parseNumber(input.familyMembers, "familyMembers", { min: 1, max: 20 }),
-    children: parseNumber(input.children, "children", { min: 0, max: 15 }),
+    yearsInBusiness: parseInteger(input.yearsInBusiness, "yearsInBusiness", { min: 0, max: 60 }),
+    existingLoanCount: parseInteger(input.existingLoanCount, "existingLoanCount", { min: 0, max: 20 }),
+    familyMembers: parseInteger(input.familyMembers, "familyMembers", { min: 1, max: 20 }),
+    children: parseInteger(input.children, "children", { min: 0, max: 15 }),
     hasCollateral: parseBoolean(input.hasCollateral),
     status: "SUBMITTED",
     aiAssessment: null,
@@ -350,6 +391,30 @@ function mapMlResponse(response: MlPredictionResponse): AiAssessment {
   };
 }
 
+function isValidMlPredictionResponse(value: unknown): value is MlPredictionResponse {
+  if (!isObject(value)) {
+    return false;
+  }
+
+  const aiRecommendation = value.ai_recommendation;
+  const riskLevel = value.risk_level;
+
+  return (
+    (aiRecommendation === "LAYAK" || aiRecommendation === "TIDAK_LAYAK") &&
+    (riskLevel === "LOW" || riskLevel === "MEDIUM" || riskLevel === "HIGH") &&
+    typeof value.prob_default === "number" &&
+    Number.isFinite(value.prob_default) &&
+    typeof value.threshold === "number" &&
+    Number.isFinite(value.threshold) &&
+    typeof value.confidence === "number" &&
+    Number.isFinite(value.confidence) &&
+    typeof value.model_name === "string" &&
+    typeof value.model_version === "string" &&
+    typeof value.human_review_required === "boolean" &&
+    typeof value.note === "string"
+  );
+}
+
 function buildFallbackAssessment(application: FinancingApplication, reason: string): AiAssessment {
   const debtPressure = application.requestedAmount / Math.max(application.monthlyIncome * application.tenorMonths, 1);
   const stabilityCredit = Math.min(application.yearsInBusiness * 0.018, 0.12);
@@ -399,7 +464,12 @@ async function scoreApplication(application: FinancingApplication): Promise<AiAs
       throw new Error(`ML API returned ${response.status}`);
     }
 
-    const payload = (await response.json()) as MlPredictionResponse;
+    const payload = (await response.json()) as unknown;
+
+    if (!isValidMlPredictionResponse(payload)) {
+      throw new Error("ML API returned an invalid prediction payload");
+    }
+
     return mapMlResponse(payload);
   } catch (error) {
     const reason = error instanceof Error ? error.message : "unknown error";
@@ -596,6 +666,17 @@ app.use((_request, response) => {
     message: "The requested demo endpoint does not exist."
   });
 });
+
+const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
+  console.error(error);
+
+  response.status(500).json({
+    error: "Internal Server Error",
+    message: "The demo API failed to process the request."
+  });
+};
+
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`KoopCare Fullstack Demo API running on http://localhost:${port}`);

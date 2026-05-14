@@ -2,12 +2,11 @@
 
 This directory contains application-level workspaces.
 
-Planned apps:
+Current apps:
 
 ```text
-apps/web = React web application for user and admin workflows
-apps/api = Express API backend
+apps/web = React web application for user and admin financing workflows
+apps/api = Express API backend with local MVP storage and ML scoring integration
 ```
 
-Progress 01 only defines the structure. Runnable apps will be added in a later checkpoint.
-
+The current local MVP lets a user submit a financing application and lets an admin score, approve, or reject it.
