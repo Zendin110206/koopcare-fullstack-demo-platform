@@ -1,0 +1,15 @@
+{
+  "name": "koopcare-fullstack-demo-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Independent fullstack demo platform for KoopCare user and admin financing workflows with ML credit scoring integration.",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "node -e \"console.log('KoopCare Fullstack Demo scaffold is ready. Progress 02 will add runnable apps.')\"",
+    "dev": "node -e \"console.log('No runnable app yet. Read docs/roadmap.md for the next progress.')\""
+  }
+}
