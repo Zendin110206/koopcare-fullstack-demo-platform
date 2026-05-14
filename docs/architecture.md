@@ -134,7 +134,7 @@ cooperative officer / admin reviewer
 
 ## Local Port Plan
 
-Planned local development ports:
+Current local development ports:
 
 ```text
 Web app: 5174
@@ -145,3 +145,16 @@ MLOps API: 8000
 
 These ports intentionally avoid the current ports used by the existing MLOps and admin repositories.
 
+## Current Progress 02 Runtime
+
+Progress 02 implements:
+
+```text
+React web app at http://127.0.0.1:5174
+Express API at http://localhost:5002
+GET /health
+GET /api/v1/demo/summary
+GET /api/v1/demo/applications
+```
+
+The runtime still uses demo in-memory data. MySQL persistence is intentionally deferred to Progress 03.

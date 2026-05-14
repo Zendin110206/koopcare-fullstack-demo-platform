@@ -1,16 +1,46 @@
 # API App
 
-This directory is reserved for the Express API backend.
+Express + TypeScript backend for the KoopCare fullstack demo.
 
-Planned responsibilities:
+## Current Endpoints
 
-- receive requests from the user web app;
-- receive requests from the admin web app;
-- validate payloads;
-- persist application data;
-- call the KoopCare MLOps API for credit scoring recommendation;
-- store AI assessment results;
-- enforce authentication, authorization, and business rules.
+```text
+GET /health
+GET /api/v1/demo/summary
+GET /api/v1/demo/applications
+```
 
-The backend is not implemented yet in Progress 01.
+The current implementation uses in-memory demo data only. Database persistence will be added in a later progress checkpoint.
 
+## Local Development
+
+From the repository root:
+
+```powershell
+npm run dev:api
+```
+
+Default URL:
+
+```text
+http://localhost:5002
+```
+
+Health check:
+
+```text
+http://localhost:5002/health
+```
+
+## Environment
+
+The backend reads:
+
+```text
+API_PORT=5002
+APP_ENV=development
+ML_API_BASE_URL=http://127.0.0.1:8000
+ML_API_TIMEOUT_MS=5000
+```
+
+ML API integration is not wired into production flow yet. Progress 02 only establishes the runnable backend shell and demo endpoints.

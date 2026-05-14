@@ -21,6 +21,12 @@ Scope:
 
 ## Progress 02 - Web and API Scaffolding
 
+Status:
+
+```text
+done
+```
+
 Goal:
 
 ```text
@@ -32,10 +38,16 @@ Planned output:
 - React + Vite + TypeScript web app;
 - Express + TypeScript API app;
 - API health endpoint;
-- minimal web landing screen;
+- user/admin workspace shell;
 - workspace scripts.
 
 ## Progress 03 - Local Database Setup
+
+Status:
+
+```text
+next
+```
 
 Goal:
 
@@ -130,4 +142,3 @@ Planned output:
 - deployment plan;
 - security checklist;
 - public demo URL when ready.
-

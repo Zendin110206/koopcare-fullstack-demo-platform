@@ -1,6 +1,6 @@
 # Reviewer Quickstart
 
-This repository is currently in the bootstrap phase.
+This repository currently includes a runnable web and API scaffold.
 
 ## What You Can Review Now
 
@@ -12,19 +12,41 @@ You can review:
 - roadmap;
 - security notes;
 - repository structure.
+- runnable React web shell;
+- runnable Express API shell.
 
 ## What Is Not Available Yet
 
 The project does not yet include:
 
-- runnable web app;
-- runnable API backend;
 - database container;
-- loan application form;
-- admin review UI;
+- database-backed loan submission;
+- production admin approval workflow;
+- real authentication;
 - deployed public demo.
 
-## Scaffold Check
+## Local Run
+
+Run:
+
+```powershell
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://127.0.0.1:5174
+```
+
+API health:
+
+```text
+http://localhost:5002/health
+```
+
+## Validation
 
 Run:
 
@@ -32,10 +54,10 @@ Run:
 npm run check
 ```
 
-Expected output:
+Security audit:
 
-```text
-KoopCare Fullstack Demo scaffold is ready. Progress 02 will add runnable apps.
+```powershell
+npm audit --audit-level=moderate
 ```
 
 ## Recommended Review Order
@@ -46,4 +68,3 @@ KoopCare Fullstack Demo scaffold is ready. Progress 02 will add runnable apps.
 4. `docs/ml_integration.md`
 5. `docs/roadmap.md`
 6. `SECURITY.md`
-

@@ -33,10 +33,10 @@ This repository is intentionally separate from the team repositories. It is a co
 Current phase:
 
 ```text
-Bootstrap and architecture foundation.
+Runnable web and API scaffold.
 ```
 
-The repository currently contains the project structure, documentation, initial configuration, and roadmap. Runnable frontend, backend, database, and deployment workflows will be added incrementally in later progress checkpoints.
+The repository currently contains a runnable React web app, a runnable Express API, documentation, initial configuration, and a staged roadmap. Database persistence, authentication, ML API integration, and public deployment will be added incrementally in later progress checkpoints.
 
 ## Product Principle
 
@@ -176,21 +176,54 @@ This repository does not replace those repositories. It is an independent fullst
 
 ## Local Setup
 
-No runnable app is available in the bootstrap phase yet.
+Install dependencies:
 
-For now, validate the scaffold:
+```powershell
+npm install
+```
+
+Run the API and web app together:
+
+```powershell
+npm run dev
+```
+
+Run only the API:
+
+```powershell
+npm run dev:api
+```
+
+Run only the web app:
+
+```powershell
+npm run dev:web
+```
+
+Local URLs:
+
+```text
+Web app: http://127.0.0.1:5174
+API health: http://localhost:5002/health
+Demo summary API: http://localhost:5002/api/v1/demo/summary
+Demo applications API: http://localhost:5002/api/v1/demo/applications
+```
+
+Validate the project:
 
 ```powershell
 npm run check
 ```
 
-Expected output:
+This runs API typecheck, web typecheck, and production builds.
 
-```text
-KoopCare Fullstack Demo scaffold is ready. Progress 02 will add runnable apps.
+Security audit:
+
+```powershell
+npm audit --audit-level=moderate
 ```
 
-The next checkpoint will add runnable frontend and backend applications.
+The current dependency set is expected to report zero moderate-or-higher vulnerabilities.
 
 ## Documentation
 

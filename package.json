@@ -9,7 +9,14 @@
     "packages/*"
   ],
   "scripts": {
-    "check": "node -e \"console.log('KoopCare Fullstack Demo scaffold is ready. Progress 02 will add runnable apps.')\"",
-    "dev": "node -e \"console.log('No runnable app yet. Read docs/roadmap.md for the next progress.')\""
+    "dev": "concurrently \"npm run dev --workspace @koopcare-demo/api\" \"npm run dev --workspace @koopcare-demo/web\"",
+    "dev:api": "npm run dev --workspace @koopcare-demo/api",
+    "dev:web": "npm run dev --workspace @koopcare-demo/web",
+    "build": "npm run build --workspace @koopcare-demo/api && npm run build --workspace @koopcare-demo/web",
+    "check": "npm run typecheck --workspace @koopcare-demo/api && npm run typecheck --workspace @koopcare-demo/web && npm run build",
+    "start:api": "npm run start --workspace @koopcare-demo/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
