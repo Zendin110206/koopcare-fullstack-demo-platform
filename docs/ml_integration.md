@@ -58,6 +58,24 @@ The real ML API response is marked with:
 source: ml_api
 ```
 
+## Scoring Modes
+
+The demo supports two backend scoring modes:
+
+```text
+ML_SCORING_MODE=optional_fallback
+```
+
+Use this for local development. The backend tries the Python MLOps API first, then creates a clearly labeled fallback score if the service is unavailable.
+
+```text
+ML_SCORING_MODE=strict_ml
+```
+
+Use this for production-like demos. The backend requires the Python MLOps API for scoring. If the service is unavailable, the API returns `503 Service Unavailable` instead of creating a fallback score.
+
+This keeps public demos honest: fallback mode is useful for local workflow testing, but strict mode is safer when the demo is presented as an MLOps integration.
+
 ## Important Score Semantics
 
 The MLOps API returns:

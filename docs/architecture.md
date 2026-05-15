@@ -166,17 +166,22 @@ The current local MVP implements:
 ```text
 React web app at http://127.0.0.1:5174
 Express API at http://localhost:5002
+Production-style single-service preview at http://localhost:5002
 Product overview page
 Guided member application page
+Member status tracker
 Admin queue, filters, and detail panel
 System readiness page
 GET /health
 GET /api/v1/demo/summary
 GET /api/v1/demo/applications
 GET /api/v1/applications
+GET /api/v1/applications/:id/status
 POST /api/v1/applications
 POST /api/v1/applications/:id/score
 POST /api/v1/applications/:id/decision
 ```
 
 The runtime uses JSON file storage for the local MVP. MySQL persistence is intentionally deferred to the next database milestone.
+
+In public-demo preview mode, the Express API serves the built React output from `apps/web/dist` so one public URL can host the product interface and the API.

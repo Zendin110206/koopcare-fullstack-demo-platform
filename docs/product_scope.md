@@ -24,6 +24,7 @@ Initial product scope:
 
 - product overview landing page;
 - guided user web flow;
+- member status tracking;
 - admin queue and detail workflow;
 - backend API;
 - local JSON persistence for the first MVP;

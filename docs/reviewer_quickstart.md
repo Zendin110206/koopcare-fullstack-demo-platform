@@ -16,6 +16,7 @@ You can review:
 - runnable Express API;
 - product overview landing page;
 - guided user financing application submission;
+- member status tracking after submission;
 - local JSON-backed persistence;
 - admin queue metrics, search, filters, and detail panel;
 - score refresh, approve, and reject actions;
@@ -28,7 +29,7 @@ The project does not yet include:
 
 - MySQL-backed persistence;
 - real authentication and authorization;
-- deployed public demo;
+- deployed public demo URL;
 - production-grade credit decision governance.
 
 ## Local Run
@@ -59,11 +60,30 @@ Try the MVP:
 3. Use `Apply` to review the prefilled financing form.
 4. Click `Review Application`.
 5. Confirm the review summary with `Confirm and Submit`.
-6. The app switches to `Admin`.
-7. Review the new application through the queue and detail panel.
-8. Use search or status filters if needed.
-9. Click `Refresh Score`, `Approve`, or `Reject`.
-10. Open `System` to inspect the local runtime boundaries.
+6. The app switches to `Status`.
+7. Review the submitted application status as a member.
+8. Open `Admin`.
+9. Review the new application through the queue and detail panel.
+10. Use search or status filters if needed.
+11. Click `Refresh Score`, `Approve`, or `Reject`.
+12. Open `System` to inspect the local runtime boundaries.
+
+## Public-Style Preview
+
+Run:
+
+```powershell
+npm run build
+npm start
+```
+
+Open:
+
+```text
+http://localhost:5002
+```
+
+This serves the built React app and the API from one Express service, matching the current public demo deployment shape.
 
 The backend stores local state in:
 
@@ -94,4 +114,5 @@ npm audit --audit-level=moderate
 3. `docs/architecture.md`
 4. `docs/ml_integration.md`
 5. `docs/roadmap.md`
-6. `SECURITY.md`
+6. `docs/deployment.md`
+7. `SECURITY.md`

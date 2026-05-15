@@ -38,6 +38,9 @@ type DemoSummary = {
     database: string;
     ml_api: string;
     ml_api_base_url: string;
+    ml_scoring_mode: "optional_fallback" | "strict_ml";
+    web_app: "served_by_api" | "separate_web_server";
+    web_dist_available: boolean;
     auth: string;
   };
 };
@@ -105,11 +108,39 @@ type ApplicationFormState = {
   hasCollateral: boolean;
 };
 
-type ViewKey = "home" | "apply" | "admin" | "system";
+type ViewKey = "home" | "apply" | "status" | "admin" | "system";
 type StatusFilter = "ALL" | ApplicationStatus;
 type ActionState = { id: string; kind: "score" | "decision" } | null;
+type DecisionDraft = {
+  decision: "APPROVED" | "REJECTED";
+  reviewerName: string;
+  note: string;
+};
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5002";
+function resolveApiBaseUrl() {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  if (typeof configuredBaseUrl === "string") {
+    return configuredBaseUrl.trim().replace(/\/$/, "");
+  }
+
+  return import.meta.env.DEV ? "http://localhost:5002" : "";
+}
+
+const apiBaseUrl = resolveApiBaseUrl();
+const apiDisplayUrl = apiBaseUrl.length > 0 ? apiBaseUrl : "Same origin";
+const moneyRules = {
+  monthlyIncome: {
+    min: 500000,
+    max: 100000000,
+    step: 100000
+  },
+  requestedAmount: {
+    min: 500000,
+    max: 100000000,
+    step: 500000
+  }
+} as const;
 
 const initialForm: ApplicationFormState = {
   applicantName: "Siti Aminah",
@@ -142,6 +173,7 @@ const compactNumberFormatter = new Intl.NumberFormat("id-ID", {
 const views: Array<{ key: ViewKey; label: string; icon: ReactNode }> = [
   { key: "home", label: "Overview", icon: <Home aria-hidden="true" size={17} /> },
   { key: "apply", label: "Apply", icon: <UserRound aria-hidden="true" size={17} /> },
+  { key: "status", label: "Status", icon: <FileCheck2 aria-hidden="true" size={17} /> },
   { key: "admin", label: "Admin", icon: <LayoutDashboard aria-hidden="true" size={17} /> },
   { key: "system", label: "System", icon: <Database aria-hidden="true" size={17} /> }
 ];
@@ -191,6 +223,10 @@ function riskTone(risk?: AiAssessment["riskLevel"]) {
 }
 
 function recommendationTone(recommendation?: AiAssessment["aiRecommendation"]) {
+  if (!recommendation) {
+    return "neutral";
+  }
+
   return recommendation === "LAYAK" ? "positive" : "danger";
 }
 
@@ -208,6 +244,75 @@ function formatAssessmentSource(source?: AiAssessment["source"]) {
   }
 
   return "Not scored";
+}
+
+function formatScoringMode(mode?: DemoSummary["integration"]["ml_scoring_mode"]) {
+  if (mode === "strict_ml") {
+    return "Strict ML";
+  }
+
+  return "Local fallback";
+}
+
+function formatMlIntegration(value?: string) {
+  if (value === "strict_ml_required") {
+    return "Strict required";
+  }
+
+  if (value === "optional_with_fallback") {
+    return "Optional fallback";
+  }
+
+  return value ?? "loading";
+}
+
+function formatStorageMode(value?: string) {
+  if (value === "json_file_storage") {
+    return "JSON file";
+  }
+
+  return value ?? "loading";
+}
+
+function formatWebAppMode(value?: DemoSummary["integration"]["web_app"]) {
+  if (value === "served_by_api") {
+    return "Single public service";
+  }
+
+  if (value === "separate_web_server") {
+    return "Separate local server";
+  }
+
+  return "loading";
+}
+
+function formatAuthMode(value?: string) {
+  if (value === "demo_mode") {
+    return "Demo mode";
+  }
+
+  return value ?? "loading";
+}
+
+function normalizeMoneyValue(
+  value: number,
+  rule: {
+    min: number;
+    max: number;
+    step: number;
+  }
+) {
+  if (!Number.isFinite(value)) {
+    return rule.min;
+  }
+
+  const clamped = Math.min(Math.max(Math.round(value), rule.min), rule.max);
+
+  return Math.round(clamped / rule.step) * rule.step;
+}
+
+function formatMoneyHint(rule: { min: number; max: number; step: number }) {
+  return `${currencyFormatter.format(rule.min)} to ${currencyFormatter.format(rule.max)}, increments of ${currencyFormatter.format(rule.step)}.`;
 }
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -234,6 +339,7 @@ export function App() {
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusLookupQuery, setStatusLookupQuery] = useState("");
   const [form, setForm] = useState<ApplicationFormState>(initialForm);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -341,8 +447,9 @@ export function App() {
 
       setApplications((current) => [response.data, ...current.filter((item) => item.id !== response.data.id)]);
       setSelectedApplicationId(response.data.id);
-      setSuccessMessage(`Application ${response.data.id} submitted and scored for officer review.`);
-      setActiveView("admin");
+      setStatusLookupQuery(response.data.id);
+      setSuccessMessage(`Application ${response.data.id} submitted. The member status tracker is ready.`);
+      setActiveView("status");
       await loadDemoData();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to submit application.";
@@ -374,15 +481,10 @@ export function App() {
     }
   }
 
-  async function decideApplication(id: string, decision: "APPROVED" | "REJECTED") {
+  async function decideApplication(id: string, decision: "APPROVED" | "REJECTED", reviewerName: string, note: string) {
     setActionState({ id, kind: "decision" });
     setErrorMessage(null);
     setSuccessMessage(null);
-
-    const note =
-      decision === "APPROVED"
-        ? "Approved in demo review after officer verification."
-        : "Rejected in demo review after officer verification.";
 
     try {
       const response = await fetchJson<{ data: FinancingApplication }>(
@@ -391,8 +493,8 @@ export function App() {
           method: "POST",
           body: JSON.stringify({
             decision,
-            reviewerName: "Demo Officer",
-            note
+            reviewerName: reviewerName.trim(),
+            note: note.trim()
           })
         }
       );
@@ -453,6 +555,16 @@ export function App() {
         />
       ) : null}
 
+      {activeView === "status" ? (
+        <StatusView
+          applications={applications}
+          isLoading={isLoading}
+          query={statusLookupQuery}
+          onOpenApply={() => setActiveView("apply")}
+          onQueryChange={setStatusLookupQuery}
+        />
+      ) : null}
+
       {activeView === "admin" ? (
         <AdminView
           applications={applications}
@@ -464,7 +576,7 @@ export function App() {
           selectedApplication={selectedApplication}
           statusFilter={statusFilter}
           summary={summary}
-          onDecide={(id, decision) => void decideApplication(id, decision)}
+          onDecide={(id, decision, reviewerName, note) => void decideApplication(id, decision, reviewerName, note)}
           onScore={(id) => void scoreApplication(id)}
           onSearchChange={setSearchQuery}
           onSelectApplication={setSelectedApplicationId}
@@ -472,7 +584,7 @@ export function App() {
         />
       ) : null}
 
-      {activeView === "system" ? <SystemView apiBaseUrl={apiBaseUrl} isLoading={isLoading} summary={summary} /> : null}
+      {activeView === "system" ? <SystemView apiBaseUrl={apiDisplayUrl} isLoading={isLoading} summary={summary} /> : null}
     </main>
   );
 }
@@ -673,6 +785,14 @@ function ApplyView({
     updateForm(key, value);
   }
 
+  function normalizeMoneyField(key: "monthlyIncome" | "requestedAmount") {
+    const normalized = normalizeMoneyValue(form[key], moneyRules[key]);
+
+    if (normalized !== form[key]) {
+      updateAndCloseReview(key, normalized);
+    }
+  }
+
   return (
     <section className="view-stack">
       <section className="page-intro">
@@ -788,23 +908,31 @@ function ApplyView({
           >
             <Field label="Monthly income">
               <input
-                min={1}
+                inputMode="numeric"
+                min={moneyRules.monthlyIncome.min}
+                max={moneyRules.monthlyIncome.max}
                 required
-                step={100000}
+                step={moneyRules.monthlyIncome.step}
                 type="number"
                 value={form.monthlyIncome}
                 onChange={(event) => updateAndCloseReview("monthlyIncome", Number(event.target.value))}
+                onBlur={() => normalizeMoneyField("monthlyIncome")}
               />
+              <small className="field-hint">{formatMoneyHint(moneyRules.monthlyIncome)}</small>
             </Field>
             <Field label="Requested amount">
               <input
-                min={500000}
+                inputMode="numeric"
+                min={moneyRules.requestedAmount.min}
+                max={moneyRules.requestedAmount.max}
                 required
-                step={500000}
+                step={moneyRules.requestedAmount.step}
                 type="number"
                 value={form.requestedAmount}
                 onChange={(event) => updateAndCloseReview("requestedAmount", Number(event.target.value))}
+                onBlur={() => normalizeMoneyField("requestedAmount")}
               />
+              <small className="field-hint">{formatMoneyHint(moneyRules.requestedAmount)}</small>
             </Field>
             <Field label="Tenor in months">
               <input
@@ -915,6 +1043,167 @@ function ApplyView({
   );
 }
 
+function StatusView({
+  applications,
+  isLoading,
+  query,
+  onOpenApply,
+  onQueryChange
+}: {
+  applications: FinancingApplication[];
+  isLoading: boolean;
+  query: string;
+  onOpenApply: () => void;
+  onQueryChange: (value: string) => void;
+}) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const matches = applications.filter((application) => {
+    if (normalizedQuery.length === 0) {
+      return true;
+    }
+
+    return (
+      application.id.toLowerCase().includes(normalizedQuery) ||
+      application.phoneNumber.toLowerCase().includes(normalizedQuery) ||
+      application.applicantName.toLowerCase().includes(normalizedQuery)
+    );
+  });
+  const visibleApplications = normalizedQuery.length > 0 ? matches : applications.slice(0, 4);
+  const selectedApplication = visibleApplications[0] ?? null;
+
+  return (
+    <section className="view-stack">
+      <section className="page-intro">
+        <div>
+          <p className="eyebrow">Member status</p>
+          <h1>Track a financing application</h1>
+          <p>
+            Members can look up the current review state after submitting an application. Officers still own the final
+            approval or rejection decision.
+          </p>
+        </div>
+        <button className="primary-action large" type="button" onClick={onOpenApply}>
+          New Application
+          <ArrowRight aria-hidden="true" size={18} />
+        </button>
+      </section>
+
+      <section className="status-layout">
+        <aside className="status-search-panel">
+          <label className="search-box status-search">
+            <Search aria-hidden="true" size={17} />
+            <input
+              placeholder="Search by application ID, phone, or name"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+            />
+          </label>
+
+          <div className="status-result-list">
+            {isLoading ? <p className="empty-copy">Loading application status...</p> : null}
+            {!isLoading && visibleApplications.length === 0 ? (
+              <p className="empty-copy">No application matches this lookup.</p>
+            ) : null}
+            {!isLoading
+              ? visibleApplications.map((application) => (
+                  <article className="status-result-card" key={application.id}>
+                    <div>
+                      <strong>{application.applicantName}</strong>
+                      <span>{application.id}</span>
+                    </div>
+                    <Badge tone={statusTone(application.status)}>{formatStatus(application.status)}</Badge>
+                  </article>
+                ))
+              : null}
+          </div>
+        </aside>
+
+        {selectedApplication ? (
+          <article className="member-status-panel">
+            <div className="status-case-heading">
+              <div>
+                <p className="eyebrow">Current case</p>
+                <h2>{selectedApplication.applicantName}</h2>
+                <span>{selectedApplication.id}</span>
+              </div>
+              <Badge tone={statusTone(selectedApplication.status)}>{formatStatus(selectedApplication.status)}</Badge>
+            </div>
+
+            <div className="status-timeline" aria-label="Application status timeline">
+              <StatusStep
+                state="complete"
+                title="Submitted"
+                copy="The backend has stored the financing request."
+              />
+              <StatusStep
+                state={selectedApplication.status === "SUBMITTED" ? "current" : "complete"}
+                title="Officer review"
+                copy="The case is ready for cooperative officer review."
+              />
+              <StatusStep
+                state={selectedApplication.decision ? "complete" : "waiting"}
+                title="Final decision"
+                copy={
+                  selectedApplication.decision
+                    ? `${formatStatus(selectedApplication.decision.decision)} by ${selectedApplication.decision.reviewerName}.`
+                    : "Waiting for the officer to save a final decision."
+                }
+              />
+            </div>
+
+            <div className="status-summary-grid">
+              <MiniMetric label="Requested" value={selectedApplication.requestedAmountFormatted} />
+              <MiniMetric label="Tenor" value={`${selectedApplication.tenorMonths} months`} />
+              <MiniMetric
+                label="AI signal"
+                value={selectedApplication.aiAssessment?.aiRecommendation ?? "Pending"}
+                tone={recommendationTone(selectedApplication.aiAssessment?.aiRecommendation)}
+              />
+              <MiniMetric
+                label="Eligibility"
+                value={selectedApplication.aiAssessment ? `${selectedApplication.aiAssessment.eligibilityScore}/100` : "-"}
+              />
+            </div>
+
+            {selectedApplication.decision ? (
+              <div className="decision-note">
+                <strong>Officer note</strong>
+                <span>
+                  {formatStatus(selectedApplication.decision.decision)} by {selectedApplication.decision.reviewerName}
+                </span>
+                <p>{selectedApplication.decision.note}</p>
+              </div>
+            ) : (
+              <div className="status-waiting-note">
+                <ShieldCheck aria-hidden="true" size={18} />
+                <p>AI has no final authority here. The member status updates after an officer saves a decision.</p>
+              </div>
+            )}
+          </article>
+        ) : (
+          <article className="member-status-panel empty">
+            <FileCheck2 aria-hidden="true" size={28} />
+            <strong>No status selected</strong>
+            <p>Submit a new application or search an existing application ID.</p>
+          </article>
+        )}
+      </section>
+    </section>
+  );
+}
+
+function StatusStep({ copy, state, title }: { copy: string; state: "complete" | "current" | "waiting"; title: string }) {
+  return (
+    <div className={`status-step ${state}`}>
+      <span>{state === "complete" ? <CheckCircle2 aria-hidden="true" size={16} /> : <FileCheck2 aria-hidden="true" size={16} />}</span>
+      <div>
+        <strong>{title}</strong>
+        <p>{copy}</p>
+      </div>
+    </div>
+  );
+}
+
 function AdminView({
   applications,
   actionState,
@@ -940,7 +1229,7 @@ function AdminView({
   selectedApplication: FinancingApplication | null;
   statusFilter: StatusFilter;
   summary: DemoSummary | null;
-  onDecide: (id: string, decision: "APPROVED" | "REJECTED") => void;
+  onDecide: (id: string, decision: "APPROVED" | "REJECTED", reviewerName: string, note: string) => void;
   onScore: (id: string) => void;
   onSearchChange: (value: string) => void;
   onSelectApplication: (id: string) => void;
@@ -952,6 +1241,7 @@ function AdminView({
   ).length;
   const isFallbackActive = scoredByFallback > 0 && scoredByMlApi === 0;
   const hasMixedScoring = scoredByFallback > 0 && scoredByMlApi > 0;
+  const isStrictMlMode = summary?.integration.ml_scoring_mode === "strict_ml";
 
   return (
     <section className="admin-shell">
@@ -1002,14 +1292,18 @@ function AdminView({
           )}
           <div>
             <strong>
-              {isFallbackActive
+              {isStrictMlMode
+                ? "Strict ML mode is enabled"
+                : isFallbackActive
                 ? "Fallback scoring is active"
                 : hasMixedScoring
                   ? "Mixed scoring sources"
                   : "Trained ML scoring ready when service responds"}
             </strong>
             <p>
-              {isFallbackActive
+              {isStrictMlMode
+                ? "The backend will require the Python MLOps API for scoring. If the model service is unavailable, new scoring requests return a clear service-unavailable error instead of using fallback."
+                : isFallbackActive
                 ? `The Python MLOps API is not currently returning scores, so this local demo is using a transparent fallback. Start the MLOps API at ${summary?.integration.ml_api_base_url ?? "the configured ML API URL"} to activate the trained model path.`
                 : hasMixedScoring
                   ? "Some records were scored while the trained model was unavailable. Refresh a selected score after the MLOps API is running to replace fallback assessments."
@@ -1131,13 +1425,13 @@ function ApplicationDetailPanel({
 }: {
   actionState: ActionState;
   application: FinancingApplication | null;
-  onDecide: (id: string, decision: "APPROVED" | "REJECTED") => void;
+  onDecide: (id: string, decision: "APPROVED" | "REJECTED", reviewerName: string, note: string) => void;
   onScore: (id: string) => void;
 }) {
-  const [pendingDecision, setPendingDecision] = useState<"APPROVED" | "REJECTED" | null>(null);
+  const [decisionDraft, setDecisionDraft] = useState<DecisionDraft | null>(null);
 
   useEffect(() => {
-    setPendingDecision(null);
+    setDecisionDraft(null);
   }, [application?.id]);
 
   if (!application) {
@@ -1153,6 +1447,28 @@ function ApplicationDetailPanel({
   const assessment = application.aiAssessment;
   const isScoring = actionState?.kind === "score" && actionState.id === application.id;
   const isDeciding = actionState?.kind === "decision" && actionState.id === application.id;
+  const defaultReviewerName = application.decision?.reviewerName ?? "Demo Officer";
+  const canSubmitDecision =
+    decisionDraft !== null && decisionDraft.reviewerName.trim().length > 0 && decisionDraft.note.trim().length >= 12;
+
+  function openDecisionDraft(decision: "APPROVED" | "REJECTED") {
+    setDecisionDraft({
+      decision,
+      reviewerName: defaultReviewerName,
+      note: ""
+    });
+  }
+
+  function updateDecisionDraft<Key extends keyof DecisionDraft>(key: Key, value: DecisionDraft[Key]) {
+    setDecisionDraft((current) =>
+      current
+        ? {
+            ...current,
+            [key]: value
+          }
+        : current
+    );
+  }
 
   return (
     <aside className="detail-panel">
@@ -1184,9 +1500,19 @@ function ApplicationDetailPanel({
           </div>
           {assessment ? <Badge tone={sourceTone(assessment.source)}>{formatAssessmentSource(assessment.source)}</Badge> : null}
         </div>
-        <div className="score-ring" style={{ "--score": `${assessment?.eligibilityScore ?? 0}%` } as CSSProperties}>
-          <strong>{assessment?.eligibilityScore ?? 0}</strong>
-          <span>eligibility</span>
+        <div className="eligibility-meter">
+          <div
+            className="score-ring"
+            aria-label={`Eligibility score ${assessment?.eligibilityScore ?? 0} out of 100`}
+            style={{ "--score": `${assessment?.eligibilityScore ?? 0}%` } as CSSProperties}
+          >
+            <strong>{assessment?.eligibilityScore ?? 0}</strong>
+          </div>
+          <div className="eligibility-copy">
+            <span>Eligibility score</span>
+            <strong>{assessment ? `${assessment.eligibilityScore}/100` : "Not scored"}</strong>
+            <p>Higher is better. The officer still saves the final financing decision.</p>
+          </div>
         </div>
         <div className="ai-grid">
           <MiniMetric label="Risk" value={assessment?.riskLevel ?? "Pending"} tone={riskTone(assessment?.riskLevel)} />
@@ -1226,23 +1552,47 @@ function ApplicationDetailPanel({
         </div>
       ) : null}
 
-      {pendingDecision ? (
-        <section className={pendingDecision === "APPROVED" ? "confirm-box approve" : "confirm-box reject"}>
+      {decisionDraft ? (
+        <section className={decisionDraft.decision === "APPROVED" ? "confirm-box approve" : "confirm-box reject"}>
           <div>
-            <strong>Confirm {formatStatus(pendingDecision)}?</strong>
-            <p>This will save a final officer decision for {application.applicantName}. You can still inspect the record after saving.</p>
+            <strong>Confirm {formatStatus(decisionDraft.decision)}?</strong>
+            <p>
+              Write the officer reason before saving. This note becomes the human audit trail for {application.applicantName}.
+            </p>
+          </div>
+          <div className="decision-form-grid">
+            <label className="decision-field">
+              <span>Reviewer name</span>
+              <input
+                value={decisionDraft.reviewerName}
+                onChange={(event) => updateDecisionDraft("reviewerName", event.target.value)}
+              />
+            </label>
+            <label className="decision-field wide">
+              <span>Decision reason</span>
+              <textarea
+                placeholder={
+                  decisionDraft.decision === "APPROVED"
+                    ? "Example: Business cashflow, collateral, and repayment capacity were verified by the officer."
+                    : "Example: Requested amount is too high compared with verified repayment capacity."
+                }
+                value={decisionDraft.note}
+                onChange={(event) => updateDecisionDraft("note", event.target.value)}
+              />
+            </label>
+            <p className="decision-helper">Minimum 12 characters. The backend will reject empty notes.</p>
           </div>
           <div className="confirm-actions">
-            <button className="secondary-action" type="button" onClick={() => setPendingDecision(null)}>
+            <button className="secondary-action" type="button" onClick={() => setDecisionDraft(null)}>
               Cancel
             </button>
             <button
-              className={pendingDecision === "APPROVED" ? "decision-button approve" : "decision-button reject"}
-              disabled={isDeciding}
+              className={decisionDraft.decision === "APPROVED" ? "decision-button approve" : "decision-button reject"}
+              disabled={isDeciding || !canSubmitDecision}
               type="button"
-              onClick={() => onDecide(application.id, pendingDecision)}
+              onClick={() => onDecide(application.id, decisionDraft.decision, decisionDraft.reviewerName, decisionDraft.note)}
             >
-              {isDeciding ? "Saving..." : `Confirm ${formatStatus(pendingDecision)}`}
+              {isDeciding ? "Saving..." : `Confirm ${formatStatus(decisionDraft.decision)}`}
             </button>
           </div>
         </section>
@@ -1257,7 +1607,7 @@ function ApplicationDetailPanel({
           className="decision-button approve"
           disabled={application.status === "APPROVED" || isScoring || isDeciding}
           type="button"
-          onClick={() => setPendingDecision("APPROVED")}
+          onClick={() => openDecisionDraft("APPROVED")}
         >
           <CheckCircle2 aria-hidden="true" size={17} />
           Approve
@@ -1266,7 +1616,7 @@ function ApplicationDetailPanel({
           className="decision-button reject"
           disabled={application.status === "REJECTED" || isScoring || isDeciding}
           type="button"
-          onClick={() => setPendingDecision("REJECTED")}
+          onClick={() => openDecisionDraft("REJECTED")}
         >
           <XCircle aria-hidden="true" size={17} />
           Reject
@@ -1297,10 +1647,12 @@ function SystemView({
       </section>
 
       <section className="system-grid">
-        <MetricTile icon={<Database aria-hidden="true" size={20} />} label="Storage" value={summary?.integration.database ?? "loading"} caption="Current MVP persistence" />
-        <MetricTile icon={<Sparkles aria-hidden="true" size={20} />} label="ML API" value={summary?.integration.ml_api ?? "loading"} caption={summary?.integration.ml_api_base_url ?? "Checking target"} />
-        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Auth" value={summary?.integration.auth ?? "loading"} caption="Demo mode for now" />
-        <MetricTile icon={<Activity aria-hidden="true" size={20} />} label="API URL" value={apiBaseUrl} caption="Frontend configuration" />
+        <MetricTile icon={<Database aria-hidden="true" size={20} />} label="Storage" value={formatStorageMode(summary?.integration.database)} caption="Current MVP persistence" />
+        <MetricTile icon={<Sparkles aria-hidden="true" size={20} />} label="ML API" value={formatMlIntegration(summary?.integration.ml_api)} caption={summary?.integration.ml_api_base_url ?? "Checking target"} />
+        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Scoring Mode" value={formatScoringMode(summary?.integration.ml_scoring_mode)} caption="Fallback locally, strict for production-like deploys" />
+        <MetricTile icon={<LayoutDashboard aria-hidden="true" size={20} />} label="Web App" value={formatWebAppMode(summary?.integration.web_app)} caption={summary?.integration.web_dist_available ? "Build output available" : "Development mode"} />
+        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Auth" value={formatAuthMode(summary?.integration.auth)} caption="Demo mode for now" />
+        <MetricTile icon={<Activity aria-hidden="true" size={20} />} label="API URL" value={apiBaseUrl === "Same origin" ? "Same origin" : "Local API"} caption={apiBaseUrl} />
       </section>
 
       <section className="architecture-panel">

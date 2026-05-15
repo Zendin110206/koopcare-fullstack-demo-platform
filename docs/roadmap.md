@@ -108,6 +108,7 @@ Output:
 
 - product overview landing page;
 - guided member application workspace;
+- member status tracker after application submission;
 - admin queue metrics;
 - search and status filters;
 - selected application detail panel;

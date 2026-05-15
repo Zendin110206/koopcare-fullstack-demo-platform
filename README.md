@@ -43,6 +43,7 @@ The repository currently contains a runnable React web app and Express API with 
 - the API validates and stores the application in local JSON storage;
 - the API attempts to call the KoopCare MLOps API for scoring;
 - if the ML API is unavailable, the API uses a transparent demo fallback scorer so the workflow remains testable;
+- a member can track the submitted application status from the web app;
 - an admin can search, filter, inspect detail, rescore, approve, or reject applications;
 - a system page explains the current service boundaries and runtime status.
 
@@ -73,7 +74,8 @@ Current user-facing workflow:
 - review the product overview and KoopCare value proposition;
 - complete a financing application form;
 - submit application data to the backend;
-- move directly into the admin review state after submission for local demo review.
+- move into the member status tracker after submission;
+- search status by application ID, applicant name, or phone number.
 
 ### Admin Web
 
@@ -227,7 +229,23 @@ Web app: http://127.0.0.1:5174
 API health: http://localhost:5002/health
 Demo summary API: http://localhost:5002/api/v1/demo/summary
 Applications API: http://localhost:5002/api/v1/applications
+Application status API: http://localhost:5002/api/v1/applications/:id/status
 ```
+
+Run the production-style single-service preview:
+
+```powershell
+npm run build
+npm start
+```
+
+Then open:
+
+```text
+http://localhost:5002
+```
+
+In this mode, the Express API serves the built React app and the API from the same port. This is the current deployment shape for a public portfolio demo.
 
 Validate the project:
 
@@ -236,6 +254,26 @@ npm run check
 ```
 
 This runs API typecheck, web typecheck, and production builds.
+
+Run the API smoke check:
+
+```powershell
+npm run smoke:api
+```
+
+This builds the API, starts it on an isolated smoke-test port, validates malformed JSON handling, financing amount rules, application creation, and officer decision note validation, then shuts the smoke server down.
+
+ML scoring mode:
+
+```powershell
+# Local workflow demo without the Python service
+ML_SCORING_MODE=optional_fallback
+
+# Production-like demo that requires the Python MLOps API
+ML_SCORING_MODE=strict_ml
+```
+
+The default is `optional_fallback` so the local demo remains easy to run. Use `strict_ml` before public deployment when fallback scores should not be created if the Python model service is unavailable.
 
 Security audit:
 
@@ -251,6 +289,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 - [Architecture](docs/architecture.md)
 - [ML Integration Plan](docs/ml_integration.md)
 - [Roadmap](docs/roadmap.md)
+- [Deployment Guide](docs/deployment.md)
 - [Reviewer Quickstart](docs/reviewer_quickstart.md)
 - [Decision Log](docs/decision_log.md)
 - [Development Log](docs/development_log.md)
@@ -261,7 +300,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 2. Scaffold React web and Express API apps.
 3. Build local MVP financing workflow with JSON persistence.
 4. Harden the local MVP runtime and validation behavior.
-5. Upgrade the web experience into a product-grade landing, member, admin, and system workspace.
+5. Upgrade the web experience into a product-grade landing, member, status, admin, and system workspace.
 6. Add MySQL development database and migration strategy.
 7. Add authentication and role separation.
 8. Strengthen AI assessment persistence and audit logs.

@@ -1,8 +1,9 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
-import type { ErrorRequestHandler } from "express";
+import type { ErrorRequestHandler, RequestHandler } from "express";
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,7 @@ dotenv.config();
 type ApplicationStatus = "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
 
 type ApplicationDecision = "APPROVED" | "REJECTED";
+type MlScoringMode = "optional_fallback" | "strict_ml";
 
 type AiAssessment = {
   source: "ml_api" | "demo_rule_based_fallback";
@@ -97,6 +99,24 @@ const port = parseEnvNumber(process.env.API_PORT, 5002);
 const environment = process.env.APP_ENV ?? "development";
 const mlApiBaseUrl = process.env.ML_API_BASE_URL ?? "http://127.0.0.1:8000";
 const mlApiTimeoutMs = parseEnvNumber(process.env.ML_API_TIMEOUT_MS, 5000);
+const mlScoringMode = parseMlScoringMode(process.env.ML_SCORING_MODE);
+const serveWebApp = parseBooleanFlag(process.env.SERVE_WEB_APP);
+const webDistPath = process.env.WEB_DIST_PATH?.trim()
+  ? resolveProjectPath(process.env.WEB_DIST_PATH.trim())
+  : path.resolve(repoRoot, "apps", "web", "dist");
+const webIndexPath = path.join(webDistPath, "index.html");
+const moneyRules = {
+  monthlyIncome: {
+    min: 500_000,
+    max: 100_000_000,
+    step: 100_000
+  },
+  requestedAmount: {
+    min: 500_000,
+    max: 100_000_000,
+    step: 500_000
+  }
+} as const;
 const dataFilePath = process.env.DATA_FILE_PATH?.trim()
   ? resolveProjectPath(process.env.DATA_FILE_PATH.trim())
   : path.resolve(apiRoot, ".data", "applications.local.json");
@@ -122,6 +142,22 @@ function parseEnvNumber(value: string | undefined, fallback: number) {
   return parsed;
 }
 
+function parseMlScoringMode(value: string | undefined): MlScoringMode {
+  return value === "strict_ml" ? "strict_ml" : "optional_fallback";
+}
+
+function parseBooleanFlag(value: string | undefined) {
+  if (value === undefined) {
+    return false;
+  }
+
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
+function getMlIntegrationStatus() {
+  return mlScoringMode === "strict_ml" ? "strict_ml_required" : "optional_with_fallback";
+}
+
 function resolveProjectPath(value: string) {
   return path.isAbsolute(value) ? value : path.resolve(repoRoot, value);
 }
@@ -130,12 +166,41 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseString(value: unknown, field: string) {
+function createHttpError(statusCode: number, errorLabel: string, message: string) {
+  const error = new Error(message) as Error & {
+    errorLabel: string;
+    statusCode: number;
+  };
+
+  error.errorLabel = errorLabel;
+  error.statusCode = statusCode;
+
+  return error;
+}
+
+function parseString(
+  value: unknown,
+  field: string,
+  options: {
+    minLength?: number;
+    maxLength?: number;
+  } = {}
+) {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new Error(`${field} is required.`);
   }
 
-  return value.trim();
+  const trimmed = value.trim();
+
+  if (options.minLength !== undefined && trimmed.length < options.minLength) {
+    throw new Error(`${field} must be at least ${options.minLength} characters.`);
+  }
+
+  if (options.maxLength !== undefined && trimmed.length > options.maxLength) {
+    throw new Error(`${field} must be at most ${options.maxLength} characters.`);
+  }
+
+  return trimmed;
 }
 
 function parseGender(value: unknown) {
@@ -164,11 +229,51 @@ function parseNumber(value: unknown, field: string, options: { min?: number; max
   return numberValue;
 }
 
+function formatRupiah(value: number) {
+  return `Rp${new Intl.NumberFormat("id-ID", {
+    maximumFractionDigits: 0
+  }).format(value)}`;
+}
+
 function parseInteger(value: unknown, field: string, options: { min?: number; max?: number } = {}) {
   const numberValue = parseNumber(value, field, options);
 
   if (!Number.isInteger(numberValue)) {
     throw new Error(`${field} must be an integer.`);
+  }
+
+  return numberValue;
+}
+
+function parseMoney(
+  value: unknown,
+  field: string,
+  options: {
+    min: number;
+    max: number;
+    step: number;
+  }
+) {
+  const numberValue = Number(value);
+
+  if (!Number.isFinite(numberValue)) {
+    throw new Error(`${field} must be a valid number.`);
+  }
+
+  if (!Number.isInteger(numberValue)) {
+    throw new Error(`${field} must be an integer rupiah amount.`);
+  }
+
+  if (numberValue < options.min) {
+    throw new Error(`${field} must be at least ${formatRupiah(options.min)}.`);
+  }
+
+  if (numberValue > options.max) {
+    throw new Error(`${field} must be at most ${formatRupiah(options.max)}.`);
+  }
+
+  if (numberValue % options.step !== 0) {
+    throw new Error(`${field} must use ${formatRupiah(options.step)} increments.`);
   }
 
   return numberValue;
@@ -322,8 +427,8 @@ function buildApplication(input: CreateApplicationRequest): FinancingApplication
     gender: parseGender(input.gender),
     age: parseInteger(input.age, "age", { min: 18, max: 75 }),
     businessType: parseString(input.businessType, "businessType"),
-    monthlyIncome: parseNumber(input.monthlyIncome, "monthlyIncome", { min: 1 }),
-    requestedAmount: parseNumber(input.requestedAmount, "requestedAmount", { min: 500_000 }),
+    monthlyIncome: parseMoney(input.monthlyIncome, "monthlyIncome", moneyRules.monthlyIncome),
+    requestedAmount: parseMoney(input.requestedAmount, "requestedAmount", moneyRules.requestedAmount),
     tenorMonths: parseInteger(input.tenorMonths, "tenorMonths", { min: 1, max: 36 }),
     purpose: parseString(input.purpose, "purpose"),
     yearsInBusiness: parseInteger(input.yearsInBusiness, "yearsInBusiness", { min: 0, max: 60 }),
@@ -473,6 +578,15 @@ async function scoreApplication(application: FinancingApplication): Promise<AiAs
     return mapMlResponse(payload);
   } catch (error) {
     const reason = error instanceof Error ? error.message : "unknown error";
+
+    if (mlScoringMode === "strict_ml") {
+      throw createHttpError(
+        503,
+        "Service Unavailable",
+        `ML scoring is required, but the MLOps API is unavailable. Reason: ${reason}.`
+      );
+    }
+
     return buildFallbackAssessment(application, reason);
   } finally {
     clearTimeout(timeout);
@@ -506,7 +620,8 @@ app.get("/health", async (_request, response) => {
     ml_api: {
       base_url: mlApiBaseUrl,
       timeout_ms: mlApiTimeoutMs,
-      integration_status: "optional_with_fallback"
+      scoring_mode: mlScoringMode,
+      integration_status: getMlIntegrationStatus()
     },
     timestamp: nowIso()
   });
@@ -522,8 +637,11 @@ app.get("/api/v1/demo/summary", async (_request, response) => {
     counts: summarizeApplications(applications),
     integration: {
       database: "json_file_storage",
-      ml_api: "optional_with_rule_based_fallback",
+      ml_api: getMlIntegrationStatus(),
       ml_api_base_url: mlApiBaseUrl,
+      ml_scoring_mode: mlScoringMode,
+      web_app: serveWebApp ? "served_by_api" : "separate_web_server",
+      web_dist_available: existsSync(webIndexPath),
       auth: "demo_mode"
     }
   });
@@ -542,6 +660,23 @@ app.get("/api/v1/applications", async (_request, response) => {
 
   response.json({
     data: applications.map(toClientApplication)
+  });
+});
+
+app.get("/api/v1/applications/:id/status", async (request, response) => {
+  const applications = await readApplications();
+  const application = applications.find((item) => item.id === request.params.id);
+
+  if (!application) {
+    response.status(404).json({
+      error: "Not Found",
+      message: "Application not found."
+    });
+    return;
+  }
+
+  response.json({
+    data: toClientApplication(application)
   });
 });
 
@@ -569,9 +704,10 @@ app.post("/api/v1/applications", async (request, response) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid request.";
+    const statusCode = getHttpErrorStatus(error, 400);
 
-    response.status(400).json({
-      error: "Bad Request",
+    response.status(statusCode).json({
+      error: getHttpErrorLabel(error, statusCode),
       message
     });
   }
@@ -618,8 +754,8 @@ app.post("/api/v1/applications/:id/decision", async (request, response) => {
       throw new Error("decision must be APPROVED or REJECTED.");
     }
 
-    const reviewerName = parseString(request.body.reviewerName, "reviewerName");
-    const note = parseString(request.body.note, "note");
+    const reviewerName = parseString(request.body.reviewerName, "reviewerName", { maxLength: 80 });
+    const note = parseString(request.body.note, "note", { minLength: 12, maxLength: 1_000 });
     const applications = await readApplications();
     const applicationIndex = applications.findIndex((item) => item.id === request.params.id);
 
@@ -660,6 +796,24 @@ app.post("/api/v1/applications/:id/decision", async (request, response) => {
   }
 });
 
+if (serveWebApp) {
+  if (existsSync(webIndexPath)) {
+    const serveSpaFallback: RequestHandler = (request, response, next) => {
+      if (!request.accepts("html")) {
+        next();
+        return;
+      }
+
+      response.sendFile(webIndexPath);
+    };
+
+    app.use(express.static(webDistPath, { index: false }));
+    app.get(/^(?!\/api\/|\/health$).*/, serveSpaFallback);
+  } else {
+    console.warn(`SERVE_WEB_APP=true but web build was not found at ${webIndexPath}`);
+  }
+}
+
 app.use((_request, response) => {
   response.status(404).json({
     error: "Not Found",
@@ -667,12 +821,66 @@ app.use((_request, response) => {
   });
 });
 
-const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
-  console.error(error);
+function getHttpErrorStatus(error: unknown, fallbackStatus = 500) {
+  if (!isObject(error)) {
+    return fallbackStatus;
+  }
 
-  response.status(500).json({
-    error: "Internal Server Error",
-    message: "The demo API failed to process the request."
+  const status = typeof error.statusCode === "number" ? error.statusCode : error.status;
+
+  if (typeof status === "number" && status >= 400 && status < 600) {
+    return status;
+  }
+
+  return fallbackStatus;
+}
+
+function getHttpErrorLabel(error: unknown, statusCode: number) {
+  if (isObject(error) && typeof error.errorLabel === "string") {
+    return error.errorLabel;
+  }
+
+  if (statusCode >= 500) {
+    return "Internal Server Error";
+  }
+
+  return "Bad Request";
+}
+
+function getHttpErrorMessage(error: unknown, statusCode: number) {
+  if (isObject(error) && error.type === "entity.parse.failed") {
+    return "Request body must be valid JSON.";
+  }
+
+  if (statusCode === 413) {
+    return "Request body is too large.";
+  }
+
+  if (isObject(error) && typeof error.statusCode === "number" && typeof error.message === "string") {
+    return error.message;
+  }
+
+  if (statusCode >= 500) {
+    return "The demo API failed to process the request.";
+  }
+
+  if (isObject(error) && typeof error.message === "string" && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return "The request could not be processed.";
+}
+
+const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
+  const statusCode = getHttpErrorStatus(error);
+
+  if (statusCode >= 500) {
+    console.error(error);
+  }
+
+  response.status(statusCode).json({
+    error: getHttpErrorLabel(error, statusCode),
+    message: getHttpErrorMessage(error, statusCode)
   });
 };
 
