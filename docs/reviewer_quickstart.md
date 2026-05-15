@@ -56,12 +56,14 @@ Try the MVP:
 
 1. Open the web app.
 2. Review the `Overview` page to understand the product.
-3. Use `Apply` to submit the prefilled financing form.
-4. The app switches to `Admin`.
-5. Review the new application through the queue and detail panel.
-6. Use search or status filters if needed.
-7. Click `Refresh Score`, `Approve`, or `Reject`.
-8. Open `System` to inspect the local runtime boundaries.
+3. Use `Apply` to review the prefilled financing form.
+4. Click `Review Application`.
+5. Confirm the review summary with `Confirm and Submit`.
+6. The app switches to `Admin`.
+7. Review the new application through the queue and detail panel.
+8. Use search or status filters if needed.
+9. Click `Refresh Score`, `Approve`, or `Reject`.
+10. Open `System` to inspect the local runtime boundaries.
 
 The backend stores local state in:
 

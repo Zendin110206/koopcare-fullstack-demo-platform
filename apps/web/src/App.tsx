@@ -19,7 +19,7 @@ import {
   UserRound,
   XCircle
 } from "lucide-react";
-import type { CSSProperties, FormEvent, ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type DemoSummary = {
@@ -328,8 +328,7 @@ export function App() {
     }));
   }
 
-  async function submitApplication(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitApplication() {
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -449,7 +448,7 @@ export function App() {
           form={form}
           installment={estimatedInstallment}
           isSubmitting={isSubmitting}
-          onSubmit={(event) => void submitApplication(event)}
+          onSubmit={() => void submitApplication()}
           updateForm={updateForm}
         />
       ) : null}
@@ -661,9 +660,19 @@ function ApplyView({
   form: ApplicationFormState;
   installment: number;
   isSubmitting: boolean;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: () => void;
   updateForm: <Key extends keyof ApplicationFormState>(key: Key, value: ApplicationFormState[Key]) => void;
 }) {
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const affordabilityTone = affordabilityRatio <= 0.3 ? "positive" : affordabilityRatio <= 0.5 ? "warning" : "danger";
+  const affordabilityLabel =
+    affordabilityRatio <= 0.3 ? "Healthy" : affordabilityRatio <= 0.5 ? "Needs review" : "High pressure";
+
+  function updateAndCloseReview<Key extends keyof ApplicationFormState>(key: Key, value: ApplicationFormState[Key]) {
+    setIsReviewOpen(false);
+    updateForm(key, value);
+  }
+
   return (
     <section className="view-stack">
       <section className="page-intro">
@@ -683,7 +692,13 @@ function ApplyView({
       </section>
 
       <section className="application-layout">
-        <form className="form-surface" onSubmit={onSubmit}>
+        <form
+          className="form-surface"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setIsReviewOpen(true);
+          }}
+        >
           <FormSection
             description="Basic member details used for identification and model feature mapping."
             eyebrow="Step 1"
@@ -693,18 +708,18 @@ function ApplyView({
               <input
                 required
                 value={form.applicantName}
-                onChange={(event) => updateForm("applicantName", event.target.value)}
+                onChange={(event) => updateAndCloseReview("applicantName", event.target.value)}
               />
             </Field>
             <Field label="Phone number">
               <input
                 required
                 value={form.phoneNumber}
-                onChange={(event) => updateForm("phoneNumber", event.target.value)}
+                onChange={(event) => updateAndCloseReview("phoneNumber", event.target.value)}
               />
             </Field>
             <Field label="Gender">
-              <select value={form.gender} onChange={(event) => updateForm("gender", event.target.value as "M" | "F")}>
+              <select value={form.gender} onChange={(event) => updateAndCloseReview("gender", event.target.value as "M" | "F")}>
                 <option value="F">Female</option>
                 <option value="M">Male</option>
               </select>
@@ -716,7 +731,7 @@ function ApplyView({
                 required
                 type="number"
                 value={form.age}
-                onChange={(event) => updateForm("age", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("age", Number(event.target.value))}
               />
             </Field>
           </FormSection>
@@ -727,7 +742,7 @@ function ApplyView({
             title="Business capacity"
           >
             <Field label="Business type">
-              <select value={form.businessType} onChange={(event) => updateForm("businessType", event.target.value)}>
+              <select value={form.businessType} onChange={(event) => updateAndCloseReview("businessType", event.target.value)}>
                 <option value="Grocery microbusiness">Grocery microbusiness</option>
                 <option value="Equipment repair service">Equipment repair service</option>
                 <option value="Home food production">Home food production</option>
@@ -741,7 +756,7 @@ function ApplyView({
                 required
                 type="number"
                 value={form.yearsInBusiness}
-                onChange={(event) => updateForm("yearsInBusiness", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("yearsInBusiness", Number(event.target.value))}
               />
             </Field>
             <Field label="Family members">
@@ -751,7 +766,7 @@ function ApplyView({
                 required
                 type="number"
                 value={form.familyMembers}
-                onChange={(event) => updateForm("familyMembers", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("familyMembers", Number(event.target.value))}
               />
             </Field>
             <Field label="Children">
@@ -761,7 +776,7 @@ function ApplyView({
                 required
                 type="number"
                 value={form.children}
-                onChange={(event) => updateForm("children", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("children", Number(event.target.value))}
               />
             </Field>
           </FormSection>
@@ -778,7 +793,7 @@ function ApplyView({
                 step={100000}
                 type="number"
                 value={form.monthlyIncome}
-                onChange={(event) => updateForm("monthlyIncome", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("monthlyIncome", Number(event.target.value))}
               />
             </Field>
             <Field label="Requested amount">
@@ -788,7 +803,7 @@ function ApplyView({
                 step={500000}
                 type="number"
                 value={form.requestedAmount}
-                onChange={(event) => updateForm("requestedAmount", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("requestedAmount", Number(event.target.value))}
               />
             </Field>
             <Field label="Tenor in months">
@@ -798,7 +813,7 @@ function ApplyView({
                 required
                 type="number"
                 value={form.tenorMonths}
-                onChange={(event) => updateForm("tenorMonths", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("tenorMonths", Number(event.target.value))}
               />
             </Field>
             <Field label="Existing loans">
@@ -808,13 +823,13 @@ function ApplyView({
                 required
                 type="number"
                 value={form.existingLoanCount}
-                onChange={(event) => updateForm("existingLoanCount", Number(event.target.value))}
+                onChange={(event) => updateAndCloseReview("existingLoanCount", Number(event.target.value))}
               />
             </Field>
             <Field label="Collateral">
               <select
                 value={String(form.hasCollateral)}
-                onChange={(event) => updateForm("hasCollateral", event.target.value === "true")}
+                onChange={(event) => updateAndCloseReview("hasCollateral", event.target.value === "true")}
               >
                 <option value="true">Available</option>
                 <option value="false">Not available</option>
@@ -824,15 +839,52 @@ function ApplyView({
               <textarea
                 required
                 value={form.purpose}
-                onChange={(event) => updateForm("purpose", event.target.value)}
+                onChange={(event) => updateAndCloseReview("purpose", event.target.value)}
               />
             </Field>
           </FormSection>
 
-          <button className="primary-action submit-action" disabled={isSubmitting} type="submit">
-            <ClipboardCheck aria-hidden="true" size={18} />
-            {isSubmitting ? "Submitting and scoring..." : "Submit Application"}
-          </button>
+          {isReviewOpen ? (
+            <section className="submit-review-panel">
+              <div className="submit-review-heading">
+                <div>
+                  <p className="eyebrow">Final check</p>
+                  <h2>Review before sending to officer workspace</h2>
+                </div>
+                <Badge tone={affordabilityTone}>{affordabilityLabel}</Badge>
+              </div>
+              <div className="review-grid">
+                <ReviewItem label="Applicant" value={form.applicantName} />
+                <ReviewItem label="Business" value={form.businessType} />
+                <ReviewItem label="Requested" value={currencyFormatter.format(form.requestedAmount)} />
+                <ReviewItem label="Base installment" value={currencyFormatter.format(installment)} />
+                <ReviewItem label="Affordability" value={formatPercent(affordabilityRatio)} />
+                <ReviewItem label="Collateral" value={form.hasCollateral ? "Available" : "Not available"} />
+              </div>
+              <p className="review-note">
+                After confirmation, the backend stores this request, calls the MLOps scoring API, and sends the case to
+                the admin workspace for final human review.
+              </p>
+              <div className="submit-review-actions">
+                <button className="secondary-action" disabled={isSubmitting} type="button" onClick={() => setIsReviewOpen(false)}>
+                  Back to edit
+                </button>
+                <button className="primary-action" disabled={isSubmitting} type="button" onClick={onSubmit}>
+                  <ClipboardCheck aria-hidden="true" size={18} />
+                  {isSubmitting ? "Submitting and scoring..." : "Confirm and Submit"}
+                </button>
+              </div>
+            </section>
+          ) : null}
+
+          {!isReviewOpen ? (
+            <div className="form-actions">
+              <button className="primary-action submit-action" disabled={isSubmitting} type="submit">
+                <ClipboardCheck aria-hidden="true" size={18} />
+                Review Application
+              </button>
+            </div>
+          ) : null}
         </form>
 
         <aside className="application-summary">
@@ -844,7 +896,7 @@ function ApplyView({
           <div className="summary-grid">
             <MiniMetric label="Monthly income" value={compactNumberFormatter.format(form.monthlyIncome)} />
             <MiniMetric label="Base installment" value={compactNumberFormatter.format(installment)} />
-            <MiniMetric label="Affordability" value={formatPercent(affordabilityRatio)} />
+            <MiniMetric label="Affordability" value={formatPercent(affordabilityRatio)} tone={affordabilityTone} />
             <MiniMetric label="Collateral" value={form.hasCollateral ? "Yes" : "No"} />
           </div>
           <div className="insight-panel">
@@ -1384,6 +1436,15 @@ function SidebarMetric({ label, value }: { label: string; value: number | string
 function ProfileItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="profile-item">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function ReviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="review-item">
       <span>{label}</span>
       <strong>{value}</strong>
     </div>

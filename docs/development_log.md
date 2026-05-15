@@ -169,3 +169,24 @@ POST /api/v1/applications/:id/score
 ```
 
 The MLOps API was restarted locally because an older uvicorn process was listening on port `8000` but timing out. After restart, the model endpoint returned `model_loaded: true`, and a backend score refresh returned `source: ml_api` with model `XGBoost`.
+
+## 2026-05-15 - Member Submit Review Step
+
+Added a safer member submission interaction after the admin UX stabilization checkpoint.
+
+Changed:
+
+- the Apply form no longer sends data immediately from the first submit button;
+- the first submit action now opens a review panel;
+- the review panel summarizes applicant, business, requested amount, installment, affordability, and collateral;
+- the final backend submit only happens after `Confirm and Submit`;
+- editing any form field closes the stale review panel so the summary cannot silently drift from the form values;
+- the sidebar affordability metric now uses positive, warning, or danger styling.
+
+Validation:
+
+```text
+npm run check
+```
+
+The goal is to make the member flow feel safer and clearer before an application is stored, scored, and sent into admin review.

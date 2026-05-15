@@ -756,9 +756,71 @@ svg {
   box-shadow: 0 0 0 3px rgb(31 122 79 / 14%);
 }
 
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 24px 24px;
+}
+
 .submit-action {
   justify-self: end;
+}
+
+.submit-review-panel {
+  display: grid;
+  gap: 15px;
   margin: 0 24px 24px;
+  padding: 18px;
+  background: #f7faf4;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.submit-review-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.review-item {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.review-item span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.review-item strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+  line-height: 1.32;
+}
+
+.review-note {
+  color: var(--muted-strong);
+  line-height: 1.58;
+}
+
+.submit-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .application-summary {
@@ -1496,6 +1558,7 @@ tbody tr.selected {
   .workflow-grid,
   .stepper,
   .form-grid,
+  .review-grid,
   .metrics-row,
   .system-grid,
   .profile-grid,
@@ -1506,9 +1569,27 @@ tbody tr.selected {
   }
 
   .submit-action {
-    justify-self: stretch;
-    width: calc(100% - 36px);
+    width: 100%;
+  }
+
+  .form-actions {
+    padding: 0 18px 18px;
+  }
+
+  .submit-review-panel {
     margin: 0 18px 18px;
+  }
+
+  .submit-review-heading {
+    display: grid;
+  }
+
+  .submit-review-actions {
+    justify-content: stretch;
+  }
+
+  .submit-review-actions button {
+    width: 100%;
   }
 
   .hero-actions,
