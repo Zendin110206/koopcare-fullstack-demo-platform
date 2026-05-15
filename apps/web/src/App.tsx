@@ -107,6 +107,7 @@ type ApplicationFormState = {
 
 type ViewKey = "home" | "apply" | "admin" | "system";
 type StatusFilter = "ALL" | ApplicationStatus;
+type ActionState = { id: string; kind: "score" | "decision" } | null;
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5002";
 
@@ -193,6 +194,22 @@ function recommendationTone(recommendation?: AiAssessment["aiRecommendation"]) {
   return recommendation === "LAYAK" ? "positive" : "danger";
 }
 
+function sourceTone(source?: AiAssessment["source"]) {
+  return source === "ml_api" ? "positive" : "warning";
+}
+
+function formatAssessmentSource(source?: AiAssessment["source"]) {
+  if (source === "ml_api") {
+    return "Trained ML API";
+  }
+
+  if (source === "demo_rule_based_fallback") {
+    return "Fallback active";
+  }
+
+  return "Not scored";
+}
+
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     headers: {
@@ -220,6 +237,7 @@ export function App() {
   const [form, setForm] = useState<ApplicationFormState>(initialForm);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionState, setActionState] = useState<ActionState>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -336,6 +354,7 @@ export function App() {
   }
 
   async function scoreApplication(id: string) {
+    setActionState({ id, kind: "score" });
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -351,10 +370,13 @@ export function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to score application.";
       setErrorMessage(message);
+    } finally {
+      setActionState(null);
     }
   }
 
   async function decideApplication(id: string, decision: "APPROVED" | "REJECTED") {
+    setActionState({ id, kind: "decision" });
     setErrorMessage(null);
     setSuccessMessage(null);
 
@@ -383,6 +405,8 @@ export function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to save decision.";
       setErrorMessage(message);
+    } finally {
+      setActionState(null);
     }
   }
 
@@ -433,6 +457,7 @@ export function App() {
       {activeView === "admin" ? (
         <AdminView
           applications={applications}
+          actionState={actionState}
           filteredApplications={filteredApplications}
           isLoading={isLoading}
           riskSummary={riskSummary}
@@ -840,6 +865,7 @@ function ApplyView({
 
 function AdminView({
   applications,
+  actionState,
   filteredApplications,
   isLoading,
   riskSummary,
@@ -854,6 +880,7 @@ function AdminView({
   onStatusFilterChange
 }: {
   applications: FinancingApplication[];
+  actionState: ActionState;
   filteredApplications: FinancingApplication[];
   isLoading: boolean;
   riskSummary: { low: number; medium: number; high: number };
@@ -867,6 +894,13 @@ function AdminView({
   onSelectApplication: (id: string) => void;
   onStatusFilterChange: (value: StatusFilter) => void;
 }) {
+  const scoredByMlApi = applications.filter((application) => application.aiAssessment?.source === "ml_api").length;
+  const scoredByFallback = applications.filter(
+    (application) => application.aiAssessment?.source === "demo_rule_based_fallback"
+  ).length;
+  const isFallbackActive = scoredByFallback > 0 && scoredByMlApi === 0;
+  const hasMixedScoring = scoredByFallback > 0 && scoredByMlApi > 0;
+
   return (
     <section className="admin-shell">
       <aside className="admin-sidebar">
@@ -908,6 +942,33 @@ function AdminView({
           </div>
         </div>
 
+        <section className={`ml-status ${isFallbackActive || hasMixedScoring ? "warning" : "positive"}`} aria-label="ML model status">
+          {isFallbackActive || hasMixedScoring ? (
+            <AlertTriangle aria-hidden="true" size={20} />
+          ) : (
+            <CheckCircle2 aria-hidden="true" size={20} />
+          )}
+          <div>
+            <strong>
+              {isFallbackActive
+                ? "Fallback scoring is active"
+                : hasMixedScoring
+                  ? "Mixed scoring sources"
+                  : "Trained ML scoring ready when service responds"}
+            </strong>
+            <p>
+              {isFallbackActive
+                ? `The Python MLOps API is not currently returning scores, so this local demo is using a transparent fallback. Start the MLOps API at ${summary?.integration.ml_api_base_url ?? "the configured ML API URL"} to activate the trained model path.`
+                : hasMixedScoring
+                  ? "Some records were scored while the trained model was unavailable. Refresh a selected score after the MLOps API is running to replace fallback assessments."
+                : "Applications can show trained MLOps scores when the Python service responds. Fallback remains labeled if the service is unavailable."}
+            </p>
+          </div>
+          <Badge tone={isFallbackActive || hasMixedScoring ? "warning" : "positive"}>
+            {scoredByMlApi} ML / {scoredByFallback} fallback
+          </Badge>
+        </section>
+
         <div className="admin-toolbar">
           <label className="search-box">
             <Search aria-hidden="true" size={17} />
@@ -938,7 +999,12 @@ function AdminView({
             selectedApplicationId={selectedApplication?.id ?? null}
             onSelectApplication={onSelectApplication}
           />
-          <ApplicationDetailPanel application={selectedApplication} onDecide={onDecide} onScore={onScore} />
+          <ApplicationDetailPanel
+            actionState={actionState}
+            application={selectedApplication}
+            onDecide={onDecide}
+            onScore={onScore}
+          />
         </div>
       </section>
     </section>
@@ -957,7 +1023,7 @@ function ApplicationTable({
   onSelectApplication: (id: string) => void;
 }) {
   return (
-    <section className="table-panel">
+    <section className="queue-panel">
       <div className="table-header">
         <div>
           <p className="eyebrow">Queue</p>
@@ -965,80 +1031,63 @@ function ApplicationTable({
         </div>
         <span>{applications.length} records</span>
       </div>
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>AI</th>
-              <th>Risk</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={5}>Loading applications...</td>
-              </tr>
-            ) : null}
-            {!isLoading && applications.length === 0 ? (
-              <tr>
-                <td colSpan={5}>No applications match the current filter.</td>
-              </tr>
-            ) : null}
-            {!isLoading
-              ? applications.map((application) => (
-                  <tr
-                    className={selectedApplicationId === application.id ? "selected" : ""}
-                    key={application.id}
-                    onClick={() => onSelectApplication(application.id)}
-                  >
-                    <td>
-                      <strong>{application.applicantName}</strong>
-                      <small>{application.id}</small>
-                    </td>
-                    <td>
-                      <strong>{application.requestedAmountFormatted}</strong>
-                      <small>{application.tenorMonths} months</small>
-                    </td>
-                    <td>
-                      <Badge tone={statusTone(application.status)}>{formatStatus(application.status)}</Badge>
-                    </td>
-                    <td>
-                      {application.aiAssessment ? (
-                        <>
-                          <strong>{application.aiAssessment.eligibilityScore}/100</strong>
-                          <small>{application.aiAssessment.aiRecommendation}</small>
-                        </>
-                      ) : (
-                        <small>Not scored</small>
-                      )}
-                    </td>
-                    <td>
-                      <Badge tone={riskTone(application.aiAssessment?.riskLevel)}>
-                        {application.aiAssessment?.riskLevel ?? "Pending"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))
-              : null}
-          </tbody>
-        </table>
+      <div className="application-list">
+        {isLoading ? <p className="empty-copy">Loading applications...</p> : null}
+        {!isLoading && applications.length === 0 ? (
+          <p className="empty-copy">No applications match the current filter.</p>
+        ) : null}
+        {!isLoading
+          ? applications.map((application) => (
+              <button
+                className={selectedApplicationId === application.id ? "application-card selected" : "application-card"}
+                key={application.id}
+                type="button"
+                onClick={() => onSelectApplication(application.id)}
+              >
+                <div className="application-card-main">
+                  <strong>{application.applicantName}</strong>
+                  <span>{application.id}</span>
+                  <small>{application.businessType}</small>
+                </div>
+                <div className="application-card-finance">
+                  <span>Requested</span>
+                  <strong>{application.requestedAmountFormatted}</strong>
+                  <small>{application.tenorMonths} months</small>
+                </div>
+                <div className="application-card-signals">
+                  <Badge tone={statusTone(application.status)}>{formatStatus(application.status)}</Badge>
+                  <Badge tone={riskTone(application.aiAssessment?.riskLevel)}>
+                    {application.aiAssessment?.riskLevel ?? "Pending"}
+                  </Badge>
+                  <span className="score-chip">
+                    {application.aiAssessment ? `${application.aiAssessment.eligibilityScore}/100` : "Not scored"}
+                  </span>
+                </div>
+              </button>
+            ))
+          : null}
       </div>
     </section>
   );
 }
 
 function ApplicationDetailPanel({
+  actionState,
   application,
   onDecide,
   onScore
 }: {
+  actionState: ActionState;
   application: FinancingApplication | null;
   onDecide: (id: string, decision: "APPROVED" | "REJECTED") => void;
   onScore: (id: string) => void;
 }) {
+  const [pendingDecision, setPendingDecision] = useState<"APPROVED" | "REJECTED" | null>(null);
+
+  useEffect(() => {
+    setPendingDecision(null);
+  }, [application?.id]);
+
   if (!application) {
     return (
       <aside className="detail-panel empty">
@@ -1050,6 +1099,8 @@ function ApplicationDetailPanel({
   }
 
   const assessment = application.aiAssessment;
+  const isScoring = actionState?.kind === "score" && actionState.id === application.id;
+  const isDeciding = actionState?.kind === "decision" && actionState.id === application.id;
 
   return (
     <aside className="detail-panel">
@@ -1062,6 +1113,16 @@ function ApplicationDetailPanel({
         <Badge tone={statusTone(application.status)}>{formatStatus(application.status)}</Badge>
       </div>
 
+      {assessment?.source === "demo_rule_based_fallback" ? (
+        <section className="model-warning">
+          <AlertTriangle aria-hidden="true" size={18} />
+          <div>
+            <strong>Trained model is not active for this score.</strong>
+            <p>The app is using the labeled fallback path because the Python MLOps API did not return a score.</p>
+          </div>
+        </section>
+      ) : null}
+
       <div className="ai-card">
         <div className="ai-card-top">
           <Sparkles aria-hidden="true" size={22} />
@@ -1069,7 +1130,7 @@ function ApplicationDetailPanel({
             <span>AI recommendation</span>
             <strong>{assessment?.aiRecommendation ?? "Not scored"}</strong>
           </div>
-          {assessment ? <Badge tone={recommendationTone(assessment.aiRecommendation)}>{assessment.source}</Badge> : null}
+          {assessment ? <Badge tone={sourceTone(assessment.source)}>{formatAssessmentSource(assessment.source)}</Badge> : null}
         </div>
         <div className="score-ring" style={{ "--score": `${assessment?.eligibilityScore ?? 0}%` } as CSSProperties}>
           <strong>{assessment?.eligibilityScore ?? 0}</strong>
@@ -1113,25 +1174,47 @@ function ApplicationDetailPanel({
         </div>
       ) : null}
 
+      {pendingDecision ? (
+        <section className={pendingDecision === "APPROVED" ? "confirm-box approve" : "confirm-box reject"}>
+          <div>
+            <strong>Confirm {formatStatus(pendingDecision)}?</strong>
+            <p>This will save a final officer decision for {application.applicantName}. You can still inspect the record after saving.</p>
+          </div>
+          <div className="confirm-actions">
+            <button className="secondary-action" type="button" onClick={() => setPendingDecision(null)}>
+              Cancel
+            </button>
+            <button
+              className={pendingDecision === "APPROVED" ? "decision-button approve" : "decision-button reject"}
+              disabled={isDeciding}
+              type="button"
+              onClick={() => onDecide(application.id, pendingDecision)}
+            >
+              {isDeciding ? "Saving..." : `Confirm ${formatStatus(pendingDecision)}`}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <div className="decision-actions">
-        <button className="secondary-action" type="button" onClick={() => onScore(application.id)}>
+        <button className="secondary-action" disabled={isScoring || isDeciding} type="button" onClick={() => onScore(application.id)}>
           <Sparkles aria-hidden="true" size={17} />
-          Refresh Score
+          {isScoring ? "Scoring..." : "Refresh Score"}
         </button>
         <button
           className="decision-button approve"
-          disabled={application.status === "APPROVED"}
+          disabled={application.status === "APPROVED" || isScoring || isDeciding}
           type="button"
-          onClick={() => onDecide(application.id, "APPROVED")}
+          onClick={() => setPendingDecision("APPROVED")}
         >
           <CheckCircle2 aria-hidden="true" size={17} />
           Approve
         </button>
         <button
           className="decision-button reject"
-          disabled={application.status === "REJECTED"}
+          disabled={application.status === "REJECTED" || isScoring || isDeciding}
           type="button"
-          onClick={() => onDecide(application.id, "REJECTED")}
+          onClick={() => setPendingDecision("REJECTED")}
         >
           <XCircle aria-hidden="true" size={17} />
           Reject

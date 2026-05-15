@@ -142,3 +142,30 @@ invalid age input returns 400
 ```
 
 The runtime test confirmed that the upgraded UI did not break the backend workflow. The local app can still submit an application, create a transparent fallback AI assessment when the Python MLOps API is not running, and save an admin decision.
+
+## 2026-05-15 - Admin Review UX Stabilization
+
+Fixed the first round of product UX issues found during manual browser review.
+
+Changed:
+
+- replaced the cramped admin table with a responsive application queue list;
+- fixed admin sidebar spacing so labels and values no longer run together;
+- reduced admin heading scale so it does not clip at the top of the workspace;
+- added a clear ML status banner for fallback, mixed, or trained-model scoring states;
+- added a selected-case warning when a score came from `demo_rule_based_fallback`;
+- changed the source badge from raw `demo_rule_based_fallback` text to clearer product copy;
+- added loading state for score and decision actions;
+- added an inline confirmation step before saving approve/reject decisions;
+- tightened mobile and narrow-width admin responsiveness.
+
+Validation:
+
+```text
+npm run check
+GET http://127.0.0.1:8000/health
+GET http://127.0.0.1:8000/model-info
+POST /api/v1/applications/:id/score
+```
+
+The MLOps API was restarted locally because an older uvicorn process was listening on port `8000` but timing out. After restart, the model endpoint returned `model_loaded: true`, and a backend score refresh returned `source: ml_api` with model `XGBoost`.
