@@ -173,6 +173,7 @@ Member status tracker
 Admin queue, filters, and detail panel
 System readiness page
 GET /health
+GET /ready
 GET /api/v1/demo/summary
 GET /api/v1/demo/applications
 GET /api/v1/applications

@@ -115,9 +115,22 @@ The platform should expose the Node service over HTTPS. The same public domain s
 ```text
 /
 /health
+/ready
 /api/v1/demo/summary
 /api/v1/applications
 ```
+
+Use `/health` for a lightweight liveness check. Use `/ready` when the platform supports readiness probes. The readiness endpoint verifies JSON storage and, in single-service mode, confirms that the built React app is available.
+
+## Deployment Smoke Check
+
+Run:
+
+```powershell
+npm run smoke:public
+```
+
+This command builds the project, starts the public preview on an isolated local port, validates the web app shell, `/ready`, `/health`, SPA fallback, summary API, and JSON 404 behavior, then shuts the server down.
 
 ## Current Limitations
 

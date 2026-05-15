@@ -110,6 +110,18 @@ try {
   const health = await waitForHealth();
   assert(health.body?.storage?.applications === 3, "Expected clean seed data with 3 applications.");
 
+  const readiness = await request("/ready");
+  assert(readiness.status === 200, "Readiness endpoint should return 200 in API smoke mode.");
+  assert(readiness.body?.status === "ready", "Readiness endpoint should report ready.");
+  assert(
+    readiness.body?.checks?.some((check) => check.name === "json_storage" && check.status === "ok"),
+    "Readiness endpoint should confirm JSON storage availability."
+  );
+  assert(
+    readiness.body?.checks?.some((check) => check.name === "web_build" && check.status === "skipped"),
+    "Readiness endpoint should skip web build when SERVE_WEB_APP is disabled."
+  );
+
   const malformedJson = await request("/api/v1/applications", {
     body: "{bad-json",
     headers: {
@@ -231,6 +243,16 @@ try {
   try {
     const strictHealth = await waitForHealth(strictBaseUrl, () => strictServerOutput);
     assert(strictHealth.body?.ml_api?.scoring_mode === "strict_ml", "Strict server should expose strict_ml mode.");
+
+    const strictReadiness = await requestTo(strictBaseUrl, "/ready");
+    assert(strictReadiness.status === 200, "Strict server readiness should return 200.");
+    assert(strictReadiness.body?.status === "ready", "Strict server readiness should report ready.");
+    assert(
+      strictReadiness.body?.checks?.some(
+        (check) => check.name === "ml_scoring_configuration" && check.details?.scoring_mode === "strict_ml"
+      ),
+      "Strict server readiness should expose strict ML configuration."
+    );
 
     const strictCreate = await requestTo(strictBaseUrl, "/api/v1/applications", {
       body: JSON.stringify(validApplication),

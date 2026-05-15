@@ -227,6 +227,7 @@ Local URLs:
 ```text
 Web app: http://127.0.0.1:5174
 API health: http://localhost:5002/health
+API readiness: http://localhost:5002/ready
 Demo summary API: http://localhost:5002/api/v1/demo/summary
 Applications API: http://localhost:5002/api/v1/applications
 Application status API: http://localhost:5002/api/v1/applications/:id/status
@@ -262,6 +263,14 @@ npm run smoke:api
 ```
 
 This builds the API, starts it on an isolated smoke-test port, validates malformed JSON handling, financing amount rules, application creation, and officer decision note validation, then shuts the smoke server down.
+
+Run the public preview smoke check:
+
+```powershell
+npm run smoke:public
+```
+
+This builds the API and web app, starts the single-service public preview on an isolated port, validates `/ready`, `/health`, the React app shell, SPA fallback, summary API, and JSON 404 behavior, then shuts the preview server down.
 
 ML scoring mode:
 

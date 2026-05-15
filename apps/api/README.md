@@ -6,6 +6,7 @@ Express + TypeScript backend for the KoopCare fullstack demo.
 
 ```text
 GET /health
+GET /ready
 GET /api/v1/demo/summary
 GET /api/v1/demo/applications
 GET /api/v1/applications
@@ -62,6 +63,18 @@ Health check:
 ```text
 http://localhost:5002/health
 ```
+
+Readiness check:
+
+```text
+http://localhost:5002/ready
+```
+
+`/ready` validates the critical runtime pieces needed before public traffic is sent to the service:
+
+- JSON application storage is readable;
+- React build output exists when `SERVE_WEB_APP=true`;
+- ML scoring mode configuration is visible.
 
 ## Environment
 

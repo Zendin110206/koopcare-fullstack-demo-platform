@@ -93,6 +93,13 @@ type MlPredictionResponse = {
   note: string;
 };
 
+type ReadinessCheck = {
+  name: string;
+  status: "ok" | "failed" | "skipped";
+  message: string;
+  details?: Record<string, number | string | boolean>;
+};
+
 const app = express();
 
 const port = parseEnvNumber(process.env.API_PORT, 5002);
@@ -417,6 +424,96 @@ async function writeApplications(applications: FinancingApplication[]) {
   await writeFile(dataFilePath, `${JSON.stringify(applications, null, 2)}\n`, "utf8");
 }
 
+async function checkStorageReadiness(): Promise<ReadinessCheck> {
+  try {
+    const applications = await readApplications();
+
+    return {
+      name: "json_storage",
+      status: "ok",
+      message: "Application storage is readable.",
+      details: {
+        applications: applications.length,
+        path: dataFilePath
+      }
+    };
+  } catch (error) {
+    return {
+      name: "json_storage",
+      status: "failed",
+      message: error instanceof Error ? error.message : "Application storage failed readiness check.",
+      details: {
+        path: dataFilePath
+      }
+    };
+  }
+}
+
+function checkWebBuildReadiness(): ReadinessCheck {
+  if (!serveWebApp) {
+    return {
+      name: "web_build",
+      status: "skipped",
+      message: "Web build serving is disabled for this runtime.",
+      details: {
+        serve_web_app: false
+      }
+    };
+  }
+
+  if (existsSync(webIndexPath)) {
+    return {
+      name: "web_build",
+      status: "ok",
+      message: "React build is available for API-served public preview.",
+      details: {
+        index_path: webIndexPath,
+        serve_web_app: true
+      }
+    };
+  }
+
+  return {
+    name: "web_build",
+    status: "failed",
+    message: "SERVE_WEB_APP=true but the React build output is missing.",
+    details: {
+      index_path: webIndexPath,
+      serve_web_app: true
+    }
+  };
+}
+
+function checkMlScoringReadiness(): ReadinessCheck {
+  return {
+    name: "ml_scoring_configuration",
+    status: "ok",
+    message:
+      mlScoringMode === "strict_ml"
+        ? "Strict ML mode is configured. Scoring requests require the MLOps API."
+        : "Optional fallback mode is configured for local demo reliability.",
+    details: {
+      base_url: mlApiBaseUrl,
+      scoring_mode: mlScoringMode,
+      timeout_ms: mlApiTimeoutMs
+    }
+  };
+}
+
+async function buildReadinessReport() {
+  const checks = [await checkStorageReadiness(), checkWebBuildReadiness(), checkMlScoringReadiness()];
+  const ready = checks.every((check) => check.status !== "failed");
+
+  return {
+    status: ready ? "ready" : "not_ready",
+    service: "KoopCare Fullstack Demo API",
+    environment,
+    version: "0.3.0",
+    checks,
+    timestamp: nowIso()
+  };
+}
+
 function buildApplication(input: CreateApplicationRequest): FinancingApplication {
   const timestamp = nowIso();
 
@@ -625,6 +722,12 @@ app.get("/health", async (_request, response) => {
     },
     timestamp: nowIso()
   });
+});
+
+app.get("/ready", async (_request, response) => {
+  const readiness = await buildReadinessReport();
+
+  response.status(readiness.status === "ready" ? 200 : 503).json(readiness);
 });
 
 app.get("/api/v1/demo/summary", async (_request, response) => {

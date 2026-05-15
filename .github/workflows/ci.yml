@@ -27,3 +27,9 @@ jobs:
 
       - name: Run project check
         run: npm run check
+
+      - name: Run API smoke check
+        run: npm run smoke:api
+
+      - name: Run public preview smoke check
+        run: npm run smoke:public

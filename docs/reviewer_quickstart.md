@@ -53,6 +53,12 @@ API health:
 http://localhost:5002/health
 ```
 
+API readiness:
+
+```text
+http://localhost:5002/ready
+```
+
 Try the MVP:
 
 1. Open the web app.
@@ -99,6 +105,8 @@ Run:
 
 ```powershell
 npm run check
+npm run smoke:api
+npm run smoke:public
 ```
 
 Security audit:
