@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: koopcare-fullstack-demo-platform
+    runtime: node
+    plan: starter
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /ready
+    envVars:
+      - key: NODE_VERSION
+        value: 22.18.0
+      - key: APP_ENV
+        value: production
+      - key: SERVE_WEB_APP
+        value: "true"
+      - key: DATA_FILE_PATH
+        value: /var/data/koopcare/applications.json
+      - key: ML_SCORING_MODE
+        value: optional_fallback
+      - key: ML_API_BASE_URL
+        value: http://127.0.0.1:8000
+      - key: ML_API_TIMEOUT_MS
+        value: "1500"
+    disk:
+      name: koopcare-demo-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -272,6 +272,14 @@ npm run smoke:public
 
 This builds the API and web app, starts the single-service public preview on an isolated port, validates `/ready`, `/health`, the React app shell, SPA fallback, summary API, and JSON 404 behavior, then shuts the preview server down.
 
+Validate deployment configuration:
+
+```powershell
+npm run check:deploy-config
+```
+
+This checks the Render Blueprint, Docker healthcheck, persistent runtime data path, and public-demo start command.
+
 ML scoring mode:
 
 ```powershell

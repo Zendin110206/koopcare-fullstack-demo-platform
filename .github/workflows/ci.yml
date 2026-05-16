@@ -33,3 +33,6 @@ jobs:
 
       - name: Run public preview smoke check
         run: npm run smoke:public
+
+      - name: Validate deployment config
+        run: npm run check:deploy-config

@@ -100,6 +100,25 @@ docker run --rm -p 5002:5002 --env ML_SCORING_MODE=strict_ml --env ML_API_BASE_U
 
 Use the strict command only when the Python MLOps API is reachable from the container.
 
+The Docker image sets:
+
+```text
+SERVE_WEB_APP=true
+DATA_FILE_PATH=/data/koopcare/applications.json
+```
+
+It also includes a container `HEALTHCHECK` that calls:
+
+```text
+/ready
+```
+
+For local container data that survives container replacement, mount a volume:
+
+```powershell
+docker run --rm -p 5002:5002 -v koopcare-demo-data:/data --env ML_SCORING_MODE=optional_fallback koopcare-fullstack-demo
+```
+
 ## Platform Deployment Shape
 
 Typical public hosting settings:
@@ -122,6 +141,70 @@ The platform should expose the Node service over HTTPS. The same public domain s
 
 Use `/health` for a lightweight liveness check. Use `/ready` when the platform supports readiness probes. The readiness endpoint verifies JSON storage and, in single-service mode, confirms that the built React app is available.
 
+## Render Blueprint
+
+This repository includes:
+
+```text
+render.yaml
+```
+
+The Blueprint defines one Node web service:
+
+```text
+Build command: npm ci && npm run build
+Start command: npm start
+Health check path: /ready
+Auto deploy trigger: checksPass
+```
+
+It also sets:
+
+```text
+SERVE_WEB_APP=true
+DATA_FILE_PATH=/var/data/koopcare/applications.json
+ML_SCORING_MODE=optional_fallback
+```
+
+The `checksPass` deploy trigger means Render waits for GitHub checks before auto-deploying from `main`.
+
+### Persistent Runtime Data
+
+The Blueprint attaches a persistent disk:
+
+```text
+mountPath: /var/data
+sizeGB: 1
+```
+
+The JSON MVP data file is stored at:
+
+```text
+/var/data/koopcare/applications.json
+```
+
+This is still not the final database milestone, but it prevents the public demo data from being lost on every normal service restart.
+
+Because persistent disks are attached to a single service instance, treat this as a portfolio-demo persistence bridge before the real database milestone.
+
+### Render Setup Steps
+
+1. Push the latest committed code to GitHub.
+2. Open Render.
+3. Create a new Blueprint from the GitHub repository.
+4. Confirm `render.yaml`.
+5. Deploy the service.
+6. Open the generated `onrender.com` URL.
+7. Check:
+
+```text
+/
+/ready
+/api/v1/demo/summary
+```
+
+If the separate Python MLOps API is deployed later, update `ML_API_BASE_URL` in Render and consider switching `ML_SCORING_MODE` to `strict_ml`.
+
 ## Deployment Smoke Check
 
 Run:
@@ -131,6 +214,14 @@ npm run smoke:public
 ```
 
 This command builds the project, starts the public preview on an isolated local port, validates the web app shell, `/ready`, `/health`, SPA fallback, summary API, and JSON 404 behavior, then shuts the server down.
+
+Validate deployment files:
+
+```powershell
+npm run check:deploy-config
+```
+
+This checks that `render.yaml`, `Dockerfile`, `package.json`, and deployment docs remain aligned.
 
 ## Current Limitations
 

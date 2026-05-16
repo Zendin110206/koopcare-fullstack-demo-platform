@@ -82,6 +82,7 @@ The backend reads:
 
 ```text
 API_PORT=5002
+PORT=
 APP_ENV=development
 ML_API_BASE_URL=http://127.0.0.1:8000
 ML_API_TIMEOUT_MS=5000
@@ -94,3 +95,5 @@ WEB_DIST_PATH=
 `DATA_FILE_PATH` is optional. Leave it empty to use the default local JSON file.
 
 Set `SERVE_WEB_APP=true` after `npm run build` when the API should also serve the built React app from `apps/web/dist`. This is used by the root `npm start` public-demo script.
+
+The API reads `API_PORT` first and falls back to `PORT` for public platforms that inject a port automatically.
