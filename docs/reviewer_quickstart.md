@@ -108,6 +108,7 @@ npm run check
 npm run smoke:api
 npm run smoke:public
 npm run check:deploy-config
+npm run preflight:deploy
 ```
 
 Security audit:

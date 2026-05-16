@@ -47,10 +47,20 @@ assert(
   packageJson.scripts?.["check:deploy-config"] === "node scripts/deployment-config-check.mjs",
   "package.json must expose check:deploy-config."
 );
+assert(
+  packageJson.scripts?.["preflight:deploy"] === "node scripts/deploy-preflight.mjs",
+  "package.json must expose preflight:deploy."
+);
+assert(
+  packageJson.scripts?.["verify:public"] === "node scripts/public-url-verify.mjs",
+  "package.json must expose verify:public."
+);
 
 assert(deploymentGuide.includes("render.yaml"), "Deployment guide must mention render.yaml.");
 assert(deploymentGuide.includes("Persistent Runtime Data"), "Deployment guide must explain persistent runtime data.");
 assert(deploymentGuide.includes("/ready"), "Deployment guide must mention the readiness endpoint.");
+assert(deploymentGuide.includes("preflight:deploy"), "Deployment guide must mention deployment preflight.");
+assert(deploymentGuide.includes("verify:public"), "Deployment guide must mention public URL verification.");
 
 assert(envExample.includes("DATA_FILE_PATH="), ".env.example must document DATA_FILE_PATH.");
 assert(envExample.includes("PORT="), ".env.example must document platform PORT.");

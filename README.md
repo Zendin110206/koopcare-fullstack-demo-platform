@@ -280,6 +280,18 @@ npm run check:deploy-config
 
 This checks the Render Blueprint, Docker healthcheck, persistent runtime data path, and public-demo start command.
 
+Run the full deployment preflight:
+
+```powershell
+npm run preflight:deploy
+```
+
+After deployment, verify the public URL:
+
+```powershell
+npm run verify:public -- https://your-public-url.onrender.com
+```
+
 ML scoring mode:
 
 ```powershell
@@ -307,6 +319,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 - [ML Integration Plan](docs/ml_integration.md)
 - [Roadmap](docs/roadmap.md)
 - [Deployment Guide](docs/deployment.md)
+- [Public Deployment Readiness](docs/public_deployment_readiness.md)
 - [Reviewer Quickstart](docs/reviewer_quickstart.md)
 - [Decision Log](docs/decision_log.md)
 - [Development Log](docs/development_log.md)

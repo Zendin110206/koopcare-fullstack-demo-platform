@@ -223,6 +223,36 @@ npm run check:deploy-config
 
 This checks that `render.yaml`, `Dockerfile`, `package.json`, and deployment docs remain aligned.
 
+Run the complete preflight before a deploy attempt:
+
+```powershell
+npm run preflight:deploy
+```
+
+If you also want to verify the Docker image build:
+
+```powershell
+npm run preflight:deploy:docker
+```
+
+After Render provides a public URL, verify it with:
+
+```powershell
+npm run verify:public -- https://your-public-url.onrender.com
+```
+
+Use the optional write test only when you are fine with adding a demo application to the public runtime:
+
+```powershell
+npm run verify:public -- https://your-public-url.onrender.com --write-test
+```
+
+For the current readiness score and remaining blockers, see:
+
+```text
+docs/public_deployment_readiness.md
+```
+
 ## Current Limitations
 
 - JSON storage is still local runtime state.

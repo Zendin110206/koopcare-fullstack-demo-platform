@@ -15,11 +15,14 @@
     "build": "npm run build --workspace @koopcare-demo/api && npm run build --workspace @koopcare-demo/web",
     "check": "npm run typecheck --workspace @koopcare-demo/api && npm run typecheck --workspace @koopcare-demo/web && npm run build",
     "check:deploy-config": "node scripts/deployment-config-check.mjs",
+    "preflight:deploy": "node scripts/deploy-preflight.mjs",
+    "preflight:deploy:docker": "node scripts/deploy-preflight.mjs --docker",
     "smoke:api": "npm run build --workspace @koopcare-demo/api && node scripts/api-smoke-check.mjs",
     "smoke:public": "npm run build && node scripts/public-preview-smoke-check.mjs",
     "start": "node scripts/start-public-demo.mjs",
     "preview:public": "npm run build && node scripts/start-public-demo.mjs",
-    "start:api": "npm run start --workspace @koopcare-demo/api"
+    "start:api": "npm run start --workspace @koopcare-demo/api",
+    "verify:public": "node scripts/public-url-verify.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
