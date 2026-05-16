@@ -25,7 +25,8 @@ const [
   envExample,
   ciWorkflow,
   renderWalkthrough,
-  railwayWalkthrough
+  railwayWalkthrough,
+  publicMlApiHandoff
 ] =
   await Promise.all([
     readProjectFile("render.yaml"),
@@ -37,7 +38,8 @@ const [
     readProjectFile(".env.example"),
     readProjectFile(".github/workflows/ci.yml"),
     readProjectFile("docs/render_beginner_walkthrough.md"),
-    readProjectFile("docs/railway_beginner_walkthrough.md")
+    readProjectFile("docs/railway_beginner_walkthrough.md"),
+    readProjectFile("docs/public_ml_api_handoff.md")
   ]);
 
 const packageJson = JSON.parse(packageJsonText);
@@ -87,6 +89,10 @@ assert(
   packageJson.scripts?.["verify:public"] === "node scripts/public-url-verify.mjs",
   "package.json must expose verify:public."
 );
+assert(
+  packageJson.scripts?.["verify:ml-api"] === "node scripts/ml-api-url-verify.mjs",
+  "package.json must expose verify:ml-api."
+);
 
 assert(deploymentGuide.includes("railway.toml"), "Deployment guide must mention railway.toml.");
 assert(deploymentGuide.includes("render.yaml"), "Deployment guide must mention render.yaml as fallback/history.");
@@ -94,6 +100,7 @@ assert(deploymentGuide.includes("Persistent Runtime Data"), "Deployment guide mu
 assert(deploymentGuide.includes("/ready"), "Deployment guide must mention the readiness endpoint.");
 assert(deploymentGuide.includes("preflight:deploy"), "Deployment guide must mention deployment preflight.");
 assert(deploymentGuide.includes("verify:public"), "Deployment guide must mention public URL verification.");
+assert(deploymentGuide.includes("verify:ml-api"), "Deployment guide must mention MLOps API verification.");
 assert(deploymentGuide.includes("Vercel"), "Deployment guide must explain why Vercel is not the primary current target.");
 
 assert(envExample.includes("DATA_FILE_PATH="), ".env.example must document DATA_FILE_PATH.");
@@ -114,6 +121,14 @@ assert(
 assert(
   railwayWalkthrough.includes("DATA_FILE_PATH=/data/koopcare/applications.json"),
   "Railway beginner walkthrough must document the persistent data path."
+);
+assert(
+  publicMlApiHandoff.includes("npm run verify:ml-api"),
+  "Public ML API handoff must document MLOps API verification."
+);
+assert(
+  publicMlApiHandoff.includes("--expect-ml-api"),
+  "Public ML API handoff must document trained-scoring verification."
 );
 
 console.log("Deployment configuration check passed.");

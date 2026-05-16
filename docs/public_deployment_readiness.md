@@ -113,8 +113,10 @@ npm run smoke:public
 npm run check:deploy-config
 npm run preflight:deploy
 npm run preflight:deploy:docker
+npm run verify:ml-api -- https://your-public-ml-api-url
 npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/
 npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test --expect-ml-api
 ```
 
 The normal public verifier checks:
@@ -234,6 +236,7 @@ Output:
 - KoopCare MLOps API has a public URL;
 - `/health` on the ML API public URL works;
 - `/model-info` on the ML API public URL works if supported;
+- `npm run verify:ml-api -- https://your-public-ml-api-url` passes;
 - Railway `ML_API_BASE_URL` points to the deployed ML API;
 - new/rescored applications show `source=ml_api`;
 - fallback remains available only as a clearly labeled resilience path.

@@ -114,6 +114,11 @@ try {
   assert(summary.body?.integration?.web_app === "served_by_api", "Summary should expose served_by_api mode.");
   assert(summary.body?.integration?.web_dist_available === true, "Summary should expose web build availability.");
 
+  const mlStatus = await requestJson("/api/v1/ml/status");
+  assert(mlStatus.status === 200, "ML status endpoint should return 200.");
+  assert(mlStatus.body?.ml_scoring_mode === "optional_fallback", "ML status should expose optional fallback mode.");
+  assert(typeof mlStatus.body?.prediction_ready === "boolean", "ML status should expose a boolean prediction readiness flag.");
+
   const missingApiRoute = await requestJson("/api/v1/does-not-exist");
   assert(missingApiRoute.status === 404, "Missing API route should stay a JSON 404.");
   assert(missingApiRoute.body?.error === "Not Found", "Missing API route should return a JSON error.");

@@ -122,6 +122,11 @@ try {
     "Readiness endpoint should skip web build when SERVE_WEB_APP is disabled."
   );
 
+  const mlStatus = await request("/api/v1/ml/status");
+  assert(mlStatus.status === 200, "ML status endpoint should return 200.");
+  assert(mlStatus.body?.ml_scoring_mode === "optional_fallback", "ML status should expose optional fallback mode.");
+  assert(typeof mlStatus.body?.prediction_ready === "boolean", "ML status should expose a boolean prediction readiness flag.");
+
   const malformedJson = await request("/api/v1/applications", {
     body: "{bad-json",
     headers: {

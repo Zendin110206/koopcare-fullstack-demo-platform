@@ -47,6 +47,14 @@ Passed checks:
 
 Use this only when it is acceptable to add demo verification data to the live Railway service.
 
+After the public Python MLOps API is connected, run:
+
+```powershell
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test --expect-ml-api
+```
+
+That requires new public submissions to be scored with `source=ml_api`.
+
 ## Current ML Status
 
 The public service is currently using labeled fallback scoring.
@@ -61,6 +69,12 @@ ML_API_BASE_URL=http://127.0.0.1:8000
 On Railway, `127.0.0.1:8000` points inside the Railway service container, not to the developer laptop. Because the Python MLOps API is not deployed inside that same public runtime, the trained model path is not reachable yet.
 
 This does not mean the public web/API deployment failed. It means the next checkpoint is deploying or exposing the Python MLOps API publicly, then updating Railway `ML_API_BASE_URL`.
+
+See:
+
+```text
+docs/public_ml_api_handoff.md
+```
 
 ## Next Target
 

@@ -328,6 +328,18 @@ npm run check:deploy-config
 
 This checks that `railway.toml`, `render.yaml`, `Dockerfile`, `package.json`, and deployment docs remain aligned.
 
+Verify the separate public Python MLOps API before connecting it to Railway:
+
+```powershell
+npm run verify:ml-api -- https://your-public-ml-api-url
+```
+
+After the MLOps API is connected to `ML_API_BASE_URL`, require trained scoring during public write verification:
+
+```powershell
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test --expect-ml-api
+```
+
 Run the complete preflight before a deploy attempt:
 
 ```powershell

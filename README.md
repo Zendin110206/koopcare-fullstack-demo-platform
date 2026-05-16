@@ -340,6 +340,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 - [Deployment Guide](docs/deployment.md)
 - [Public Deployment Readiness](docs/public_deployment_readiness.md)
 - [Public Railway Verification](docs/public_railway_verification.md)
+- [Public MLOps API Handoff](docs/public_ml_api_handoff.md)
 - [Railway Beginner Walkthrough](docs/railway_beginner_walkthrough.md)
 - [Render Beginner Walkthrough](docs/render_beginner_walkthrough.md)
 - [Reviewer Quickstart](docs/reviewer_quickstart.md)

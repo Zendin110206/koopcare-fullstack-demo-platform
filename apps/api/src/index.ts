@@ -100,12 +100,21 @@ type ReadinessCheck = {
   details?: Record<string, number | string | boolean>;
 };
 
+type MlEndpointProbe = {
+  body?: unknown;
+  error?: string;
+  ok: boolean;
+  path: string;
+  statusCode?: number;
+};
+
 const app = express();
 
 const port = parseEnvNumber(process.env.PORT ?? process.env.API_PORT, 5002);
 const environment = process.env.APP_ENV ?? "development";
 const mlApiBaseUrl = process.env.ML_API_BASE_URL ?? "http://127.0.0.1:8000";
 const mlApiTimeoutMs = parseEnvNumber(process.env.ML_API_TIMEOUT_MS, 5000);
+const mlStatusTimeoutMs = Math.min(parseEnvNumber(process.env.ML_STATUS_TIMEOUT_MS, 1500), mlApiTimeoutMs);
 const mlScoringMode = parseMlScoringMode(process.env.ML_SCORING_MODE);
 const serveWebApp = parseBooleanFlag(process.env.SERVE_WEB_APP);
 const webDistPath = process.env.WEB_DIST_PATH?.trim()
@@ -167,6 +176,18 @@ function getMlIntegrationStatus() {
 
 function resolveProjectPath(value: string) {
   return path.isAbsolute(value) ? value : path.resolve(repoRoot, value);
+}
+
+function isLocalHostname(hostname: string) {
+  return ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(hostname);
+}
+
+function isLocalMlApiTarget() {
+  try {
+    return isLocalHostname(new URL(mlApiBaseUrl).hostname);
+  } catch {
+    return false;
+  }
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -514,6 +535,71 @@ async function buildReadinessReport() {
   };
 }
 
+async function probeMlEndpoint(pathname: string): Promise<MlEndpointProbe> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), mlStatusTimeoutMs);
+
+  try {
+    const response = await fetch(`${mlApiBaseUrl}${pathname}`, {
+      headers: {
+        Accept: "application/json"
+      },
+      signal: controller.signal
+    });
+    let body: unknown = null;
+
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+
+    return {
+      body,
+      ok: response.ok,
+      path: pathname,
+      statusCode: response.status
+    };
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "ML API probe failed.",
+      ok: false,
+      path: pathname
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function buildMlApiStatusReport() {
+  const [health, modelInfo] = await Promise.all([probeMlEndpoint("/health"), probeMlEndpoint("/model-info")]);
+  const modelInfoBody = isObject(modelInfo.body) ? modelInfo.body : null;
+  const modelLoaded = typeof modelInfoBody?.model_loaded === "boolean" ? modelInfoBody.model_loaded : false;
+  const artifactStatus = typeof modelInfoBody?.artifact_status === "string" ? modelInfoBody.artifact_status : "unknown";
+  const predictionReady = health.ok && modelInfo.ok && modelLoaded && artifactStatus === "available";
+  const localTargetWarning = isLocalMlApiTarget()
+    ? "ML_API_BASE_URL points to a local address. In public hosting, this means inside the service container, not the developer laptop."
+    : null;
+
+  return {
+    status: predictionReady ? "ready" : health.ok || modelInfo.ok ? "not_ready" : "unreachable",
+    prediction_ready: predictionReady,
+    integration_status: getMlIntegrationStatus(),
+    ml_scoring_mode: mlScoringMode,
+    ml_api_base_url: mlApiBaseUrl,
+    timeout_ms: mlStatusTimeoutMs,
+    local_target_warning: localTargetWarning,
+    checks: {
+      health,
+      model_info: modelInfo
+    },
+    guidance: predictionReady
+      ? "The configured MLOps API reports an available model artifact and is ready for trained scoring."
+      : "Fallback scoring may remain active until the MLOps API is reachable and /model-info reports model_loaded=true with artifact_status=available.",
+    timestamp: nowIso()
+  };
+}
+
 function buildApplication(input: CreateApplicationRequest): FinancingApplication {
   const timestamp = nowIso();
 
@@ -748,6 +834,10 @@ app.get("/api/v1/demo/summary", async (_request, response) => {
       auth: "demo_mode"
     }
   });
+});
+
+app.get("/api/v1/ml/status", async (_request, response) => {
+  response.json(await buildMlApiStatusReport());
 });
 
 app.get("/api/v1/demo/applications", async (_request, response) => {

@@ -8,6 +8,7 @@ Express + TypeScript backend for the KoopCare fullstack demo.
 GET /health
 GET /ready
 GET /api/v1/demo/summary
+GET /api/v1/ml/status
 GET /api/v1/demo/applications
 GET /api/v1/applications
 GET /api/v1/applications/:id/status
@@ -76,6 +77,14 @@ http://localhost:5002/ready
 - React build output exists when `SERVE_WEB_APP=true`;
 - ML scoring mode configuration is visible.
 
+ML integration status:
+
+```text
+http://localhost:5002/api/v1/ml/status
+```
+
+`/api/v1/ml/status` probes the configured MLOps API `/health` and `/model-info` endpoints. It returns HTTP 200 even when the MLOps API is unreachable, because this endpoint is diagnostic: it explains whether trained scoring is ready or whether fallback may remain active.
+
 ## Environment
 
 The backend reads:
@@ -86,6 +95,7 @@ PORT=
 APP_ENV=development
 ML_API_BASE_URL=http://127.0.0.1:8000
 ML_API_TIMEOUT_MS=5000
+ML_STATUS_TIMEOUT_MS=1500
 ML_SCORING_MODE=optional_fallback
 DATA_FILE_PATH=
 SERVE_WEB_APP=false

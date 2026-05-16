@@ -6,6 +6,7 @@ const currentFilePath = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(currentFilePath), "..");
 const cliArguments = process.argv.slice(2);
 const writeTestEnabled = process.argv.includes("--write-test") || process.env.VERIFY_PUBLIC_WRITE === "true";
+const expectMlApiScoring = process.argv.includes("--expect-ml-api") || process.env.VERIFY_PUBLIC_EXPECT_ML_API === "true";
 const urlArgument = cliArguments.find((argument) => !argument.startsWith("--"));
 const publicDemoUrl = normalizeBaseUrl(urlArgument ?? process.env.PUBLIC_DEMO_URL);
 const reportPath = path.join(repoRoot, "local_context", "runtime_logs", "public-url-verify-report.md");
@@ -13,6 +14,7 @@ const reportPath = path.join(repoRoot, "local_context", "runtime_logs", "public-
 if (!publicDemoUrl) {
   console.error("Usage: npm run verify:public -- https://your-public-demo-url");
   console.error("Optional write test: npm run verify:public -- https://your-public-demo-url --write-test");
+  console.error("Require trained ML scoring during write test: add --expect-ml-api");
   process.exit(1);
 }
 
@@ -116,6 +118,15 @@ async function runVerification() {
     `web_app=${summary.body?.integration?.web_app ?? "unknown"}`
   );
 
+  const mlStatus = await requestJson("/api/v1/ml/status");
+  assertCheck(checks, "ML status endpoint", mlStatus.status === 200, `HTTP ${mlStatus.status}`);
+  assertCheck(
+    checks,
+    "ML status shape",
+    typeof mlStatus.body?.prediction_ready === "boolean" && typeof mlStatus.body?.ml_scoring_mode === "string",
+    `prediction_ready=${mlStatus.body?.prediction_ready ?? "unknown"}`
+  );
+
   const applications = await requestJson("/api/v1/applications");
   assertCheck(checks, "Applications endpoint", applications.status === 200 && Array.isArray(applications.body?.data), `HTTP ${applications.status}`);
 
@@ -148,6 +159,14 @@ async function runVerification() {
 
     const createdId = createResponse.body?.data?.id;
     assertCheck(checks, "Write test create application", createResponse.status === 201 && Boolean(createdId), `HTTP ${createResponse.status}`);
+    assertCheck(
+      checks,
+      "Write test scoring source",
+      expectMlApiScoring
+        ? createResponse.body?.data?.aiAssessment?.source === "ml_api"
+        : Boolean(createResponse.body?.data?.aiAssessment?.source),
+      `source=${createResponse.body?.data?.aiAssessment?.source ?? "missing"}`
+    );
 
     if (createdId) {
       const statusLookup = await requestJson(`/api/v1/applications/${createdId}/status`);
@@ -199,6 +218,7 @@ async function writeReport(checks) {
     `Generated at: ${generatedAt}`,
     `URL: ${publicDemoUrl}`,
     `Write test: ${writeTestEnabled ? "enabled" : "disabled"}`,
+    `Expect ML API scoring: ${expectMlApiScoring ? "yes" : "no"}`,
     "",
     "| Check | Status | Detail |",
     "| --- | --- | --- |",

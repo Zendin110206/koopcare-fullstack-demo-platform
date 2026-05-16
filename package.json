@@ -22,6 +22,7 @@
     "start": "node scripts/start-public-demo.mjs",
     "preview:public": "npm run build && node scripts/start-public-demo.mjs",
     "start:api": "npm run start --workspace @koopcare-demo/api",
+    "verify:ml-api": "node scripts/ml-api-url-verify.mjs",
     "verify:public": "node scripts/public-url-verify.mjs"
   },
   "devDependencies": {
