@@ -13,9 +13,9 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 Current status after the Railway public URL was created and verified:
 
 ```text
-Public demo readiness: 92%
+Public demo readiness: 93%
 Actual public URL availability: 100%
-Full product readiness: 66%
+Full product readiness: 68%
 ```
 
 Live public demo:
@@ -35,8 +35,9 @@ Meaning:
 - SPA route fallback works.
 - The public URL verifier passes.
 - The public write-test verifier passes: create application, read status, save officer decision, and read decided status.
-- The full product is still not production-ready because authentication, real database persistence, and deployed strict MLOps integration are still unfinished.
-- The current live ML behavior is honest fallback scoring because the separate Python MLOps API is not deployed/reachable from Railway yet.
+- The full product is still not production-ready because authentication, real database persistence, and strict MLOps integration are still unfinished.
+- Project 13 is now prepared for public ML API deployment with `models/best_model.pkl` inside the Docker image.
+- The current live ML behavior is still honest fallback scoring because the separate Python MLOps API public URL is not connected to this Railway service yet.
 
 ## Why 92% for Public Demo Readiness?
 
@@ -49,14 +50,14 @@ This percentage is for a portfolio public demo, not a real financial production 
 | Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
 | Runtime persistence bridge | 10% | 8% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
-| MLOps integration for public demo | 10% | 6% | Backend supports optional fallback and strict mode. Python MLOps API is not deployed together yet. |
+| MLOps integration for public demo | 10% | 7% | Backend supports optional fallback and strict mode. Project 13 is prepared for public deployment, but its public URL is not connected yet. |
 | Public URL verification | 10% | 10% | Railway public URL exists. Read-only verification and write-test verification both pass. |
 | Security boundary | 10% | 9% | Advisory AI messaging, validation, and decision note rules exist. Authentication/authorization still missing. |
 
 Total:
 
 ```text
-92 / 100
+93 / 100
 ```
 
 ## What Is Already Ready
@@ -147,7 +148,7 @@ The public URL exists now.
 
 The remaining public-demo polish tasks are:
 
-1. Deploy or expose the Python KoopCare MLOps API on a public URL.
+1. Deploy the prepared Python KoopCare MLOps API on a public URL.
 2. Set Railway variable:
 
 ```text
@@ -204,7 +205,7 @@ ML_API_BASE_URL=http://127.0.0.1:8000
 
 Inside Railway, `127.0.0.1:8000` means "inside the Railway container", not your laptop.
 
-Because the Python MLOps API is not running inside that same public container, the backend cannot get a trained model score. The backend then uses labeled fallback scoring so the product workflow remains testable.
+Because the Python MLOps API public URL is not connected yet, the backend cannot get a trained model score. The backend then uses labeled fallback scoring so the product workflow remains testable.
 
 This is acceptable for the portfolio demo as long as the UI says it clearly. It is not acceptable to present fallback scores as trained-model scores.
 
@@ -236,7 +237,7 @@ fallback scoring is no longer the only public scoring path
 
 Output:
 
-- KoopCare MLOps API has a public URL;
+- KoopCare MLOps API has a public URL from the prepared project 13 Docker/Railway deployment;
 - `/health` on the ML API public URL works;
 - `/model-info` on the ML API public URL works if supported;
 - `npm run verify:ml-api -- https://your-public-ml-api-url` passes;

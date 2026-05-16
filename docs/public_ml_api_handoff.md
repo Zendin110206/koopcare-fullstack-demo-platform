@@ -10,10 +10,10 @@ The KoopCare fullstack demo is already public:
 https://koopcare-fullstack-demo-platform-production.up.railway.app/
 ```
 
-The remaining ML blocker is:
+The remaining ML blocker is now narrower:
 
 ```text
-the Python MLOps API is not deployed on a public URL yet
+the Python MLOps API deploy package is prepared, but its public URL is not connected to this fullstack service yet
 ```
 
 Because of that, public web submissions currently use clearly labeled fallback scoring.
@@ -70,14 +70,17 @@ human_review_required
 note
 ```
 
-Important deployment blocker:
+Important deployment status:
 
 ```text
-project 13 does not commit models/best_model.pkl
-project 13 .dockerignore also excludes models/*
+project 13 now allows models/best_model.pkl for the approved public checkpoint
+project 13 Dockerfile now copies models/best_model.pkl into the production image
+project 13 now includes railway.toml
 ```
 
-So if project 13 is deployed directly from GitHub without a model artifact strategy, `/health` can work but `/predict` may return `503 model_artifact_missing`.
+So the next task is no longer designing a model artifact strategy from zero.
+The next task is deploying project 13 and verifying that `/model-info` reports
+`artifact_status=available` on the public URL.
 
 ## Correct Public ML Target
 
@@ -149,7 +152,7 @@ I can prepare code, docs, scripts, and verification.
 You must do these account-level steps if I do not have an authenticated Railway session:
 
 1. Deploy project 13 as a separate Railway service or another public service.
-2. Make sure the deployed service has access to `models/best_model.pkl`.
+2. Confirm the deployed service builds from project 13 `Dockerfile` and `railway.toml`.
 3. Open the public ML API URL.
 4. Run:
 
@@ -183,50 +186,27 @@ npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.
 ML_SCORING_MODE=strict_ml
 ```
 
-## Model Artifact Options
+## Model Artifact Decision
 
-Choose one strategy for `best_model.pkl`.
-
-### Option A - Model Registry or Release Asset
-
-Store the model artifact somewhere the deployment can download from:
-
-- GitHub Release asset;
-- Hugging Face model repository;
-- S3-compatible object storage;
-- other private artifact registry.
-
-Then project 13 startup or build downloads the file into:
+The project has chosen the commit-and-copy strategy for this approved public
+portfolio checkpoint:
 
 ```text
 models/best_model.pkl
+-> committed in project 13
+-> copied into the project 13 Docker image
+-> verified by /model-info and /predict
 ```
 
-This is the most future-proof path.
+This is acceptable here because the team approved the prototype artifact for the
+public demo and the file is small enough for the repository.
 
-### Option B - Railway Volume
-
-Attach a Railway volume and place:
+For future retrained models, do not silently replace the artifact. Project 13
+must follow:
 
 ```text
-best_model.pkl
+docs/model_handoff_contract.md
 ```
-
-inside the mounted model folder.
-
-Then set project 13:
-
-```text
-MODEL_PATH=/mounted-path/best_model.pkl
-```
-
-This can work, but it is more manual and easier to misconfigure.
-
-### Option C - Commit the Model Artifact
-
-This is not recommended as the default because model artifacts are generated binary files.
-
-Only consider this if the artifact is intentionally public, small, legally safe, and explicitly accepted as part of the portfolio repo.
 
 ## Beginner Summary
 
@@ -235,7 +215,8 @@ Think of it like this:
 ```text
 Project 14 public URL is alive.
 Project 14 can already submit, store, approve, reject, and show status.
-The only missing trained-AI part is a public Project 13 URL with the model file available.
+Project 13 is now prepared for a public trained-model deployment.
+The missing trained-AI step is creating the public Project 13 URL and putting it into Project 14 ML_API_BASE_URL.
 ```
 
 The next professional checkpoint is:
