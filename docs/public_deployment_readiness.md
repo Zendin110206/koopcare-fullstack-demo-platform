@@ -30,6 +30,7 @@ Meaning:
 - `/health` returns healthy JSON.
 - `/ready` returns ready JSON.
 - `/api/v1/demo/summary` works.
+- `/api/v1/ml/status` works and explains why trained ML scoring is not public-ready yet.
 - `/api/v1/applications` works.
 - SPA route fallback works.
 - The public URL verifier passes.
@@ -128,12 +129,14 @@ The normal public verifier checks:
 - web build readiness;
 - JSON storage readiness;
 - summary API;
+- ML status diagnostics;
 - applications API;
 - JSON 404 behavior.
 
 The write-test verifier has passed for:
 
 - create application;
+- confirm current scoring source;
 - read status;
 - save officer approval decision;
 - read decided status again.

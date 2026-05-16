@@ -27,6 +27,7 @@ Verified checks:
 - readiness confirms the web build is available;
 - readiness confirms JSON storage is writable/readable;
 - `/api/v1/demo/summary` returns HTTP 200;
+- `/api/v1/ml/status` returns HTTP 200 and reports `prediction_ready=false` while the public ML API is not connected;
 - `/api/v1/applications` returns HTTP 200;
 - unknown API paths return JSON 404.
 
@@ -41,6 +42,7 @@ npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.
 Passed checks:
 
 - create a real demo application;
+- confirm scoring source is currently `demo_rule_based_fallback`;
 - read its member status;
 - save an officer approval decision;
 - read the decided member status again.
