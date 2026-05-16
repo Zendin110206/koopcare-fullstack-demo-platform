@@ -512,7 +512,7 @@ function checkMlScoringReadiness(): ReadinessCheck {
     message:
       mlScoringMode === "strict_ml"
         ? "Strict ML mode is configured. Scoring requests require the MLOps API."
-        : "Optional fallback mode is configured for local demo reliability.",
+        : "Optional fallback mode is configured for demo reliability.",
     details: {
       base_url: mlApiBaseUrl,
       scoring_mode: mlScoringMode,
@@ -578,7 +578,7 @@ async function buildMlApiStatusReport() {
   const artifactStatus = typeof modelInfoBody?.artifact_status === "string" ? modelInfoBody.artifact_status : "unknown";
   const predictionReady = health.ok && modelInfo.ok && modelLoaded && artifactStatus === "available";
   const localTargetWarning = isLocalMlApiTarget()
-    ? "ML_API_BASE_URL points to a local address. In public hosting, this means inside the service container, not the developer laptop."
+    ? "ML_API_BASE_URL points to a local address. In public hosting, that address is inside the deployed service container and is not a public MLOps API URL."
     : null;
 
   return {

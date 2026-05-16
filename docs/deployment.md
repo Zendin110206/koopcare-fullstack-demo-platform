@@ -99,7 +99,7 @@ For real public demo review, prefer:
 ML_SCORING_MODE=optional_fallback
 ```
 
-For the current Railway public demo, use the verified project 13 public ML API:
+For the current Railway public demo, use the verified KoopCare MLOps Credit Scoring API public ML API:
 
 ```text
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app

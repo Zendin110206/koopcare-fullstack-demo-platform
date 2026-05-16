@@ -109,6 +109,8 @@ type ApplicationFormState = {
 };
 
 type ViewKey = "home" | "apply" | "status" | "admin" | "system";
+type AppLanguage = "en" | "id";
+type LocalizedText = Record<AppLanguage, string>;
 type StatusFilter = "ALL" | ApplicationStatus;
 type ActionState = { id: string; kind: "score" | "decision" } | null;
 type DecisionDraft = {
@@ -128,6 +130,11 @@ type DerivedFeatureRow = {
   modelColumn: string;
   formula: string;
   reason: string;
+};
+
+type BusinessTypeOption = {
+  value: ApplicationFormState["businessType"];
+  label: LocalizedText;
 };
 
 function resolveApiBaseUrl() {
@@ -164,7 +171,7 @@ const initialForm: ApplicationFormState = {
   monthlyIncome: 6500000,
   requestedAmount: 8000000,
   tenorMonths: 10,
-  purpose: "Working capital for additional grocery inventory before the next market cycle.",
+  purpose: "Modal kerja untuk menambah stok warung sebelum siklus pasar berikutnya.",
   yearsInBusiness: 4,
   existingLoanCount: 0,
   familyMembers: 4,
@@ -183,12 +190,19 @@ const compactNumberFormatter = new Intl.NumberFormat("id-ID", {
   maximumFractionDigits: 1
 });
 
-const views: Array<{ key: ViewKey; label: string; icon: ReactNode }> = [
-  { key: "home", label: "Overview", icon: <Home aria-hidden="true" size={17} /> },
-  { key: "apply", label: "Apply", icon: <UserRound aria-hidden="true" size={17} /> },
-  { key: "status", label: "Status", icon: <FileCheck2 aria-hidden="true" size={17} /> },
-  { key: "admin", label: "Admin", icon: <LayoutDashboard aria-hidden="true" size={17} /> },
-  { key: "system", label: "System", icon: <Database aria-hidden="true" size={17} /> }
+const views: Array<{ key: ViewKey; label: LocalizedText; icon: ReactNode }> = [
+  { key: "home", label: { en: "Overview", id: "Ringkasan" }, icon: <Home aria-hidden="true" size={17} /> },
+  { key: "apply", label: { en: "Apply", id: "Ajukan" }, icon: <UserRound aria-hidden="true" size={17} /> },
+  { key: "status", label: { en: "Status", id: "Status" }, icon: <FileCheck2 aria-hidden="true" size={17} /> },
+  { key: "admin", label: { en: "Admin", id: "Admin" }, icon: <LayoutDashboard aria-hidden="true" size={17} /> },
+  { key: "system", label: { en: "System", id: "Sistem" }, icon: <Database aria-hidden="true" size={17} /> }
+];
+
+const businessTypeOptions: BusinessTypeOption[] = [
+  { value: "Grocery microbusiness", label: { en: "Grocery microbusiness", id: "Usaha warung/sembako" } },
+  { value: "Equipment repair service", label: { en: "Equipment repair service", id: "Jasa perbaikan alat" } },
+  { value: "Home food production", label: { en: "Home food production", id: "Produksi makanan rumahan" } },
+  { value: "Tailoring service", label: { en: "Tailoring service", id: "Jasa jahit" } }
 ];
 
 const mlFeatureMapRows: MlFeatureMapRow[] = [
@@ -346,12 +360,414 @@ const derivedFeatureRows: DerivedFeatureRow[] = [
   }
 ];
 
-function formatStatus(value: string) {
+const featureSourceIdByRequestField: Record<string, string> = {
+  code_gender: "gender",
+  name_income_type: "Default dari backend",
+  name_education_type: "Default dari backend",
+  name_family_status: "familyMembers",
+  occupation_type: "Default dari backend",
+  flag_own_car: "Default dari backend",
+  flag_own_realty: "hasCollateral",
+  cnt_children: "children",
+  cnt_fam_members: "familyMembers",
+  amt_income_total: "monthlyIncome",
+  amt_credit: "requestedAmount",
+  amt_annuity: "requestedAmount, tenorMonths",
+  amt_goods_price: "requestedAmount",
+  days_birth: "age",
+  days_employed: "yearsInBusiness",
+  days_last_phone_change: "Default dari backend",
+  ext_source_1: "hasCollateral",
+  ext_source_2: "yearsInBusiness",
+  ext_source_3: "existingLoanCount"
+};
+
+const featureMappingIdByRequestField: Record<string, string> = {
+  code_gender: "Langsung dari form anggota.",
+  name_income_type: "Sementara diisi Working untuk demo portfolio ini.",
+  name_education_type: "Sementara diisi Secondary / secondary special sampai form publik punya field pendidikan.",
+  name_family_status: "Jika jumlah keluarga lebih dari satu dianggap Married; selain itu Single / not married.",
+  occupation_type: "Sementara diisi Laborers sampai form publik punya field pekerjaan.",
+  flag_own_car: "Sementara diisi N karena form KoopCare saat ini belum menanyakan kepemilikan mobil.",
+  flag_own_realty: "Agunan dipakai sebagai sinyal kepemilikan properti untuk kontrak prototype.",
+  cnt_children: "Langsung dari form anggota.",
+  cnt_fam_members: "Langsung dari form anggota.",
+  amt_income_total: "Pendapatan bulanan anggota dikirim sebagai total income untuk kontrak demo ini.",
+  amt_credit: "Nominal pembiayaan yang diajukan.",
+  amt_annuity: "Dihitung dari requestedAmount / tenorMonths, dengan nilai minimum 1.",
+  amt_goods_price: "Mengikuti requestedAmount karena demo belum memisahkan harga barang dan nominal pembiayaan.",
+  days_birth: "Dihitung dari -round(age * 365.25). Dipakai untuk membuat AGE_YEARS.",
+  days_employed: "Dihitung dari -round(yearsInBusiness * 365.25).",
+  days_last_phone_change: "Sementara diisi -365 sampai form publik punya riwayat perubahan nomor telepon.",
+  ext_source_1: "0.62 jika ada agunan, 0.48 jika tidak ada agunan.",
+  ext_source_2: "clamp(0.42 + yearsInBusiness * 0.025, 0.25, 0.85).",
+  ext_source_3: "clamp(0.58 - existingLoanCount * 0.04, 0.25, 0.8)."
+};
+
+const derivedReasonIdByModelColumn: Record<string, string> = {
+  AGE_YEARS: "Model memakai umur dalam tahun, bukan angka hari lahir mentah yang bernilai negatif.",
+  DAYS_EMPLOYED_ANOM: "Menandai nilai anomali dari format dataset Home Credit sebelum nilai itu diganti menjadi kosong.",
+  EXT_SOURCE_MEAN: "Merangkum kekuatan tiga proxy/external score.",
+  EXT_SOURCE_MIN: "Menangkap sinyal terlemah dari tiga proxy/external score.",
+  EXT_SOURCE_PROD: "Menangkap kekuatan gabungan dari semua proxy/external score.",
+  DEBT_TO_INCOME: "Mengukur besar pembiayaan dibanding pendapatan.",
+  PAYMENT_RATE: "Mengukur beban cicilan dibanding nominal pembiayaan."
+};
+
+const systemWorkflowSteps: Array<{ title: LocalizedText; copy: LocalizedText }> = [
+  {
+    title: { en: "1. Member submits the form", id: "1. Anggota mengisi form" },
+    copy: {
+      en: "The form stores identity, phone, income, requested amount, tenor, business duration, family size, children, and collateral.",
+      id: "Form menyimpan identitas, nomor telepon, pendapatan, nominal pengajuan, tenor, lama usaha, jumlah keluarga, anak, dan agunan."
+    }
+  },
+  {
+    title: { en: "2. Backend validates and stores", id: "2. Backend validasi dan simpan" },
+    copy: {
+      en: "The fullstack backend checks the input rules, creates an application ID, and stores the application record.",
+      id: "Backend fullstack mengecek aturan input, membuat ID pengajuan, lalu menyimpan data pengajuan."
+    }
+  },
+  {
+    title: { en: "3. Backend builds 19 ML request fields", id: "3. Backend membuat 19 field ML" },
+    copy: {
+      en: "Product fields are translated into the request contract expected by the KoopCare MLOps Credit Scoring API.",
+      id: "Field produk diterjemahkan menjadi kontrak request yang dibutuhkan KoopCare MLOps Credit Scoring API."
+    }
+  },
+  {
+    title: { en: "4. MLOps API builds 25 model columns", id: "4. MLOps API membuat 25 kolom model" },
+    copy: {
+      en: "The MLOps service derives age, debt ratio, payment rate, and proxy score summaries before calling XGBoost.",
+      id: "Service MLOps membuat umur, rasio utang, payment rate, dan ringkasan proxy score sebelum memanggil XGBoost."
+    }
+  },
+  {
+    title: { en: "5. AI result is saved as advice", id: "5. Hasil AI disimpan sebagai saran" },
+    copy: {
+      en: "The recommendation, default risk, confidence, eligibility score, model name, and source are stored with the application.",
+      id: "Rekomendasi, risiko default, confidence, eligibility score, nama model, dan sumber scoring disimpan bersama pengajuan."
+    }
+  },
+  {
+    title: { en: "6. Officer makes the final decision", id: "6. Petugas membuat keputusan final" },
+    copy: {
+      en: "Admin officers still approve or reject manually and must write a decision reason for the audit trail.",
+      id: "Petugas admin tetap approve atau reject secara manual dan wajib menulis alasan keputusan untuk audit trail."
+    }
+  }
+];
+
+const homeCopy: Record<
+  AppLanguage,
+  {
+    eyebrow: string;
+    title: string;
+    lede: string;
+    startApplication: string;
+    openAdmin: string;
+    proofAi: string;
+    proofHuman: string;
+    proofPublic: string;
+    officerReview: string;
+    activeCases: string;
+    liveDemo: string;
+    averageEligibility: string;
+    lowRisk: string;
+    mediumRisk: string;
+    highRisk: string;
+    flowMember: string;
+    flowApi: string;
+    flowMl: string;
+    flowOfficer: string;
+  }
+> = {
+  en: {
+    eyebrow: "AI-assisted cooperative financing",
+    title: "KoopCare helps members apply and helps officers decide with clearer risk signals.",
+    lede:
+      "A clean public demo for the core KoopCare workflow: members submit financing requests, the backend calls the ML scoring service, and cooperative officers keep the final decision.",
+    startApplication: "Start Member Application",
+    openAdmin: "Open Admin Workspace",
+    proofAi: "Backend-owned AI calls",
+    proofHuman: "Human final decision",
+    proofPublic: "Public demo ready",
+    officerReview: "Officer review",
+    activeCases: "active cases",
+    liveDemo: "Live demo",
+    averageEligibility: "Average eligibility",
+    lowRisk: "Low risk",
+    mediumRisk: "Medium",
+    highRisk: "High risk",
+    flowMember: "Member Form",
+    flowApi: "API",
+    flowMl: "ML",
+    flowOfficer: "Officer"
+  },
+  id: {
+    eyebrow: "Pembiayaan koperasi dengan bantuan AI",
+    title: "KoopCare membantu anggota mengajukan pembiayaan dan membantu petugas membaca sinyal risiko.",
+    lede:
+      "Demo public ini menampilkan alur utama KoopCare: anggota mengisi pengajuan, backend meminta scoring ML, lalu petugas koperasi tetap membuat keputusan final.",
+    startApplication: "Mulai Pengajuan Anggota",
+    openAdmin: "Buka Admin",
+    proofAi: "AI dipanggil dari backend",
+    proofHuman: "Keputusan final oleh manusia",
+    proofPublic: "Demo public siap",
+    officerReview: "Review petugas",
+    activeCases: "kasus aktif",
+    liveDemo: "Demo live",
+    averageEligibility: "Rata-rata eligibility",
+    lowRisk: "Risiko rendah",
+    mediumRisk: "Sedang",
+    highRisk: "Risiko tinggi",
+    flowMember: "Form Anggota",
+    flowApi: "API",
+    flowMl: "ML",
+    flowOfficer: "Petugas"
+  }
+};
+
+const systemCopy: Record<
+  AppLanguage,
+  {
+    pageEyebrow: string;
+    pageTitle: string;
+    pageDescription: string;
+    loaded: string;
+    loading: string;
+    metricStorage: string;
+    metricStorageCaption: string;
+    metricMlApi: string;
+    metricScoring: string;
+    metricWebApp: string;
+    metricWebCaptionReady: string;
+    metricWebCaptionDev: string;
+    metricAuth: string;
+    metricAuthCaption: string;
+    metricApiUrl: string;
+    architectureEyebrow: string;
+    architectureTitle: string;
+    architectureDescription: string;
+    flowMember: string;
+    flowBackend: string;
+    flowMl: string;
+    flowOfficer: string;
+    workflowEyebrow: string;
+    workflowTitle: string;
+    workflowDescription: string;
+    featureEyebrow: string;
+    featureTitle: string;
+    featureDescription: string;
+    verifiedBadge: string;
+    countProduct: string;
+    countProductCaption: string;
+    countRequest: string;
+    countRequestCaption: string;
+    countModel: string;
+    countModelCaption: string;
+    mappingNote: string;
+    mappingCaption: string;
+    requestFieldHeader: string;
+    sourceHeader: string;
+    mappingHeader: string;
+    impactHeader: string;
+    derivedEyebrow: string;
+    derivedTitle: string;
+    derivedDescription: string;
+    engineeredBadge: string;
+  }
+> = {
+  en: {
+    pageEyebrow: "System readiness",
+    pageTitle: "Backend-owned ML integration",
+    pageDescription: "The product frontend talks to the Express API. The API owns validation, storage, and ML service calls.",
+    loaded: "Loaded",
+    loading: "Loading",
+    metricStorage: "Storage",
+    metricStorageCaption: "Current MVP persistence",
+    metricMlApi: "ML API",
+    metricScoring: "Scoring Mode",
+    metricWebApp: "Web App",
+    metricWebCaptionReady: "Build output available",
+    metricWebCaptionDev: "Development mode",
+    metricAuth: "Auth",
+    metricAuthCaption: "Demo mode for now",
+    metricApiUrl: "API URL",
+    architectureEyebrow: "Architecture",
+    architectureTitle: "Safe product boundary",
+    architectureDescription:
+      "The browser never calls the ML service directly. This keeps mapping, validation, storage, and business rules inside the backend where they can be reviewed and audited.",
+    flowMember: "Member Web",
+    flowBackend: "Fullstack API",
+    flowMl: "MLOps API",
+    flowOfficer: "Officer Review",
+    workflowEyebrow: "Real workflow",
+    workflowTitle: "What actually happens after a member submits",
+    workflowDescription:
+      "This is the practical flow reviewers can follow from public form, backend storage, trained ML scoring, admin review, and member status.",
+    featureEyebrow: "Feature mapping",
+    featureTitle: "From 19 request fields to 25 model columns",
+    featureDescription:
+      "The member form stays product-friendly. The backend translates it into the MLOps API request, then the FastAPI service builds the exact XGBoost feature columns expected by `best_model.pkl`.",
+    verifiedBadge: "Public ML path verified",
+    countProduct: "Product form",
+    countProductCaption: "member/admin workflow data",
+    countRequest: "MLOps request",
+    countRequestCaption: "payload sent to MLOps API",
+    countModel: "Model frame",
+    countModelCaption: "XGBoost artifact contract",
+    mappingNote:
+      "Identity and workflow fields such as applicant name, phone number, business type, and purpose are stored for review, but they are not sent directly to the model. Some model fields are temporary prototype defaults until KoopCare retrains a BMT-native model.",
+    mappingCaption: "Fullstack backend payload mapping into MLOps API request fields",
+    requestFieldHeader: "MLOps request field",
+    sourceHeader: "Source in fullstack app",
+    mappingHeader: "Mapping rule",
+    impactHeader: "MLOps model column impact",
+    derivedEyebrow: "Derived columns",
+    derivedTitle: "Why 19 becomes 25",
+    derivedDescription:
+      "The MLOps API keeps most raw request fields, drops raw `DAYS_BIRTH` after converting it to age, and adds seven engineered columns before the model predicts default risk.",
+    engineeredBadge: "7 engineered columns"
+  },
+  id: {
+    pageEyebrow: "Kesiapan sistem",
+    pageTitle: "Integrasi ML dikendalikan oleh backend",
+    pageDescription:
+      "Frontend produk berbicara ke API fullstack. API ini yang mengurus validasi, penyimpanan, dan pemanggilan service ML.",
+    loaded: "Siap",
+    loading: "Memuat",
+    metricStorage: "Penyimpanan",
+    metricStorageCaption: "Penyimpanan MVP saat ini",
+    metricMlApi: "API ML",
+    metricScoring: "Mode Scoring",
+    metricWebApp: "Web App",
+    metricWebCaptionReady: "Build web tersedia",
+    metricWebCaptionDev: "Mode development",
+    metricAuth: "Auth",
+    metricAuthCaption: "Masih mode demo",
+    metricApiUrl: "URL API",
+    architectureEyebrow: "Arsitektur",
+    architectureTitle: "Batas produk yang aman",
+    architectureDescription:
+      "Browser tidak memanggil service ML secara langsung. Mapping field, validasi, penyimpanan, dan aturan bisnis tetap berada di backend agar bisa diaudit.",
+    flowMember: "Web Anggota",
+    flowBackend: "API Fullstack",
+    flowMl: "API MLOps",
+    flowOfficer: "Review Petugas",
+    workflowEyebrow: "Workflow nyata",
+    workflowTitle: "Apa yang terjadi setelah anggota submit",
+    workflowDescription:
+      "Ini alur praktis yang bisa diikuti reviewer: form publik, penyimpanan backend, scoring ML terlatih, review admin, lalu status anggota.",
+    featureEyebrow: "Mapping fitur",
+    featureTitle: "Dari 19 field request menjadi 25 kolom model",
+    featureDescription:
+      "Form anggota dibuat tetap sederhana. Backend menerjemahkannya menjadi request untuk API MLOps, lalu service FastAPI membuat kolom XGBoost yang dibutuhkan `best_model.pkl`.",
+    verifiedBadge: "Jalur ML public sudah verified",
+    countProduct: "Form produk",
+    countProductCaption: "data workflow anggota/admin",
+    countRequest: "Request MLOps",
+    countRequestCaption: "payload yang dikirim ke API MLOps",
+    countModel: "Frame model",
+    countModelCaption: "kontrak artifact XGBoost",
+    mappingNote:
+      "Field identitas dan workflow seperti nama pemohon, nomor telepon, jenis usaha, dan tujuan pengajuan disimpan untuk review, tetapi tidak dikirim langsung ke model. Beberapa field model masih default/proxy sementara sampai KoopCare melakukan retraining model BMT-native.",
+    mappingCaption: "Mapping payload backend fullstack ke request API MLOps",
+    requestFieldHeader: "Field request MLOps",
+    sourceHeader: "Sumber di aplikasi fullstack",
+    mappingHeader: "Aturan mapping",
+    impactHeader: "Dampak ke kolom model MLOps",
+    derivedEyebrow: "Kolom turunan",
+    derivedTitle: "Kenapa 19 menjadi 25",
+    derivedDescription:
+      "API MLOps mempertahankan sebagian besar field mentah, membuang `DAYS_BIRTH` setelah mengubahnya menjadi umur, lalu menambahkan tujuh kolom engineered sebelum model memprediksi risiko default.",
+    engineeredBadge: "7 kolom engineered"
+  }
+};
+
+function t(language: AppLanguage, en: string, id: string) {
+  return language === "id" ? id : en;
+}
+
+function formatStatus(value: string, language: AppLanguage = "en") {
+  const localizedStatus: Partial<Record<ApplicationStatus, LocalizedText>> = {
+    SUBMITTED: { en: "Submitted", id: "Diajukan" },
+    UNDER_REVIEW: { en: "Under Review", id: "Dalam Review" },
+    APPROVED: { en: "Approved", id: "Disetujui" },
+    REJECTED: { en: "Rejected", id: "Ditolak" }
+  };
+  const mapped = localizedStatus[value as ApplicationStatus];
+
+  if (mapped) {
+    return mapped[language];
+  }
+
   return value
     .toLowerCase()
     .split("_")
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join(" ");
+}
+
+function formatRiskLevel(risk: AiAssessment["riskLevel"] | undefined, language: AppLanguage = "en") {
+  if (risk === "LOW") {
+    return language === "id" ? "Rendah" : "Low";
+  }
+
+  if (risk === "MEDIUM") {
+    return language === "id" ? "Sedang" : "Medium";
+  }
+
+  if (risk === "HIGH") {
+    return language === "id" ? "Tinggi" : "High";
+  }
+
+  return language === "id" ? "Menunggu" : "Pending";
+}
+
+function formatRecommendation(value: AiAssessment["aiRecommendation"] | undefined, language: AppLanguage = "en") {
+  if (!value) {
+    return language === "id" ? "Belum discoring" : "Not scored";
+  }
+
+  if (value === "TIDAK_LAYAK") {
+    return language === "id" ? "TIDAK LAYAK" : "NOT ELIGIBLE";
+  }
+
+  return language === "id" ? "LAYAK" : "ELIGIBLE";
+}
+
+function formatBusinessType(value: string, language: AppLanguage = "en") {
+  return businessTypeOptions.find((option) => option.value === value)?.label[language] ?? value;
+}
+
+function formatGender(value: ApplicationFormState["gender"], language: AppLanguage = "en") {
+  if (value === "F") {
+    return language === "id" ? "Perempuan" : "Female";
+  }
+
+  return language === "id" ? "Laki-laki" : "Male";
+}
+
+function formatCollateral(value: boolean, language: AppLanguage = "en") {
+  return value ? t(language, "Available", "Ada") : t(language, "Not available", "Tidak ada");
+}
+
+function formatYesNo(value: boolean, language: AppLanguage = "en") {
+  return value ? t(language, "Yes", "Ya") : t(language, "No", "Tidak");
+}
+
+function formatTenor(months: number, language: AppLanguage = "en") {
+  return language === "id" ? `${months} bulan` : `${months} months`;
+}
+
+function formatAge(years: number, language: AppLanguage = "en") {
+  return language === "id" ? `${years} tahun` : `${years} years`;
+}
+
+function formatMembers(count: number, language: AppLanguage = "en") {
+  return language === "id" ? `${count} orang` : `${count} members`;
 }
 
 function formatPercent(value: number) {
@@ -402,53 +818,53 @@ function sourceTone(source?: AiAssessment["source"]) {
   return source === "ml_api" ? "positive" : "warning";
 }
 
-function formatAssessmentSource(source?: AiAssessment["source"]) {
+function formatAssessmentSource(source?: AiAssessment["source"], language: AppLanguage = "en") {
   if (source === "ml_api") {
-    return "Trained ML API";
+    return language === "id" ? "API ML Terlatih" : "Trained ML API";
   }
 
   if (source === "demo_rule_based_fallback") {
-    return "Fallback active";
+    return language === "id" ? "Fallback aktif" : "Fallback active";
   }
 
-  return "Not scored";
+  return language === "id" ? "Belum discoring" : "Not scored";
 }
 
-function formatScoringMode(mode?: DemoSummary["integration"]["ml_scoring_mode"]) {
+function formatScoringMode(mode?: DemoSummary["integration"]["ml_scoring_mode"], language: AppLanguage = "en") {
   if (mode === "strict_ml") {
     return "Strict ML";
   }
 
-  return "Fallback allowed";
+  return language === "id" ? "Fallback boleh" : "Fallback allowed";
 }
 
-function formatMlIntegration(value?: string) {
+function formatMlIntegration(value?: string, language: AppLanguage = "en") {
   if (value === "strict_ml_required") {
-    return "Strict required";
+    return language === "id" ? "ML wajib" : "Strict required";
   }
 
   if (value === "optional_with_fallback") {
-    return "Optional fallback";
+    return language === "id" ? "Fallback opsional" : "Optional fallback";
   }
 
   return value ?? "loading";
 }
 
-function formatStorageMode(value?: string) {
+function formatStorageMode(value?: string, language: AppLanguage = "en") {
   if (value === "json_file_storage") {
-    return "JSON file";
+    return language === "id" ? "File JSON" : "JSON file";
   }
 
   return value ?? "loading";
 }
 
-function formatWebAppMode(value?: DemoSummary["integration"]["web_app"]) {
+function formatWebAppMode(value?: DemoSummary["integration"]["web_app"], language: AppLanguage = "en") {
   if (value === "served_by_api") {
-    return "Single public service";
+    return language === "id" ? "Satu service public" : "Single public service";
   }
 
   if (value === "separate_web_server") {
-    return "Separate local server";
+    return language === "id" ? "Server web terpisah" : "Separate web server";
   }
 
   return "loading";
@@ -478,43 +894,53 @@ function isLocalServiceUrl(value?: string) {
   }
 }
 
-function formatMlApiTargetCaption(value?: string) {
+function formatMlApiTargetCaption(value?: string, language: AppLanguage = "en") {
   if (!value) {
-    return "Checking target";
+    return language === "id" ? "Mengecek target" : "Checking target";
   }
 
   if (isPublicBrowserRuntime() && isLocalServiceUrl(value)) {
-    return "No public ML API configured yet";
+    return language === "id" ? "API ML public belum dikonfigurasi" : "No public ML API configured yet";
   }
 
   return value;
 }
 
-function formatScoringModeCaption(summary: DemoSummary | null) {
+function formatScoringModeCaption(summary: DemoSummary | null, language: AppLanguage = "en") {
   if (summary?.integration.ml_api === "ready") {
-    return "Trained scoring available; fallback stays labeled if needed";
+    return language === "id"
+      ? "Scoring model terlatih tersedia; fallback tetap diberi label jika dipakai"
+      : "Trained scoring available; fallback stays labeled if needed";
   }
 
   if (summary?.integration.ml_scoring_mode === "strict_ml") {
-    return "Requests fail clearly if the ML API is unavailable";
+    return language === "id"
+      ? "Request akan gagal dengan jelas jika API ML tidak tersedia"
+      : "Requests fail clearly if the ML API is unavailable";
   }
 
-  return "Fallback remains labeled until trained scoring is reachable";
+  return language === "id"
+    ? "Fallback tetap diberi label sampai scoring terlatih bisa diakses"
+    : "Fallback remains labeled until trained scoring is reachable";
 }
 
-function fallbackScoringMessage(summary: DemoSummary | null) {
+function fallbackScoringMessage(summary: DemoSummary | null, language: AppLanguage = "en") {
   const mlApiBaseUrl = summary?.integration.ml_api_base_url;
 
   if (isPublicBrowserRuntime() && isLocalServiceUrl(mlApiBaseUrl)) {
-    return "The trained Python MLOps API is not deployed or reachable from this public service yet, so this public demo is using clearly labeled fallback scoring. Deploy the MLOps API and set ML_API_BASE_URL on Railway to activate the trained model path.";
+    return language === "id"
+      ? "API MLOps Python terlatih belum bisa dijangkau dari service public ini, jadi demo public memakai fallback scoring yang diberi label jelas. Deploy API MLOps dan isi ML_API_BASE_URL di Railway untuk mengaktifkan jalur model terlatih."
+      : "The trained Python MLOps API is not deployed or reachable from this public service yet, so this public demo is using clearly labeled fallback scoring. Deploy the MLOps API and set ML_API_BASE_URL on Railway to activate the trained model path.";
   }
 
-  return `The Python MLOps API is not currently returning scores, so this workflow demo is using clearly labeled fallback scoring. Start or connect the MLOps API at ${mlApiBaseUrl ?? "the configured ML API URL"} to activate the trained model path.`;
+  return language === "id"
+    ? `API MLOps Python belum mengembalikan score, jadi demo workflow memakai fallback scoring yang diberi label jelas. Hubungkan API MLOps di ${mlApiBaseUrl ?? "URL API ML yang dikonfigurasi"} untuk mengaktifkan jalur model terlatih.`
+    : `The Python MLOps API is not currently returning scores, so this workflow demo is using clearly labeled fallback scoring. Start or connect the MLOps API at ${mlApiBaseUrl ?? "the configured ML API URL"} to activate the trained model path.`;
 }
 
-function formatAuthMode(value?: string) {
+function formatAuthMode(value?: string, language: AppLanguage = "en") {
   if (value === "demo_mode") {
-    return "Demo mode";
+    return language === "id" ? "Mode demo" : "Demo mode";
   }
 
   return value ?? "loading";
@@ -537,8 +963,10 @@ function normalizeMoneyValue(
   return Math.round(clamped / rule.step) * rule.step;
 }
 
-function formatMoneyHint(rule: { min: number; max: number; step: number }) {
-  return `${currencyFormatter.format(rule.min)} to ${currencyFormatter.format(rule.max)}, increments of ${currencyFormatter.format(rule.step)}.`;
+function formatMoneyHint(rule: { min: number; max: number; step: number }, language: AppLanguage = "en") {
+  return language === "id"
+    ? `${currencyFormatter.format(rule.min)} sampai ${currencyFormatter.format(rule.max)}, kelipatan ${currencyFormatter.format(rule.step)}.`
+    : `${currencyFormatter.format(rule.min)} to ${currencyFormatter.format(rule.max)}, increments of ${currencyFormatter.format(rule.step)}.`;
 }
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -560,6 +988,7 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 
 export function App() {
   const [activeView, setActiveView] = useState<ViewKey>("home");
+  const [language, setLanguage] = useState<AppLanguage>("id");
   const [summary, setSummary] = useState<DemoSummary | null>(null);
   const [applications, setApplications] = useState<FinancingApplication[]>([]);
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
@@ -674,11 +1103,17 @@ export function App() {
       setApplications((current) => [response.data, ...current.filter((item) => item.id !== response.data.id)]);
       setSelectedApplicationId(response.data.id);
       setStatusLookupQuery(response.data.id);
-      setSuccessMessage(`Application ${response.data.id} submitted. The member status tracker is ready.`);
+      setSuccessMessage(
+        t(
+          language,
+          `Application ${response.data.id} submitted. The member status tracker is ready.`,
+          `Pengajuan ${response.data.id} berhasil dikirim. Status anggota sudah siap dicek.`
+        )
+      );
       setActiveView("status");
       await loadDemoData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to submit application.";
+      const message = error instanceof Error ? error.message : t(language, "Failed to submit application.", "Gagal mengirim pengajuan.");
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
@@ -697,10 +1132,10 @@ export function App() {
 
       setApplications((current) => current.map((item) => (item.id === id ? response.data : item)));
       setSelectedApplicationId(response.data.id);
-      setSuccessMessage(`Application ${id} has a refreshed AI assessment.`);
+      setSuccessMessage(t(language, `Application ${id} has a refreshed AI assessment.`, `Assessment AI untuk pengajuan ${id} berhasil diperbarui.`));
       await loadDemoData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to score application.";
+      const message = error instanceof Error ? error.message : t(language, "Failed to score application.", "Gagal melakukan scoring pengajuan.");
       setErrorMessage(message);
     } finally {
       setActionState(null);
@@ -727,10 +1162,12 @@ export function App() {
 
       setApplications((current) => current.map((item) => (item.id === id ? response.data : item)));
       setSelectedApplicationId(response.data.id);
-      setSuccessMessage(`Application ${id} marked as ${formatStatus(decision)}.`);
+      setSuccessMessage(
+        t(language, `Application ${id} marked as ${formatStatus(decision)}.`, `Pengajuan ${id} ditandai sebagai ${formatStatus(decision, language)}.`)
+      );
       await loadDemoData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save decision.";
+      const message = error instanceof Error ? error.message : t(language, "Failed to save decision.", "Gagal menyimpan keputusan.");
       setErrorMessage(message);
     } finally {
       setActionState(null);
@@ -742,6 +1179,8 @@ export function App() {
       <TopNavigation
         activeView={activeView}
         isLoading={isLoading}
+        language={language}
+        onLanguageChange={setLanguage}
         onRefresh={() => void loadDemoData()}
         onViewChange={setActiveView}
       />
@@ -763,6 +1202,7 @@ export function App() {
       {activeView === "home" ? (
         <HomeView
           averageEligibility={averageEligibility}
+          language={language}
           riskSummary={riskSummary}
           summary={summary}
           onOpenAdmin={() => setActiveView("admin")}
@@ -776,6 +1216,7 @@ export function App() {
           form={form}
           installment={estimatedInstallment}
           isSubmitting={isSubmitting}
+          language={language}
           onSubmit={() => void submitApplication()}
           updateForm={updateForm}
         />
@@ -785,6 +1226,7 @@ export function App() {
         <StatusView
           applications={applications}
           isLoading={isLoading}
+          language={language}
           query={statusLookupQuery}
           onOpenApply={() => setActiveView("apply")}
           onQueryChange={setStatusLookupQuery}
@@ -797,6 +1239,7 @@ export function App() {
           actionState={actionState}
           filteredApplications={filteredApplications}
           isLoading={isLoading}
+          language={language}
           riskSummary={riskSummary}
           searchQuery={searchQuery}
           selectedApplication={selectedApplication}
@@ -810,7 +1253,7 @@ export function App() {
         />
       ) : null}
 
-      {activeView === "system" ? <SystemView apiBaseUrl={apiDisplayUrl} isLoading={isLoading} summary={summary} /> : null}
+      {activeView === "system" ? <SystemView apiBaseUrl={apiDisplayUrl} isLoading={isLoading} language={language} summary={summary} /> : null}
     </main>
   );
 }
@@ -818,11 +1261,15 @@ export function App() {
 function TopNavigation({
   activeView,
   isLoading,
+  language,
+  onLanguageChange,
   onRefresh,
   onViewChange
 }: {
   activeView: ViewKey;
   isLoading: boolean;
+  language: AppLanguage;
+  onLanguageChange: (language: AppLanguage) => void;
   onRefresh: () => void;
   onViewChange: (view: ViewKey) => void;
 }) {
@@ -834,11 +1281,11 @@ function TopNavigation({
         </span>
         <span>
           <strong>KoopCare</strong>
-          <small>Fullstack Demo</small>
+          <small>{t(language, "Fullstack Demo", "Demo Fullstack")}</small>
         </span>
       </button>
 
-      <nav className="nav-tabs" aria-label="Primary navigation">
+      <nav className="nav-tabs" aria-label={t(language, "Primary navigation", "Navigasi utama")}>
         {views.map((item) => (
           <button
             className={activeView === item.key ? "active" : ""}
@@ -847,14 +1294,28 @@ function TopNavigation({
             onClick={() => onViewChange(item.key)}
           >
             {item.icon}
-            {item.label}
+            {item.label[language]}
           </button>
         ))}
       </nav>
 
+      <div className="language-toggle" aria-label={t(language, "Language selector", "Pilihan bahasa")}>
+        {(["id", "en"] as const).map((item) => (
+          <button
+            aria-pressed={language === item}
+            className={language === item ? "active" : ""}
+            key={item}
+            type="button"
+            onClick={() => onLanguageChange(item)}
+          >
+            {item.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
       <button className="utility-button" disabled={isLoading} type="button" onClick={onRefresh}>
         <RefreshCw aria-hidden="true" size={17} />
-        Refresh
+        {language === "id" ? "Muat ulang" : "Refresh"}
       </button>
     </header>
   );
@@ -862,123 +1323,138 @@ function TopNavigation({
 
 function HomeView({
   averageEligibility,
+  language,
   riskSummary,
   summary,
   onOpenAdmin,
   onStartApplication
 }: {
   averageEligibility: number;
+  language: AppLanguage;
   riskSummary: { low: number; medium: number; high: number };
   summary: DemoSummary | null;
   onOpenAdmin: () => void;
   onStartApplication: () => void;
 }) {
+  const copy = homeCopy[language];
+
   return (
     <section className="view-stack">
       <section className="hero-section">
         <div className="hero-copy">
-          <p className="eyebrow">AI-assisted cooperative financing</p>
-          <h1>KoopCare helps members apply and helps officers decide with clearer risk signals.</h1>
-          <p className="hero-lede">
-            A clean local demo for the core KoopCare workflow: members submit financing requests, the backend calls the
-            ML scoring service, and cooperative officers keep the final decision.
-          </p>
+          <p className="eyebrow">{copy.eyebrow}</p>
+          <h1>{copy.title}</h1>
+          <p className="hero-lede">{copy.lede}</p>
           <div className="hero-actions">
             <button className="primary-action large" type="button" onClick={onStartApplication}>
-              Start Member Application
+              {copy.startApplication}
               <ArrowRight aria-hidden="true" size={18} />
             </button>
             <button className="secondary-action large" type="button" onClick={onOpenAdmin}>
-              Open Admin Workspace
+              {copy.openAdmin}
               <LayoutDashboard aria-hidden="true" size={18} />
             </button>
           </div>
           <div className="hero-proof">
-            <ProofPill label="Backend-owned AI calls" />
-            <ProofPill label="Human final decision" />
-            <ProofPill label="Local MVP ready" />
+            <ProofPill label={copy.proofAi} />
+            <ProofPill label={copy.proofHuman} />
+            <ProofPill label={copy.proofPublic} />
           </div>
         </div>
 
         <div className="hero-product" aria-label="KoopCare product snapshot">
           <div className="snapshot-top">
             <div>
-              <span>Officer review</span>
-              <strong>{summary?.counts.under_review ?? 0} active cases</strong>
+              <span>{copy.officerReview}</span>
+              <strong>
+                {summary?.counts.under_review ?? 0} {copy.activeCases}
+              </strong>
             </div>
-            <span className="live-dot">Live demo</span>
+            <span className="live-dot">{copy.liveDemo}</span>
           </div>
           <div className="snapshot-score">
             <Gauge aria-hidden="true" size={24} />
             <div>
-              <span>Average eligibility</span>
+              <span>{copy.averageEligibility}</span>
               <strong>{averageEligibility || 0}/100</strong>
             </div>
           </div>
           <div className="snapshot-grid">
-            <MiniMetric label="Low risk" value={riskSummary.low} tone="positive" />
-            <MiniMetric label="Medium" value={riskSummary.medium} tone="warning" />
-            <MiniMetric label="High risk" value={riskSummary.high} tone="danger" />
+            <MiniMetric label={copy.lowRisk} value={riskSummary.low} tone="positive" />
+            <MiniMetric label={copy.mediumRisk} value={riskSummary.medium} tone="warning" />
+            <MiniMetric label={copy.highRisk} value={riskSummary.high} tone="danger" />
           </div>
           <div className="snapshot-flow">
-            <span>Member Form</span>
+            <span>{copy.flowMember}</span>
             <ChevronRight aria-hidden="true" size={16} />
-            <span>API</span>
+            <span>{copy.flowApi}</span>
             <ChevronRight aria-hidden="true" size={16} />
-            <span>ML</span>
+            <span>{copy.flowMl}</span>
             <ChevronRight aria-hidden="true" size={16} />
-            <span>Officer</span>
+            <span>{copy.flowOfficer}</span>
           </div>
         </div>
       </section>
 
-      <section className="metrics-row" aria-label="Product metrics">
+      <section className="metrics-row" aria-label={t(language, "Product metrics", "Metrik produk")}>
         <MetricTile
           icon={<FileText aria-hidden="true" size={20} />}
-          label="Applications"
+          label={t(language, "Applications", "Pengajuan")}
           value={summary?.counts.total_applications ?? "-"}
-          caption="Stored in local MVP"
+          caption={t(language, "Stored in demo storage", "Tersimpan di storage demo")}
         />
         <MetricTile
           icon={<ShieldCheck aria-hidden="true" size={20} />}
-          label="Under Review"
+          label={t(language, "Under Review", "Dalam Review")}
           value={summary?.counts.under_review ?? "-"}
-          caption="Officer queue"
+          caption={t(language, "Officer queue", "Antrean petugas")}
         />
         <MetricTile
           icon={<Sparkles aria-hidden="true" size={20} />}
-          label="Scored"
+          label={t(language, "Scored", "Sudah Discoring")}
           value={summary?.counts.scored ?? "-"}
-          caption="AI assessment created"
+          caption={t(language, "AI assessment created", "Assessment AI dibuat")}
         />
         <MetricTile
           icon={<Activity aria-hidden="true" size={20} />}
-          label="Decision Principle"
-          value="Human"
-          caption="AI recommends only"
+          label={t(language, "Decision Principle", "Prinsip Keputusan")}
+          value={t(language, "Human", "Manusia")}
+          caption={t(language, "AI recommends only", "AI hanya memberi saran")}
         />
       </section>
 
       <section className="section-band">
         <div className="section-heading">
-          <p className="eyebrow">Workflow</p>
-          <h2>One product path, two clear workspaces.</h2>
+          <p className="eyebrow">{t(language, "Workflow", "Workflow")}</p>
+          <h2>{t(language, "One product path, two clear workspaces.", "Satu alur produk, dua ruang kerja yang jelas.")}</h2>
         </div>
         <div className="workflow-grid">
           <WorkflowCard
             icon={<UserRound aria-hidden="true" size={22} />}
-            title="Member onboarding"
-            copy="A member starts from a friendly application flow, fills business and financing details, then submits the request."
+            title={t(language, "Member onboarding", "Pengajuan anggota")}
+            copy={t(
+              language,
+              "A member starts from a friendly application flow, fills business and financing details, then submits the request.",
+              "Anggota mulai dari form yang mudah dipahami, mengisi detail usaha dan pembiayaan, lalu mengirim pengajuan."
+            )}
           />
           <WorkflowCard
             icon={<Sparkles aria-hidden="true" size={22} />}
-            title="AI assessment"
-            copy="The backend maps the request into the MLOps API contract and returns recommendation, risk, confidence, and model metadata."
+            title={t(language, "AI assessment", "Assessment AI")}
+            copy={t(
+              language,
+              "The backend maps the request into the MLOps API contract and returns recommendation, risk, confidence, and model metadata.",
+              "Backend memetakan pengajuan ke kontrak API MLOps, lalu mengembalikan rekomendasi, risiko, confidence, dan metadata model."
+            )}
           />
           <WorkflowCard
             icon={<ShieldCheck aria-hidden="true" size={22} />}
-            title="Officer decision"
-            copy="Admin review shows the queue, detail panel, AI signal, and controlled approve/reject actions for the final decision."
+            title={t(language, "Officer decision", "Keputusan petugas")}
+            copy={t(
+              language,
+              "Admin review shows the queue, detail panel, AI signal, and controlled approve/reject actions for the final decision.",
+              "Admin melihat antrean, detail pengajuan, sinyal AI, dan tombol approve/reject yang tetap dikendalikan manusia."
+            )}
           />
         </div>
       </section>
@@ -991,6 +1467,7 @@ function ApplyView({
   form,
   installment,
   isSubmitting,
+  language,
   onSubmit,
   updateForm
 }: {
@@ -998,13 +1475,18 @@ function ApplyView({
   form: ApplicationFormState;
   installment: number;
   isSubmitting: boolean;
+  language: AppLanguage;
   onSubmit: () => void;
   updateForm: <Key extends keyof ApplicationFormState>(key: Key, value: ApplicationFormState[Key]) => void;
 }) {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const affordabilityTone = affordabilityRatio <= 0.3 ? "positive" : affordabilityRatio <= 0.5 ? "warning" : "danger";
   const affordabilityLabel =
-    affordabilityRatio <= 0.3 ? "Healthy" : affordabilityRatio <= 0.5 ? "Needs review" : "High pressure";
+    affordabilityRatio <= 0.3
+      ? t(language, "Healthy", "Sehat")
+      : affordabilityRatio <= 0.5
+        ? t(language, "Needs review", "Perlu review")
+        : t(language, "High pressure", "Beban tinggi");
 
   function updateAndCloseReview<Key extends keyof ApplicationFormState>(key: Key, value: ApplicationFormState[Key]) {
     setIsReviewOpen(false);
@@ -1023,17 +1505,20 @@ function ApplyView({
     <section className="view-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">Member portal</p>
-          <h1>Apply for cooperative financing</h1>
+          <p className="eyebrow">{t(language, "Member portal", "Portal anggota")}</p>
+          <h1>{t(language, "Apply for cooperative financing", "Ajukan pembiayaan koperasi")}</h1>
           <p>
-            The demo keeps the form intentionally simple while still collecting enough structured information for the
-            backend scoring workflow.
+            {t(
+              language,
+              "The demo keeps the form intentionally simple while still collecting enough structured information for the backend scoring workflow.",
+              "Form demo dibuat sederhana, tetapi tetap mengumpulkan data terstruktur yang dibutuhkan untuk alur scoring backend."
+            )}
           </p>
         </div>
-        <div className="stepper" aria-label="Application steps">
-          <StepBadge active label="Profile" number="1" />
-          <StepBadge active label="Financing" number="2" />
-          <StepBadge label="Officer Review" number="3" />
+        <div className="stepper" aria-label={t(language, "Application steps", "Langkah pengajuan")}>
+          <StepBadge active label={t(language, "Profile", "Profil")} number="1" />
+          <StepBadge active label={t(language, "Financing", "Pembiayaan")} number="2" />
+          <StepBadge label={t(language, "Officer Review", "Review Petugas")} number="3" />
         </div>
       </section>
 
@@ -1046,31 +1531,35 @@ function ApplyView({
           }}
         >
           <FormSection
-            description="Basic member details used for identification and model feature mapping."
-            eyebrow="Step 1"
-            title="Applicant profile"
+            description={t(
+              language,
+              "Basic member details used for identification and model feature mapping.",
+              "Data dasar anggota dipakai untuk identifikasi dan mapping fitur model."
+            )}
+            eyebrow={t(language, "Step 1", "Langkah 1")}
+            title={t(language, "Applicant profile", "Profil pemohon")}
           >
-            <Field label="Applicant name">
+            <Field label={t(language, "Applicant name", "Nama pemohon")}>
               <input
                 required
                 value={form.applicantName}
                 onChange={(event) => updateAndCloseReview("applicantName", event.target.value)}
               />
             </Field>
-            <Field label="Phone number">
+            <Field label={t(language, "Phone number", "Nomor telepon")}>
               <input
                 required
                 value={form.phoneNumber}
                 onChange={(event) => updateAndCloseReview("phoneNumber", event.target.value)}
               />
             </Field>
-            <Field label="Gender">
+            <Field label={t(language, "Gender", "Jenis kelamin")}>
               <select value={form.gender} onChange={(event) => updateAndCloseReview("gender", event.target.value as "M" | "F")}>
-                <option value="F">Female</option>
-                <option value="M">Male</option>
+                <option value="F">{formatGender("F", language)}</option>
+                <option value="M">{formatGender("M", language)}</option>
               </select>
             </Field>
-            <Field label="Age">
+            <Field label={t(language, "Age", "Umur")}>
               <input
                 min={18}
                 max={75}
@@ -1083,19 +1572,24 @@ function ApplyView({
           </FormSection>
 
           <FormSection
-            description="Business stability and household size help the demo estimate risk and repayment capacity."
-            eyebrow="Step 2"
-            title="Business capacity"
+            description={t(
+              language,
+              "Business stability and household size help the demo estimate risk and repayment capacity.",
+              "Stabilitas usaha dan jumlah keluarga membantu demo memperkirakan risiko serta kemampuan bayar."
+            )}
+            eyebrow={t(language, "Step 2", "Langkah 2")}
+            title={t(language, "Business capacity", "Kapasitas usaha")}
           >
-            <Field label="Business type">
+            <Field label={t(language, "Business type", "Jenis usaha")}>
               <select value={form.businessType} onChange={(event) => updateAndCloseReview("businessType", event.target.value)}>
-                <option value="Grocery microbusiness">Grocery microbusiness</option>
-                <option value="Equipment repair service">Equipment repair service</option>
-                <option value="Home food production">Home food production</option>
-                <option value="Tailoring service">Tailoring service</option>
+                {businessTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label[language]}
+                  </option>
+                ))}
               </select>
             </Field>
-            <Field label="Years in business">
+            <Field label={t(language, "Years in business", "Lama usaha")}>
               <input
                 min={0}
                 max={60}
@@ -1105,7 +1599,7 @@ function ApplyView({
                 onChange={(event) => updateAndCloseReview("yearsInBusiness", Number(event.target.value))}
               />
             </Field>
-            <Field label="Family members">
+            <Field label={t(language, "Family members", "Jumlah keluarga")}>
               <input
                 min={1}
                 max={20}
@@ -1115,7 +1609,7 @@ function ApplyView({
                 onChange={(event) => updateAndCloseReview("familyMembers", Number(event.target.value))}
               />
             </Field>
-            <Field label="Children">
+            <Field label={t(language, "Children", "Anak")}>
               <input
                 min={0}
                 max={15}
@@ -1128,11 +1622,15 @@ function ApplyView({
           </FormSection>
 
           <FormSection
-            description="The backend uses these values to calculate affordability and build the ML request payload."
-            eyebrow="Step 3"
-            title="Financing request"
+            description={t(
+              language,
+              "The backend uses these values to calculate affordability and build the ML request payload.",
+              "Backend memakai nilai ini untuk menghitung affordability dan membuat payload request ML."
+            )}
+            eyebrow={t(language, "Step 3", "Langkah 3")}
+            title={t(language, "Financing request", "Pengajuan pembiayaan")}
           >
-            <Field label="Monthly income">
+            <Field label={t(language, "Monthly income", "Pendapatan bulanan")}>
               <input
                 inputMode="numeric"
                 min={moneyRules.monthlyIncome.min}
@@ -1144,9 +1642,9 @@ function ApplyView({
                 onChange={(event) => updateAndCloseReview("monthlyIncome", Number(event.target.value))}
                 onBlur={() => normalizeMoneyField("monthlyIncome")}
               />
-              <small className="field-hint">{formatMoneyHint(moneyRules.monthlyIncome)}</small>
+              <small className="field-hint">{formatMoneyHint(moneyRules.monthlyIncome, language)}</small>
             </Field>
-            <Field label="Requested amount">
+            <Field label={t(language, "Requested amount", "Nominal pengajuan")}>
               <input
                 inputMode="numeric"
                 min={moneyRules.requestedAmount.min}
@@ -1158,9 +1656,9 @@ function ApplyView({
                 onChange={(event) => updateAndCloseReview("requestedAmount", Number(event.target.value))}
                 onBlur={() => normalizeMoneyField("requestedAmount")}
               />
-              <small className="field-hint">{formatMoneyHint(moneyRules.requestedAmount)}</small>
+              <small className="field-hint">{formatMoneyHint(moneyRules.requestedAmount, language)}</small>
             </Field>
-            <Field label="Tenor in months">
+            <Field label={t(language, "Tenor in months", "Tenor dalam bulan")}>
               <input
                 min={1}
                 max={36}
@@ -1170,7 +1668,7 @@ function ApplyView({
                 onChange={(event) => updateAndCloseReview("tenorMonths", Number(event.target.value))}
               />
             </Field>
-            <Field label="Existing loans">
+            <Field label={t(language, "Existing loans", "Pinjaman aktif")}>
               <input
                 min={0}
                 max={20}
@@ -1180,16 +1678,16 @@ function ApplyView({
                 onChange={(event) => updateAndCloseReview("existingLoanCount", Number(event.target.value))}
               />
             </Field>
-            <Field label="Collateral">
+            <Field label={t(language, "Collateral", "Agunan")}>
               <select
                 value={String(form.hasCollateral)}
                 onChange={(event) => updateAndCloseReview("hasCollateral", event.target.value === "true")}
               >
-                <option value="true">Available</option>
-                <option value="false">Not available</option>
+                <option value="true">{t(language, "Available", "Ada")}</option>
+                <option value="false">{t(language, "Not available", "Tidak ada")}</option>
               </select>
             </Field>
-            <Field label="Financing purpose" wide>
+            <Field label={t(language, "Financing purpose", "Tujuan pembiayaan")} wide>
               <textarea
                 required
                 value={form.purpose}
@@ -1202,30 +1700,35 @@ function ApplyView({
             <section className="submit-review-panel">
               <div className="submit-review-heading">
                 <div>
-                  <p className="eyebrow">Final check</p>
-                  <h2>Review before sending to officer workspace</h2>
+                  <p className="eyebrow">{t(language, "Final check", "Cek akhir")}</p>
+                  <h2>{t(language, "Review before sending to officer workspace", "Review sebelum dikirim ke ruang kerja petugas")}</h2>
                 </div>
                 <Badge tone={affordabilityTone}>{affordabilityLabel}</Badge>
               </div>
               <div className="review-grid">
-                <ReviewItem label="Applicant" value={form.applicantName} />
-                <ReviewItem label="Business" value={form.businessType} />
-                <ReviewItem label="Requested" value={currencyFormatter.format(form.requestedAmount)} />
-                <ReviewItem label="Base installment" value={currencyFormatter.format(installment)} />
-                <ReviewItem label="Affordability" value={formatPercent(affordabilityRatio)} />
-                <ReviewItem label="Collateral" value={form.hasCollateral ? "Available" : "Not available"} />
+                <ReviewItem label={t(language, "Applicant", "Pemohon")} value={form.applicantName} />
+                <ReviewItem label={t(language, "Business", "Usaha")} value={formatBusinessType(form.businessType, language)} />
+                <ReviewItem label={t(language, "Requested", "Pengajuan")} value={currencyFormatter.format(form.requestedAmount)} />
+                <ReviewItem label={t(language, "Base installment", "Estimasi cicilan")} value={currencyFormatter.format(installment)} />
+                <ReviewItem label={t(language, "Affordability", "Affordability")} value={formatPercent(affordabilityRatio)} />
+                <ReviewItem label={t(language, "Collateral", "Agunan")} value={formatCollateral(form.hasCollateral, language)} />
               </div>
               <p className="review-note">
-                After confirmation, the backend stores this request, calls the MLOps scoring API, and sends the case to
-                the admin workspace for final human review.
+                {t(
+                  language,
+                  "After confirmation, the backend stores this request, calls the MLOps scoring API, and sends the case to the admin workspace for final human review.",
+                  "Setelah dikonfirmasi, backend menyimpan pengajuan ini, memanggil API scoring MLOps, lalu mengirim kasus ke admin untuk review final oleh manusia."
+                )}
               </p>
               <div className="submit-review-actions">
                 <button className="secondary-action" disabled={isSubmitting} type="button" onClick={() => setIsReviewOpen(false)}>
-                  Back to edit
+                  {t(language, "Back to edit", "Kembali edit")}
                 </button>
                 <button className="primary-action" disabled={isSubmitting} type="button" onClick={onSubmit}>
                   <ClipboardCheck aria-hidden="true" size={18} />
-                  {isSubmitting ? "Submitting and scoring..." : "Confirm and Submit"}
+                  {isSubmitting
+                    ? t(language, "Submitting and scoring...", "Mengirim dan scoring...")
+                    : t(language, "Confirm and Submit", "Konfirmasi dan Kirim")}
                 </button>
               </div>
             </section>
@@ -1235,7 +1738,7 @@ function ApplyView({
             <div className="form-actions">
               <button className="primary-action submit-action" disabled={isSubmitting} type="submit">
                 <ClipboardCheck aria-hidden="true" size={18} />
-                Review Application
+                {t(language, "Review Application", "Review Pengajuan")}
               </button>
             </div>
           ) : null}
@@ -1243,23 +1746,26 @@ function ApplyView({
 
         <aside className="application-summary">
           <div className="summary-hero">
-            <span>Requested financing</span>
+            <span>{t(language, "Requested financing", "Nominal pembiayaan")}</span>
             <strong>{currencyFormatter.format(form.requestedAmount)}</strong>
-            <small>{form.tenorMonths} month tenor</small>
+            <small>{formatTenor(form.tenorMonths, language)}</small>
           </div>
           <div className="summary-grid">
-            <MiniMetric label="Monthly income" value={compactNumberFormatter.format(form.monthlyIncome)} />
-            <MiniMetric label="Base installment" value={compactNumberFormatter.format(installment)} />
-            <MiniMetric label="Affordability" value={formatPercent(affordabilityRatio)} tone={affordabilityTone} />
-            <MiniMetric label="Collateral" value={form.hasCollateral ? "Yes" : "No"} />
+            <MiniMetric label={t(language, "Monthly income", "Pendapatan bulanan")} value={compactNumberFormatter.format(form.monthlyIncome)} />
+            <MiniMetric label={t(language, "Base installment", "Estimasi cicilan")} value={compactNumberFormatter.format(installment)} />
+            <MiniMetric label={t(language, "Affordability", "Affordability")} value={formatPercent(affordabilityRatio)} tone={affordabilityTone} />
+            <MiniMetric label={t(language, "Collateral", "Agunan")} value={formatYesNo(form.hasCollateral, language)} />
           </div>
           <div className="insight-panel">
             <Gauge aria-hidden="true" size={22} />
             <div>
-              <strong>What happens after submit?</strong>
+              <strong>{t(language, "What happens after submit?", "Apa yang terjadi setelah submit?")}</strong>
               <p>
-                The API stores the request, calls the ML scoring service, then sends the application to the admin review
-                workspace. AI never makes the final financing decision.
+                {t(
+                  language,
+                  "The API stores the request, calls the ML scoring service, then sends the application to the admin review workspace. AI never makes the final financing decision.",
+                  "API menyimpan pengajuan, memanggil service scoring ML, lalu mengirim pengajuan ke ruang review admin. AI tidak pernah membuat keputusan final pembiayaan."
+                )}
               </p>
             </div>
           </div>
@@ -1272,12 +1778,14 @@ function ApplyView({
 function StatusView({
   applications,
   isLoading,
+  language,
   query,
   onOpenApply,
   onQueryChange
 }: {
   applications: FinancingApplication[];
   isLoading: boolean;
+  language: AppLanguage;
   query: string;
   onOpenApply: () => void;
   onQueryChange: (value: string) => void;
@@ -1301,15 +1809,18 @@ function StatusView({
     <section className="view-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">Member status</p>
-          <h1>Track a financing application</h1>
+          <p className="eyebrow">{t(language, "Member status", "Status anggota")}</p>
+          <h1>{t(language, "Track a financing application", "Lacak status pengajuan pembiayaan")}</h1>
           <p>
-            Members can look up the current review state after submitting an application. Officers still own the final
-            approval or rejection decision.
+            {t(
+              language,
+              "Members can look up the current review state after submitting an application. Officers still own the final approval or rejection decision.",
+              "Anggota bisa melihat status review setelah mengirim pengajuan. Petugas tetap menjadi pemilik keputusan final approve atau reject."
+            )}
           </p>
         </div>
         <button className="primary-action large" type="button" onClick={onOpenApply}>
-          New Application
+          {t(language, "New Application", "Pengajuan Baru")}
           <ArrowRight aria-hidden="true" size={18} />
         </button>
       </section>
@@ -1319,16 +1830,16 @@ function StatusView({
           <label className="search-box status-search">
             <Search aria-hidden="true" size={17} />
             <input
-              placeholder="Search by application ID, phone, or name"
+              placeholder={t(language, "Search by application ID, phone, or name", "Cari ID pengajuan, nomor telepon, atau nama")}
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
             />
           </label>
 
           <div className="status-result-list">
-            {isLoading ? <p className="empty-copy">Loading application status...</p> : null}
+            {isLoading ? <p className="empty-copy">{t(language, "Loading application status...", "Memuat status pengajuan...")}</p> : null}
             {!isLoading && visibleApplications.length === 0 ? (
-              <p className="empty-copy">No application matches this lookup.</p>
+              <p className="empty-copy">{t(language, "No application matches this lookup.", "Tidak ada pengajuan yang cocok.")}</p>
             ) : null}
             {!isLoading
               ? visibleApplications.map((application) => (
@@ -1337,7 +1848,7 @@ function StatusView({
                       <strong>{application.applicantName}</strong>
                       <span>{application.id}</span>
                     </div>
-                    <Badge tone={statusTone(application.status)}>{formatStatus(application.status)}</Badge>
+                    <Badge tone={statusTone(application.status)}>{formatStatus(application.status, language)}</Badge>
                   </article>
                 ))
               : null}
@@ -1348,41 +1859,45 @@ function StatusView({
           <article className="member-status-panel">
             <div className="status-case-heading">
               <div>
-                <p className="eyebrow">Current case</p>
+                <p className="eyebrow">{t(language, "Current case", "Kasus saat ini")}</p>
                 <h2>{selectedApplication.applicantName}</h2>
                 <span>{selectedApplication.id}</span>
               </div>
-              <Badge tone={statusTone(selectedApplication.status)}>{formatStatus(selectedApplication.status)}</Badge>
+              <Badge tone={statusTone(selectedApplication.status)}>{formatStatus(selectedApplication.status, language)}</Badge>
             </div>
 
-            <div className="status-timeline" aria-label="Application status timeline">
+            <div className="status-timeline" aria-label={t(language, "Application status timeline", "Timeline status pengajuan")}>
               <StatusStep
                 state="complete"
-                title="Submitted"
-                copy="The backend has stored the financing request."
+                title={t(language, "Submitted", "Diajukan")}
+                copy={t(language, "The backend has stored the financing request.", "Backend sudah menyimpan pengajuan pembiayaan.")}
               />
               <StatusStep
                 state={selectedApplication.status === "SUBMITTED" ? "current" : "complete"}
-                title="Officer review"
-                copy="The case is ready for cooperative officer review."
+                title={t(language, "Officer review", "Review petugas")}
+                copy={t(language, "The case is ready for cooperative officer review.", "Kasus siap direview oleh petugas koperasi.")}
               />
               <StatusStep
                 state={selectedApplication.decision ? "complete" : "waiting"}
-                title="Final decision"
+                title={t(language, "Final decision", "Keputusan final")}
                 copy={
                   selectedApplication.decision
-                    ? `${formatStatus(selectedApplication.decision.decision)} by ${selectedApplication.decision.reviewerName}.`
-                    : "Waiting for the officer to save a final decision."
+                    ? t(
+                        language,
+                        `${formatStatus(selectedApplication.decision.decision)} by ${selectedApplication.decision.reviewerName}.`,
+                        `${formatStatus(selectedApplication.decision.decision, language)} oleh ${selectedApplication.decision.reviewerName}.`
+                      )
+                    : t(language, "Waiting for the officer to save a final decision.", "Menunggu petugas menyimpan keputusan final.")
                 }
               />
             </div>
 
             <div className="status-summary-grid">
-              <MiniMetric label="Requested" value={selectedApplication.requestedAmountFormatted} />
-              <MiniMetric label="Tenor" value={`${selectedApplication.tenorMonths} months`} />
+              <MiniMetric label={t(language, "Requested", "Pengajuan")} value={selectedApplication.requestedAmountFormatted} />
+              <MiniMetric label={t(language, "Tenor", "Tenor")} value={formatTenor(selectedApplication.tenorMonths, language)} />
               <MiniMetric
-                label="AI signal"
-                value={selectedApplication.aiAssessment?.aiRecommendation ?? "Pending"}
+                label={t(language, "AI signal", "Sinyal AI")}
+                value={formatRecommendation(selectedApplication.aiAssessment?.aiRecommendation, language)}
                 tone={recommendationTone(selectedApplication.aiAssessment?.aiRecommendation)}
               />
               <MiniMetric
@@ -1393,24 +1908,34 @@ function StatusView({
 
             {selectedApplication.decision ? (
               <div className="decision-note">
-                <strong>Officer note</strong>
+                <strong>{t(language, "Officer note", "Catatan petugas")}</strong>
                 <span>
-                  {formatStatus(selectedApplication.decision.decision)} by {selectedApplication.decision.reviewerName}
+                  {t(
+                    language,
+                    `${formatStatus(selectedApplication.decision.decision)} by ${selectedApplication.decision.reviewerName}`,
+                    `${formatStatus(selectedApplication.decision.decision, language)} oleh ${selectedApplication.decision.reviewerName}`
+                  )}
                 </span>
                 <p>{selectedApplication.decision.note}</p>
               </div>
             ) : (
               <div className="status-waiting-note">
                 <ShieldCheck aria-hidden="true" size={18} />
-                <p>AI has no final authority here. The member status updates after an officer saves a decision.</p>
+                <p>
+                  {t(
+                    language,
+                    "AI has no final authority here. The member status updates after an officer saves a decision.",
+                    "AI tidak punya wewenang final. Status anggota berubah setelah petugas menyimpan keputusan."
+                  )}
+                </p>
               </div>
             )}
           </article>
         ) : (
           <article className="member-status-panel empty">
             <FileCheck2 aria-hidden="true" size={28} />
-            <strong>No status selected</strong>
-            <p>Submit a new application or search an existing application ID.</p>
+            <strong>{t(language, "No status selected", "Belum ada status dipilih")}</strong>
+            <p>{t(language, "Submit a new application or search an existing application ID.", "Kirim pengajuan baru atau cari ID pengajuan yang sudah ada.")}</p>
           </article>
         )}
       </section>
@@ -1435,6 +1960,7 @@ function AdminView({
   actionState,
   filteredApplications,
   isLoading,
+  language,
   riskSummary,
   searchQuery,
   selectedApplication,
@@ -1450,6 +1976,7 @@ function AdminView({
   actionState: ActionState;
   filteredApplications: FinancingApplication[];
   isLoading: boolean;
+  language: AppLanguage;
   riskSummary: { low: number; medium: number; high: number };
   searchQuery: string;
   selectedApplication: FinancingApplication | null;
@@ -1476,26 +2003,26 @@ function AdminView({
           <span className="avatar">KC</span>
           <div>
             <strong>KoopCare Admin</strong>
-            <small>Officer review console</small>
+            <small>{t(language, "Officer review console", "Konsol review petugas")}</small>
           </div>
         </div>
         <div className="sidebar-metrics">
           <SidebarMetric label="Total" value={summary?.counts.total_applications ?? applications.length} />
-          <SidebarMetric label="Review" value={summary?.counts.under_review ?? 0} />
-          <SidebarMetric label="Approved" value={summary?.counts.approved ?? 0} />
-          <SidebarMetric label="Rejected" value={summary?.counts.rejected ?? 0} />
+          <SidebarMetric label={t(language, "Review", "Review")} value={summary?.counts.under_review ?? 0} />
+          <SidebarMetric label={t(language, "Approved", "Disetujui")} value={summary?.counts.approved ?? 0} />
+          <SidebarMetric label={t(language, "Rejected", "Ditolak")} value={summary?.counts.rejected ?? 0} />
         </div>
-        <div className="risk-stack" aria-label="Risk distribution">
+        <div className="risk-stack" aria-label={t(language, "Risk distribution", "Distribusi risiko")}>
           <div>
-            <span>Low</span>
+            <span>{t(language, "Low", "Rendah")}</span>
             <strong>{riskSummary.low}</strong>
           </div>
           <div>
-            <span>Medium</span>
+            <span>{t(language, "Medium", "Sedang")}</span>
             <strong>{riskSummary.medium}</strong>
           </div>
           <div>
-            <span>High</span>
+            <span>{t(language, "High", "Tinggi")}</span>
             <strong>{riskSummary.high}</strong>
           </div>
         </div>
@@ -1504,13 +2031,19 @@ function AdminView({
       <section className="admin-main">
         <div className="admin-heading">
           <div>
-            <p className="eyebrow">Admin workspace</p>
-            <h1>Application Review</h1>
-            <p>Prioritize, inspect AI signals, rescore when needed, and keep the officer as final decision maker.</p>
+            <p className="eyebrow">{t(language, "Admin workspace", "Ruang kerja admin")}</p>
+            <h1>{t(language, "Application Review", "Review Pengajuan")}</h1>
+            <p>
+              {t(
+                language,
+                "Prioritize, inspect AI signals, rescore when needed, and keep the officer as final decision maker.",
+                "Prioritaskan antrean, baca sinyal AI, lakukan rescore jika perlu, dan tetap jadikan petugas sebagai pembuat keputusan final."
+              )}
+            </p>
           </div>
         </div>
 
-        <section className={`ml-status ${isFallbackActive || hasMixedScoring ? "warning" : "positive"}`} aria-label="ML model status">
+        <section className={`ml-status ${isFallbackActive || hasMixedScoring ? "warning" : "positive"}`} aria-label={t(language, "ML model status", "Status model ML")}>
           {isFallbackActive || hasMixedScoring ? (
             <AlertTriangle aria-hidden="true" size={20} />
           ) : (
@@ -1519,21 +2052,33 @@ function AdminView({
           <div>
             <strong>
               {isStrictMlMode
-                ? "Strict ML mode is enabled"
+                ? t(language, "Strict ML mode is enabled", "Mode Strict ML aktif")
                 : isFallbackActive
-                ? "Fallback scoring is active"
+                ? t(language, "Fallback scoring is active", "Fallback scoring aktif")
                 : hasMixedScoring
-                  ? "Mixed scoring sources"
-                  : "Trained ML scoring ready when service responds"}
+                  ? t(language, "Mixed scoring sources", "Sumber scoring campuran")
+                  : t(language, "Trained ML scoring ready when service responds", "Scoring ML terlatih siap ketika service merespons")}
             </strong>
             <p>
               {isStrictMlMode
-                ? "The backend will require the Python MLOps API for scoring. If the model service is unavailable, new scoring requests return a clear service-unavailable error instead of using fallback."
+                ? t(
+                    language,
+                    "The backend will require the Python MLOps API for scoring. If the model service is unavailable, new scoring requests return a clear service-unavailable error instead of using fallback.",
+                    "Backend wajib memakai API MLOps Python untuk scoring. Jika service model tidak tersedia, request scoring baru akan gagal dengan error yang jelas, bukan memakai fallback."
+                  )
                 : isFallbackActive
-                ? fallbackScoringMessage(summary)
+                ? fallbackScoringMessage(summary, language)
                 : hasMixedScoring
-                  ? "Some records were scored while the trained model was unavailable. Refresh a selected score after the MLOps API is running to replace fallback assessments."
-                : "Applications can show trained MLOps scores when the Python service responds. Fallback remains labeled if the service is unavailable."}
+                  ? t(
+                      language,
+                      "Some records were scored while the trained model was unavailable. Refresh a selected score after the MLOps API is running to replace fallback assessments.",
+                      "Beberapa record discoring saat model terlatih belum tersedia. Refresh score pada pengajuan terpilih setelah API MLOps aktif untuk mengganti assessment fallback."
+                    )
+                  : t(
+                      language,
+                      "Applications can show trained MLOps scores when the Python service responds. Fallback remains labeled if the service is unavailable.",
+                      "Pengajuan bisa menampilkan score MLOps terlatih ketika service Python merespons. Fallback tetap diberi label jika service tidak tersedia."
+                    )}
             </p>
           </div>
           <Badge tone={isFallbackActive || hasMixedScoring ? "warning" : "positive"}>
@@ -1545,12 +2090,12 @@ function AdminView({
           <label className="search-box">
             <Search aria-hidden="true" size={17} />
             <input
-              placeholder="Search applicant, business, or application ID"
+              placeholder={t(language, "Search applicant, business, or application ID", "Cari pemohon, usaha, atau ID pengajuan")}
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
             />
           </label>
-          <div className="filter-group" aria-label="Status filters">
+          <div className="filter-group" aria-label={t(language, "Status filters", "Filter status")}>
             {(["ALL", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"] as StatusFilter[]).map((status) => (
               <button
                 className={statusFilter === status ? "active" : ""}
@@ -1558,7 +2103,7 @@ function AdminView({
                 type="button"
                 onClick={() => onStatusFilterChange(status)}
               >
-                {status === "ALL" ? "All" : formatStatus(status)}
+                {status === "ALL" ? t(language, "All", "Semua") : formatStatus(status, language)}
               </button>
             ))}
           </div>
@@ -1568,12 +2113,14 @@ function AdminView({
           <ApplicationTable
             applications={filteredApplications}
             isLoading={isLoading}
+            language={language}
             selectedApplicationId={selectedApplication?.id ?? null}
             onSelectApplication={onSelectApplication}
           />
           <ApplicationDetailPanel
             actionState={actionState}
             application={selectedApplication}
+            language={language}
             onDecide={onDecide}
             onScore={onScore}
           />
@@ -1586,11 +2133,13 @@ function AdminView({
 function ApplicationTable({
   applications,
   isLoading,
+  language,
   selectedApplicationId,
   onSelectApplication
 }: {
   applications: FinancingApplication[];
   isLoading: boolean;
+  language: AppLanguage;
   selectedApplicationId: string | null;
   onSelectApplication: (id: string) => void;
 }) {
@@ -1598,15 +2147,15 @@ function ApplicationTable({
     <section className="queue-panel">
       <div className="table-header">
         <div>
-          <p className="eyebrow">Queue</p>
-          <h2>Financing Applications</h2>
+          <p className="eyebrow">{t(language, "Queue", "Antrean")}</p>
+          <h2>{t(language, "Financing Applications", "Pengajuan Pembiayaan")}</h2>
         </div>
-        <span>{applications.length} records</span>
+        <span>{applications.length} {t(language, "records", "record")}</span>
       </div>
       <div className="application-list">
-        {isLoading ? <p className="empty-copy">Loading applications...</p> : null}
+        {isLoading ? <p className="empty-copy">{t(language, "Loading applications...", "Memuat pengajuan...")}</p> : null}
         {!isLoading && applications.length === 0 ? (
-          <p className="empty-copy">No applications match the current filter.</p>
+          <p className="empty-copy">{t(language, "No applications match the current filter.", "Tidak ada pengajuan yang cocok dengan filter saat ini.")}</p>
         ) : null}
         {!isLoading
           ? applications.map((application) => (
@@ -1619,20 +2168,20 @@ function ApplicationTable({
                 <div className="application-card-main">
                   <strong>{application.applicantName}</strong>
                   <span>{application.id}</span>
-                  <small>{application.businessType}</small>
+                  <small>{formatBusinessType(application.businessType, language)}</small>
                 </div>
                 <div className="application-card-finance">
-                  <span>Requested</span>
+                  <span>{t(language, "Requested", "Pengajuan")}</span>
                   <strong>{application.requestedAmountFormatted}</strong>
-                  <small>{application.tenorMonths} months</small>
+                  <small>{formatTenor(application.tenorMonths, language)}</small>
                 </div>
                 <div className="application-card-signals">
-                  <Badge tone={statusTone(application.status)}>{formatStatus(application.status)}</Badge>
+                  <Badge tone={statusTone(application.status)}>{formatStatus(application.status, language)}</Badge>
                   <Badge tone={riskTone(application.aiAssessment?.riskLevel)}>
-                    {application.aiAssessment?.riskLevel ?? "Pending"}
+                    {formatRiskLevel(application.aiAssessment?.riskLevel, language)}
                   </Badge>
                   <span className="score-chip">
-                    {application.aiAssessment ? `${application.aiAssessment.eligibilityScore}/100` : "Not scored"}
+                    {application.aiAssessment ? `${application.aiAssessment.eligibilityScore}/100` : t(language, "Not scored", "Belum discoring")}
                   </span>
                 </div>
               </button>
@@ -1646,11 +2195,13 @@ function ApplicationTable({
 function ApplicationDetailPanel({
   actionState,
   application,
+  language,
   onDecide,
   onScore
 }: {
   actionState: ActionState;
   application: FinancingApplication | null;
+  language: AppLanguage;
   onDecide: (id: string, decision: "APPROVED" | "REJECTED", reviewerName: string, note: string) => void;
   onScore: (id: string) => void;
 }) {
@@ -1664,8 +2215,14 @@ function ApplicationDetailPanel({
     return (
       <aside className="detail-panel empty">
         <FileCheck2 aria-hidden="true" size={28} />
-        <strong>Select an application</strong>
-        <p>Choose a row from the queue to inspect profile, AI assessment, and decision controls.</p>
+        <strong>{t(language, "Select an application", "Pilih pengajuan")}</strong>
+        <p>
+          {t(
+            language,
+            "Choose a row from the queue to inspect profile, AI assessment, and decision controls.",
+            "Pilih salah satu antrean untuk melihat profil, assessment AI, dan kontrol keputusan."
+          )}
+        </p>
       </aside>
     );
   }
@@ -1709,19 +2266,25 @@ function ApplicationDetailPanel({
     <aside className="detail-panel">
       <div className="detail-header">
         <div>
-          <p className="eyebrow">Selected case</p>
+          <p className="eyebrow">{t(language, "Selected case", "Kasus terpilih")}</p>
           <h2>{application.applicantName}</h2>
           <span>{application.id}</span>
         </div>
-        <Badge tone={statusTone(application.status)}>{formatStatus(application.status)}</Badge>
+        <Badge tone={statusTone(application.status)}>{formatStatus(application.status, language)}</Badge>
       </div>
 
       {assessment?.source === "demo_rule_based_fallback" ? (
         <section className="model-warning">
           <AlertTriangle aria-hidden="true" size={18} />
           <div>
-            <strong>Trained model is not active for this score.</strong>
-            <p>The app is using the labeled fallback path because the Python MLOps API did not return a score.</p>
+            <strong>{t(language, "Trained model is not active for this score.", "Model terlatih tidak aktif untuk score ini.")}</strong>
+            <p>
+              {t(
+                language,
+                "The app is using the labeled fallback path because the Python MLOps API did not return a score.",
+                "Aplikasi memakai jalur fallback berlabel karena API MLOps Python tidak mengembalikan score."
+              )}
+            </p>
           </div>
         </section>
       ) : null}
@@ -1730,58 +2293,79 @@ function ApplicationDetailPanel({
         <div className="ai-card-top">
           <Sparkles aria-hidden="true" size={22} />
           <div>
-            <span>AI recommendation</span>
-            <strong>{assessment?.aiRecommendation ?? "Not scored"}</strong>
+            <span>{t(language, "AI recommendation", "Rekomendasi AI")}</span>
+            <strong>{formatRecommendation(assessment?.aiRecommendation, language)}</strong>
           </div>
-          {assessment ? <Badge tone={sourceTone(assessment.source)}>{formatAssessmentSource(assessment.source)}</Badge> : null}
+          {assessment ? <Badge tone={sourceTone(assessment.source)}>{formatAssessmentSource(assessment.source, language)}</Badge> : null}
         </div>
         <div className="eligibility-meter">
           <div
             className="score-ring"
-            aria-label={`Eligibility score ${assessment?.eligibilityScore ?? 0} out of 100`}
+            aria-label={t(
+              language,
+              `Eligibility score ${assessment?.eligibilityScore ?? 0} out of 100`,
+              `Skor eligibility ${assessment?.eligibilityScore ?? 0} dari 100`
+            )}
             style={{ "--score": `${assessment?.eligibilityScore ?? 0}%` } as CSSProperties}
           >
             <strong>{assessment?.eligibilityScore ?? 0}</strong>
           </div>
           <div className="eligibility-copy">
-            <span>Eligibility score</span>
-            <strong>{assessment ? `${assessment.eligibilityScore}/100` : "Not scored"}</strong>
-            <p>Higher is better. The officer still saves the final financing decision.</p>
+            <span>{t(language, "Eligibility score", "Skor eligibility")}</span>
+            <strong>{assessment ? `${assessment.eligibilityScore}/100` : t(language, "Not scored", "Belum discoring")}</strong>
+            <p>
+              {t(
+                language,
+                "Higher is better. The officer still saves the final financing decision.",
+                "Semakin tinggi semakin baik. Petugas tetap menyimpan keputusan final pembiayaan."
+              )}
+            </p>
           </div>
         </div>
         <div className="ai-grid">
-          <MiniMetric label="Risk" value={assessment?.riskLevel ?? "Pending"} tone={riskTone(assessment?.riskLevel)} />
-          <MiniMetric label="Default risk" value={assessment ? formatPercent(assessment.probDefault) : "-"} />
-          <MiniMetric label="Confidence" value={assessment ? formatPercent(assessment.confidence) : "-"} />
+          <MiniMetric label={t(language, "Risk", "Risiko")} value={formatRiskLevel(assessment?.riskLevel, language)} tone={riskTone(assessment?.riskLevel)} />
+          <MiniMetric label={t(language, "Default risk", "Risiko default")} value={assessment ? formatPercent(assessment.probDefault) : "-"} />
+          <MiniMetric label={t(language, "Confidence", "Confidence")} value={assessment ? formatPercent(assessment.confidence) : "-"} />
           <MiniMetric label="Model" value={assessment?.modelName ?? "-"} />
         </div>
-        <p>{assessment?.note ?? "Run scoring to generate an AI assessment for this application."}</p>
+        <p>
+          {assessment?.note ??
+            t(
+              language,
+              "Run scoring to generate an AI assessment for this application.",
+              "Jalankan scoring untuk membuat assessment AI pada pengajuan ini."
+            )}
+        </p>
       </div>
 
       <div className="detail-section">
-        <h3>Applicant profile</h3>
+        <h3>{t(language, "Applicant profile", "Profil pemohon")}</h3>
         <div className="profile-grid">
-          <ProfileItem label="Business" value={application.businessType} />
-          <ProfileItem label="Phone" value={application.phoneNumber} />
-          <ProfileItem label="Age" value={`${application.age} years`} />
-          <ProfileItem label="Family" value={`${application.familyMembers} members`} />
-          <ProfileItem label="Children" value={String(application.children)} />
-          <ProfileItem label="Collateral" value={application.hasCollateral ? "Available" : "Not available"} />
-          <ProfileItem label="Income" value={currencyFormatter.format(application.monthlyIncome)} />
-          <ProfileItem label="Requested" value={application.requestedAmountFormatted} />
+          <ProfileItem label={t(language, "Business", "Usaha")} value={formatBusinessType(application.businessType, language)} />
+          <ProfileItem label={t(language, "Phone", "Telepon")} value={application.phoneNumber} />
+          <ProfileItem label={t(language, "Age", "Umur")} value={formatAge(application.age, language)} />
+          <ProfileItem label={t(language, "Family", "Keluarga")} value={formatMembers(application.familyMembers, language)} />
+          <ProfileItem label={t(language, "Children", "Anak")} value={String(application.children)} />
+          <ProfileItem label={t(language, "Collateral", "Agunan")} value={formatCollateral(application.hasCollateral, language)} />
+          <ProfileItem label={t(language, "Income", "Pendapatan")} value={currencyFormatter.format(application.monthlyIncome)} />
+          <ProfileItem label={t(language, "Requested", "Pengajuan")} value={application.requestedAmountFormatted} />
         </div>
       </div>
 
       <div className="detail-section">
-        <h3>Purpose</h3>
+        <h3>{t(language, "Purpose", "Tujuan")}</h3>
         <p className="purpose-copy">{application.purpose}</p>
       </div>
 
       {application.decision ? (
         <div className="decision-note">
-          <strong>Final decision saved</strong>
+          <strong>{t(language, "Final decision saved", "Keputusan final tersimpan")}</strong>
           <span>
-            {formatStatus(application.decision.decision)} by {application.decision.reviewerName}
+            {t(
+              language,
+              `${formatStatus(application.decision.decision)} by ${application.decision.reviewerName}`,
+              `${formatStatus(application.decision.decision, language)} oleh ${application.decision.reviewerName}`
+            )}
           </span>
           <p>{application.decision.note}</p>
         </div>
@@ -1790,36 +2374,50 @@ function ApplicationDetailPanel({
       {decisionDraft ? (
         <section className={decisionDraft.decision === "APPROVED" ? "confirm-box approve" : "confirm-box reject"}>
           <div>
-            <strong>Confirm {formatStatus(decisionDraft.decision)}?</strong>
+            <strong>{t(language, `Confirm ${formatStatus(decisionDraft.decision)}?`, `Konfirmasi ${formatStatus(decisionDraft.decision, language)}?`)}</strong>
             <p>
-              Write the officer reason before saving. This note becomes the human audit trail for {application.applicantName}.
+              {t(
+                language,
+                `Write the officer reason before saving. This note becomes the human audit trail for ${application.applicantName}.`,
+                `Tulis alasan petugas sebelum menyimpan. Catatan ini menjadi audit trail manusia untuk ${application.applicantName}.`
+              )}
             </p>
           </div>
           <div className="decision-form-grid">
             <label className="decision-field">
-              <span>Reviewer name</span>
+              <span>{t(language, "Reviewer name", "Nama reviewer")}</span>
               <input
                 value={decisionDraft.reviewerName}
                 onChange={(event) => updateDecisionDraft("reviewerName", event.target.value)}
               />
             </label>
             <label className="decision-field wide">
-              <span>Decision reason</span>
+              <span>{t(language, "Decision reason", "Alasan keputusan")}</span>
               <textarea
                 placeholder={
                   decisionDraft.decision === "APPROVED"
-                    ? "Example: Business cashflow, collateral, and repayment capacity were verified by the officer."
-                    : "Example: Requested amount is too high compared with verified repayment capacity."
+                    ? t(
+                        language,
+                        "Example: Business cashflow, collateral, and repayment capacity were verified by the officer.",
+                        "Contoh: Cashflow usaha, agunan, dan kemampuan bayar sudah diverifikasi petugas."
+                      )
+                    : t(
+                        language,
+                        "Example: Requested amount is too high compared with verified repayment capacity.",
+                        "Contoh: Nominal pengajuan terlalu tinggi dibanding kemampuan bayar yang terverifikasi."
+                      )
                 }
                 value={decisionDraft.note}
                 onChange={(event) => updateDecisionDraft("note", event.target.value)}
               />
             </label>
-            <p className="decision-helper">Minimum 12 characters. The backend will reject empty notes.</p>
+            <p className="decision-helper">
+              {t(language, "Minimum 12 characters. The backend will reject empty notes.", "Minimal 12 karakter. Backend akan menolak catatan kosong.")}
+            </p>
           </div>
           <div className="confirm-actions">
             <button className="secondary-action" type="button" onClick={() => setDecisionDraft(null)}>
-              Cancel
+              {t(language, "Cancel", "Batal")}
             </button>
             <button
               className={decisionDraft.decision === "APPROVED" ? "decision-button approve" : "decision-button reject"}
@@ -1827,7 +2425,9 @@ function ApplicationDetailPanel({
               type="button"
               onClick={() => void saveDecision()}
             >
-              {isDeciding ? "Saving..." : `Confirm ${formatStatus(decisionDraft.decision)}`}
+              {isDeciding
+                ? t(language, "Saving...", "Menyimpan...")
+                : t(language, `Confirm ${formatStatus(decisionDraft.decision)}`, `Konfirmasi ${formatStatus(decisionDraft.decision, language)}`)}
             </button>
           </div>
         </section>
@@ -1836,7 +2436,7 @@ function ApplicationDetailPanel({
       <div className="decision-actions">
         <button className="secondary-action" disabled={isScoring || isDeciding} type="button" onClick={() => onScore(application.id)}>
           <Sparkles aria-hidden="true" size={17} />
-          {isScoring ? "Scoring..." : "Refresh Score"}
+          {isScoring ? t(language, "Scoring...", "Scoring...") : t(language, "Refresh Score", "Refresh Score")}
         </button>
         <button
           className="decision-button approve"
@@ -1845,7 +2445,7 @@ function ApplicationDetailPanel({
           onClick={() => openDecisionDraft("APPROVED")}
         >
           <CheckCircle2 aria-hidden="true" size={17} />
-          Approve
+          {t(language, "Approve", "Setujui")}
         </button>
         <button
           className="decision-button reject"
@@ -1854,7 +2454,7 @@ function ApplicationDetailPanel({
           onClick={() => openDecisionDraft("REJECTED")}
         >
           <XCircle aria-hidden="true" size={17} />
-          Reject
+          {t(language, "Reject", "Tolak")}
         </button>
       </div>
     </aside>
@@ -1864,103 +2464,118 @@ function ApplicationDetailPanel({
 function SystemView({
   apiBaseUrl,
   isLoading,
+  language,
   summary
 }: {
   apiBaseUrl: string;
   isLoading: boolean;
+  language: AppLanguage;
   summary: DemoSummary | null;
 }) {
+  const copy = systemCopy[language];
+  const featureCountsLabel = language === "id" ? "Jumlah field dan kolom model" : "Feature mapping counts";
+  const apiUrlValue = apiBaseUrl === "Same origin" ? (language === "id" ? "Origin yang sama" : "Same origin") : "API";
+
   return (
     <section className="view-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">System readiness</p>
-          <h1>Backend-owned ML integration</h1>
-          <p>The product frontend talks to the Express API. The API owns validation, storage, and ML service calls.</p>
+          <p className="eyebrow">{copy.pageEyebrow}</p>
+          <h1>{copy.pageTitle}</h1>
+          <p>{copy.pageDescription}</p>
         </div>
-        <Badge tone={isLoading ? "warning" : "positive"}>{isLoading ? "Loading" : "Loaded"}</Badge>
+        <Badge tone={isLoading ? "warning" : "positive"}>{isLoading ? copy.loading : copy.loaded}</Badge>
       </section>
 
       <section className="system-grid">
-        <MetricTile icon={<Database aria-hidden="true" size={20} />} label="Storage" value={formatStorageMode(summary?.integration.database)} caption="Current MVP persistence" />
-        <MetricTile icon={<Sparkles aria-hidden="true" size={20} />} label="ML API" value={formatMlIntegration(summary?.integration.ml_api)} caption={formatMlApiTargetCaption(summary?.integration.ml_api_base_url)} />
-        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Scoring Mode" value={formatScoringMode(summary?.integration.ml_scoring_mode)} caption={formatScoringModeCaption(summary)} />
-        <MetricTile icon={<LayoutDashboard aria-hidden="true" size={20} />} label="Web App" value={formatWebAppMode(summary?.integration.web_app)} caption={summary?.integration.web_dist_available ? "Build output available" : "Development mode"} />
-        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Auth" value={formatAuthMode(summary?.integration.auth)} caption="Demo mode for now" />
-        <MetricTile icon={<Activity aria-hidden="true" size={20} />} label="API URL" value={apiBaseUrl === "Same origin" ? "Same origin" : "Local API"} caption={apiBaseUrl} />
+        <MetricTile icon={<Database aria-hidden="true" size={20} />} label={copy.metricStorage} value={formatStorageMode(summary?.integration.database, language)} caption={copy.metricStorageCaption} />
+        <MetricTile icon={<Sparkles aria-hidden="true" size={20} />} label={copy.metricMlApi} value={formatMlIntegration(summary?.integration.ml_api, language)} caption={formatMlApiTargetCaption(summary?.integration.ml_api_base_url, language)} />
+        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label={copy.metricScoring} value={formatScoringMode(summary?.integration.ml_scoring_mode, language)} caption={formatScoringModeCaption(summary, language)} />
+        <MetricTile icon={<LayoutDashboard aria-hidden="true" size={20} />} label={copy.metricWebApp} value={formatWebAppMode(summary?.integration.web_app, language)} caption={summary?.integration.web_dist_available ? copy.metricWebCaptionReady : copy.metricWebCaptionDev} />
+        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label={copy.metricAuth} value={formatAuthMode(summary?.integration.auth, language)} caption={copy.metricAuthCaption} />
+        <MetricTile icon={<Activity aria-hidden="true" size={20} />} label={copy.metricApiUrl} value={apiUrlValue} caption={apiBaseUrl} />
       </section>
 
       <section className="architecture-panel">
         <div>
-          <p className="eyebrow">Architecture</p>
-          <h2>Safe product boundary</h2>
-          <p>
-            The browser never calls the ML service directly. This keeps mapping, validation, storage, and business rules
-            inside the backend where they can be reviewed and audited.
-          </p>
+          <p className="eyebrow">{copy.architectureEyebrow}</p>
+          <h2>{copy.architectureTitle}</h2>
+          <p>{copy.architectureDescription}</p>
         </div>
         <div className="architecture-flow">
-          <FlowNode icon={<UserRound aria-hidden="true" size={18} />} label="Member Web" />
+          <FlowNode icon={<UserRound aria-hidden="true" size={18} />} label={copy.flowMember} />
           <FlowArrow />
-          <FlowNode icon={<Building2 aria-hidden="true" size={18} />} label="Express API" />
+          <FlowNode icon={<Building2 aria-hidden="true" size={18} />} label={copy.flowBackend} />
           <FlowArrow />
-          <FlowNode icon={<Sparkles aria-hidden="true" size={18} />} label="MLOps API" />
+          <FlowNode icon={<Sparkles aria-hidden="true" size={18} />} label={copy.flowMl} />
           <FlowArrow />
-          <FlowNode icon={<ShieldCheck aria-hidden="true" size={18} />} label="Officer Review" />
+          <FlowNode icon={<ShieldCheck aria-hidden="true" size={18} />} label={copy.flowOfficer} />
+        </div>
+      </section>
+
+      <section className="workflow-explain-panel">
+        <div className="feature-map-heading">
+          <div>
+            <p className="eyebrow">{copy.workflowEyebrow}</p>
+            <h2>{copy.workflowTitle}</h2>
+            <p>{copy.workflowDescription}</p>
+          </div>
+        </div>
+
+        <div className="workflow-explain-grid">
+          {systemWorkflowSteps.map((step) => (
+            <article key={step.title.en}>
+              <strong>{step.title[language]}</strong>
+              <p>{step.copy[language]}</p>
+            </article>
+          ))}
         </div>
       </section>
 
       <section className="feature-map-panel">
         <div className="feature-map-heading">
           <div>
-            <p className="eyebrow">Feature mapping</p>
-            <h2>From 19 request fields to 25 model columns</h2>
-            <p>
-              The member form stays product-friendly. The backend translates it into the project 13 API request, then the
-              FastAPI service builds the exact XGBoost feature columns expected by `best_model.pkl`.
-            </p>
+            <p className="eyebrow">{copy.featureEyebrow}</p>
+            <h2>{copy.featureTitle}</h2>
+            <p>{copy.featureDescription}</p>
           </div>
-          <Badge tone="positive">Public ML path verified</Badge>
+          <Badge tone="positive">{copy.verifiedBadge}</Badge>
         </div>
 
-        <div className="feature-count-strip" aria-label="Feature mapping counts">
+        <div className="feature-count-strip" aria-label={featureCountsLabel}>
           <div>
-            <span>Product form</span>
+            <span>{copy.countProduct}</span>
             <strong>14 fields</strong>
-            <small>member/admin workflow data</small>
+            <small>{copy.countProductCaption}</small>
           </div>
           <ArrowRight aria-hidden="true" size={18} />
           <div>
-            <span>MLOps request</span>
+            <span>{copy.countRequest}</span>
             <strong>19 fields</strong>
-            <small>payload sent to project 13</small>
+            <small>{copy.countRequestCaption}</small>
           </div>
           <ArrowRight aria-hidden="true" size={18} />
           <div>
-            <span>Model frame</span>
+            <span>{copy.countModel}</span>
             <strong>25 columns</strong>
-            <small>XGBoost artifact contract</small>
+            <small>{copy.countModelCaption}</small>
           </div>
         </div>
 
         <div className="mapping-note">
           <FileText aria-hidden="true" size={19} />
-          <p>
-            Identity and workflow fields such as applicant name, phone number, business type, and purpose are stored for
-            review, but they are not sent directly to the model. Some model fields are temporary prototype defaults until
-            KoopCare retrains a BMT-native model.
-          </p>
+          <p>{copy.mappingNote}</p>
         </div>
 
         <div className="mapping-table-wrap">
           <table className="mapping-table">
-            <caption>Project 14 backend payload mapping into project 13 request fields</caption>
+            <caption>{copy.mappingCaption}</caption>
             <thead>
               <tr>
-                <th>MLOps request field</th>
-                <th>Source in project 14</th>
-                <th>Mapping rule</th>
-                <th>Project 13 model column impact</th>
+                <th>{copy.requestFieldHeader}</th>
+                <th>{copy.sourceHeader}</th>
+                <th>{copy.mappingHeader}</th>
+                <th>{copy.impactHeader}</th>
               </tr>
             </thead>
             <tbody>
@@ -1969,8 +2584,8 @@ function SystemView({
                   <td>
                     <code>{row.requestField}</code>
                   </td>
-                  <td>{row.source}</td>
-                  <td>{row.mapping}</td>
+                  <td>{language === "id" ? featureSourceIdByRequestField[row.requestField] ?? row.source : row.source}</td>
+                  <td>{language === "id" ? featureMappingIdByRequestField[row.requestField] ?? row.mapping : row.mapping}</td>
                   <td>{row.modelColumns}</td>
                 </tr>
               ))}
@@ -1982,14 +2597,11 @@ function SystemView({
       <section className="feature-map-panel compact">
         <div className="feature-map-heading">
           <div>
-            <p className="eyebrow">Derived columns</p>
-            <h2>Why 19 becomes 25</h2>
-            <p>
-              Project 13 keeps most raw request fields, drops raw `DAYS_BIRTH` after converting it to age, and adds seven
-              engineered columns before the model predicts default risk.
-            </p>
+            <p className="eyebrow">{copy.derivedEyebrow}</p>
+            <h2>{copy.derivedTitle}</h2>
+            <p>{copy.derivedDescription}</p>
           </div>
-          <Badge tone="neutral">7 engineered columns</Badge>
+          <Badge tone="neutral">{copy.engineeredBadge}</Badge>
         </div>
 
         <div className="derived-grid">
@@ -1997,7 +2609,7 @@ function SystemView({
             <article key={row.modelColumn}>
               <strong>{row.modelColumn}</strong>
               <code>{row.formula}</code>
-              <p>{row.reason}</p>
+              <p>{language === "id" ? derivedReasonIdByModelColumn[row.modelColumn] ?? row.reason : row.reason}</p>
             </article>
           ))}
         </div>

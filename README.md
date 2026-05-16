@@ -36,7 +36,7 @@ Current phase:
 Verified Railway public demo with product-grade financing workflow.
 ```
 
-The repository currently contains a runnable React web app and Express API with an end-to-end local demo flow:
+The repository currently contains a runnable React web app and Express API with an end-to-end demo flow:
 
 - a reviewer lands on a polished KoopCare overview page;
 - a member can move into a guided financing application flow;
@@ -111,7 +111,7 @@ Current backend responsibilities:
 - request validation;
 - local JSON-backed financing application persistence;
 - ML API integration with timeout handling;
-- transparent rule-based fallback scoring for local demo reliability;
+- transparent rule-based fallback scoring for demo reliability;
 - admin decision workflow;
 - safe response shaping for frontend clients.
 
@@ -324,7 +324,7 @@ ML_SCORING_MODE=optional_fallback
 ML_SCORING_MODE=strict_ml
 ```
 
-The public Railway demo currently keeps `optional_fallback` as a resilience mode while it points to the verified project 13 public ML API URL:
+The public Railway demo currently keeps `optional_fallback` as a resilience mode while it points to the verified public KoopCare MLOps Credit Scoring API URL:
 
 ```text
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app

@@ -104,7 +104,7 @@ svg {
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   gap: 16px;
   align-items: center;
   padding: 14px 0;
@@ -165,6 +165,7 @@ svg {
 
 .nav-tabs button,
 .filter-group button,
+.language-toggle button,
 .utility-button,
 .primary-action,
 .secondary-action,
@@ -195,6 +196,33 @@ svg {
 
 .nav-tabs button:hover,
 .nav-tabs button.active {
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-color: #c8e4d3;
+}
+
+.language-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.language-toggle button {
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--muted-strong);
+  background: transparent;
+  border-color: transparent;
+  font-size: 0.78rem;
+}
+
+.language-toggle button:hover,
+.language-toggle button.active {
   color: var(--green-dark);
   background: var(--green-soft);
   border-color: #c8e4d3;
@@ -283,6 +311,7 @@ svg {
 .system-grid > article,
 .architecture-panel,
 .feature-map-panel,
+.workflow-explain-panel,
 .metric-tile,
 .workflow-card {
   background: var(--surface);
@@ -1723,7 +1752,8 @@ tbody tr.selected {
   box-shadow: none;
 }
 
-.feature-map-panel {
+.feature-map-panel,
+.workflow-explain-panel {
   display: grid;
   gap: 18px;
   min-width: 0;
@@ -1750,7 +1780,8 @@ tbody tr.selected {
 
 .feature-map-heading p:not(.eyebrow),
 .mapping-note p,
-.derived-grid p {
+.derived-grid p,
+.workflow-explain-grid p {
   color: var(--muted);
   line-height: 1.58;
 }
@@ -1840,13 +1871,15 @@ tbody tr.selected {
   line-height: 1.45;
 }
 
-.derived-grid {
+.derived-grid,
+.workflow-explain-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 10px;
 }
 
-.derived-grid > article {
+.derived-grid > article,
+.workflow-explain-grid > article {
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -1856,7 +1889,8 @@ tbody tr.selected {
   border-radius: 8px;
 }
 
-.derived-grid strong {
+.derived-grid strong,
+.workflow-explain-grid strong {
   color: var(--text);
   overflow-wrap: anywhere;
 }
@@ -1943,6 +1977,10 @@ tbody tr.selected {
     width: 100%;
   }
 
+  .language-toggle {
+    justify-content: flex-start;
+  }
+
   h1 {
     font-size: 2.2rem;
     line-height: 1.1;
@@ -1957,7 +1995,9 @@ tbody tr.selected {
   .admin-main,
   .admin-sidebar,
   .detail-panel,
-  .architecture-panel {
+  .architecture-panel,
+  .feature-map-panel,
+  .workflow-explain-panel {
     padding: 18px;
   }
 
@@ -1989,6 +2029,7 @@ tbody tr.selected {
   .review-grid,
   .status-summary-grid,
   .status-timeline,
+  .workflow-explain-grid,
   .metrics-row,
   .system-grid,
   .profile-grid,
@@ -2066,7 +2107,9 @@ tbody tr.selected {
   .admin-main,
   .admin-sidebar,
   .detail-panel,
-  .application-summary {
+  .application-summary,
+  .feature-map-panel,
+  .workflow-explain-panel {
     padding: 14px;
   }
 

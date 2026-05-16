@@ -16,7 +16,7 @@ The previous ML blocker is now resolved for the public portfolio demo:
 the Python MLOps API public URL is verified and connected to this fullstack service
 ```
 
-Public web submissions can now use trained ML scoring through project 13.
+Public web submissions can now use trained ML scoring through KoopCare MLOps Credit Scoring API.
 
 ## Current Public System
 
@@ -28,8 +28,8 @@ Reviewer browser
   -> Express API
   -> JSON runtime storage
   -> tries ML_API_BASE_URL
-  -> project 13 public ML API
-  -> fallback scorer only if public ML API is unreachable
+  -> public KoopCare MLOps Credit Scoring API
+  -> fallback scorer only if that public API is unreachable
 ```
 
 Current expected Railway fullstack variable:
@@ -40,9 +40,9 @@ ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.
 
 The trained scoring path is verified by the public write-test verifier.
 
-## Project 13 Reality Check
+## KoopCare MLOps Credit Scoring API Reality Check
 
-Project 13 already has the right API contract:
+KoopCare MLOps Credit Scoring API already has the right API contract:
 
 ```text
 GET /
@@ -51,13 +51,13 @@ GET /model-info
 POST /predict
 ```
 
-Project 14 already calls:
+KoopCare Fullstack Demo Platform already calls:
 
 ```text
 POST ${ML_API_BASE_URL}/predict
 ```
 
-The response shape expected by project 14 is:
+The response shape expected by KoopCare Fullstack Demo Platform is:
 
 ```text
 ai_recommendation
@@ -74,16 +74,16 @@ note
 Important deployment status:
 
 ```text
-project 13 now allows models/best_model.pkl for the approved public checkpoint
-project 13 Dockerfile now copies models/best_model.pkl into the production image
-project 13 now includes railway.toml
+KoopCare MLOps Credit Scoring API now allows models/best_model.pkl for the approved public checkpoint
+KoopCare MLOps Credit Scoring API Dockerfile now copies models/best_model.pkl into the production image
+KoopCare MLOps Credit Scoring API now includes railway.toml
 ```
 
 The task is no longer designing a model artifact strategy from zero or
 connecting the service. The current task is keeping the public demo verified
 before presentations and future changes.
 
-Verified public project 13 URL:
+Verified public KoopCare MLOps Credit Scoring API URL:
 
 ```text
 https://koopcare-mlops-credit-scoring-api-production.up.railway.app
@@ -172,7 +172,7 @@ source=ml_api
 
 ## Current Railway State
 
-Project 14 should keep:
+KoopCare Fullstack Demo Platform should keep:
 
 ```text
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
@@ -180,7 +180,7 @@ ML_SCORING_MODE=optional_fallback
 ```
 
 Keep `optional_fallback` during early public testing so the app remains usable if
-the project 13 ML API has a temporary outage.
+the KoopCare MLOps Credit Scoring API has a temporary outage.
 
 Before any presentation or important demo, run:
 
@@ -201,15 +201,15 @@ portfolio checkpoint:
 
 ```text
 models/best_model.pkl
--> committed in project 13
--> copied into the project 13 Docker image
+-> committed in KoopCare MLOps Credit Scoring API
+-> copied into the KoopCare MLOps Credit Scoring API Docker image
 -> verified by /model-info and /predict
 ```
 
 This is acceptable here because the team approved the prototype artifact for the
 public demo and the file is small enough for the repository.
 
-For future retrained models, do not silently replace the artifact. Project 13
+For future retrained models, do not silently replace the artifact. KoopCare MLOps Credit Scoring API
 must follow:
 
 ```text
@@ -221,10 +221,10 @@ docs/model_handoff_contract.md
 Think of it like this:
 
 ```text
-Project 14 public URL is alive.
-Project 14 can already submit, store, approve, reject, and show status.
-Project 13 public trained-model API is alive and verified.
-Project 14 is connected to that Project 13 URL.
+KoopCare Fullstack Demo Platform public URL is alive.
+KoopCare Fullstack Demo Platform can already submit, store, approve, reject, and show status.
+KoopCare MLOps Credit Scoring API public trained-model API is alive and verified.
+KoopCare Fullstack Demo Platform is connected to that KoopCare MLOps Credit Scoring API URL.
 The public write-test verifier confirms source=ml_api.
 ```
 

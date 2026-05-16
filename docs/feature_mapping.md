@@ -8,9 +8,9 @@ number of fields as the XGBoost model input.
 Short version:
 
 ```text
-Project 14 member/admin workflow data
--> Project 14 Express backend builds 19 MLOps request fields
--> Project 13 FastAPI service builds 25 model columns
+KoopCare Fullstack Demo Platform member/admin workflow data
+-> KoopCare Fullstack Demo Platform Express backend builds 19 MLOps request fields
+-> KoopCare MLOps Credit Scoring API FastAPI service builds 25 model columns
 -> XGBoost best_model.pkl predicts default risk
 ```
 
@@ -22,17 +22,17 @@ reviewable.
 
 | Layer | Count | Meaning |
 | --- | ---: | --- |
-| Project 14 public form/product record | 14 | User/admin workflow fields such as name, phone, income, request amount, tenor, business duration, family size, and collateral. |
-| Project 14 to project 13 request payload | 19 | `POST /predict` JSON fields required by the current project 13 API contract. |
-| Project 13 model frame | 25 | Exact feature columns expected by `models/best_model.pkl` after feature engineering. |
+| KoopCare Fullstack Demo Platform public form/product record | 14 | User/admin workflow fields such as name, phone, income, request amount, tenor, business duration, family size, and collateral. |
+| KoopCare Fullstack Demo Platform to KoopCare MLOps Credit Scoring API request payload | 19 | `POST /predict` JSON fields required by the current KoopCare MLOps Credit Scoring API contract. |
+| KoopCare MLOps Credit Scoring API model frame | 25 | Exact feature columns expected by `models/best_model.pkl` after feature engineering. |
 
 Identity and review fields such as applicant name, phone number, business type,
 and purpose are stored for workflow review. They are not sent directly into the
 current prototype model.
 
-## Project 14 Payload Mapping
+## KoopCare Fullstack Demo Platform Payload Mapping
 
-| Project 13 request field | Project 14 source | Mapping rule | Project 13 model column impact |
+| KoopCare MLOps Credit Scoring API request field | KoopCare Fullstack Demo Platform source | Mapping rule | KoopCare MLOps Credit Scoring API model column impact |
 | --- | --- | --- | --- |
 | `code_gender` | `gender` | Direct mapping from the member form. | `CODE_GENDER` |
 | `name_income_type` | Backend default | Fixed to `Working` for this portfolio demo. | `NAME_INCOME_TYPE` |
@@ -54,9 +54,9 @@ current prototype model.
 | `ext_source_2` | `yearsInBusiness` | `clamp(0.42 + yearsInBusiness * 0.025, 0.25, 0.85)`. | `EXT_SOURCE_2`, `EXT_SOURCE_MEAN`, `EXT_SOURCE_MIN`, `EXT_SOURCE_PROD` |
 | `ext_source_3` | `existingLoanCount` | `clamp(0.58 - existingLoanCount * 0.04, 0.25, 0.8)`. | `EXT_SOURCE_3`, `EXT_SOURCE_MEAN`, `EXT_SOURCE_MIN`, `EXT_SOURCE_PROD` |
 
-## Project 13 Feature Engineering
+## KoopCare MLOps Credit Scoring API Feature Engineering
 
-Project 13 receives the 19 request fields and creates the final 25-column model
+KoopCare MLOps Credit Scoring API receives the 19 request fields and creates the final 25-column model
 frame.
 
 The current model columns are:
@@ -107,7 +107,7 @@ Derived columns:
 ## Important Limitation
 
 The current artifact is still a prototype trained with Home Credit style fields.
-Several values in project 14 are controlled defaults or proxy values because the
+Several values in KoopCare Fullstack Demo Platform are controlled defaults or proxy values because the
 current public form is a cooperative workflow demo, not a final BMT-native model
 input form.
 

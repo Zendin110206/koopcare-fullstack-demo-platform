@@ -12,7 +12,7 @@ https://koopcare-fullstack-demo-platform-production.up.railway.app/
 
 The Railway public service is live. The read-only verifier and write-test
 verifier both pass. The latest write-test verifier confirms trained ML scoring
-through project 13.
+through KoopCare MLOps Credit Scoring API.
 
 Verified command:
 
@@ -61,9 +61,9 @@ That requires new public submissions to be scored with `source=ml_api`.
 
 ## Current ML Status
 
-The public service is currently connected to the public project 13 MLOps API.
+The public service is currently connected to the public KoopCare MLOps Credit Scoring API.
 
-The separate project 13 public MLOps API is already verified:
+The separate KoopCare MLOps Credit Scoring API public URL is already verified:
 
 ```text
 https://koopcare-mlops-credit-scoring-api-production.up.railway.app

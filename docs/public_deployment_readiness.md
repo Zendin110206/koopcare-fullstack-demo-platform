@@ -13,9 +13,9 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 Current status after the Railway public URL was created and verified:
 
 ```text
-Public demo readiness: 97%
+Public demo readiness: 98%
 Actual public URL availability: 100%
-Full product readiness: 75%
+Full product readiness: 76%
 ```
 
 Live public demo:
@@ -35,30 +35,31 @@ Meaning:
 - SPA route fallback works.
 - The public URL verifier passes.
 - The public write-test verifier passes: create application, trained ML score, read status, save officer decision, and read decided status.
-- The System page now explains how project 14 product fields become project 13 request fields and final model columns.
+- The public UI now has an `ID/EN` language toggle for the main hero, navigation, Apply, Status, Admin, and System explanation.
+- The System page now explains how KoopCare Fullstack Demo Platform product fields become KoopCare MLOps Credit Scoring API request fields and final model columns.
 - The full product is still not production-ready because authentication, real database persistence, and production hardening are still unfinished.
-- Project 13 is now live on a public Railway URL and has passed the ML API verifier.
-- Project 14 is now connected to the project 13 public ML API, and the write-test verifier confirms `source=ml_api`.
+- KoopCare MLOps Credit Scoring API is now live on a public Railway URL and has passed the ML API verifier.
+- KoopCare Fullstack Demo Platform is now connected to the public KoopCare MLOps Credit Scoring API, and the write-test verifier confirms `source=ml_api`.
 
-## Why 97% for Public Demo Readiness?
+## Why 98% for Public Demo Readiness?
 
 This percentage is for a portfolio public demo, not a real financial production system.
 
 | Area | Weight | Current | Notes |
 | --- | ---: | ---: | --- |
-| Local user-to-admin workflow | 15% | 15% | User apply, backend store, trained ML score, admin decision, status tracker, and feature-mapping explanation exist. |
+| User-to-admin workflow | 15% | 15% | User apply, backend store, trained ML score, admin decision, status tracker, bilingual public UI, and feature-mapping explanation exist. |
 | Single-service public runtime | 15% | 15% | Express serves React build and API from one Railway public origin. |
 | Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
-| Runtime persistence bridge | 10% | 8% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
-| MLOps integration for public demo | 10% | 10% | Backend calls the verified public project 13 ML API; write-test verification confirms `source=ml_api`. |
+| Runtime persistence bridge | 10% | 9% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
+| MLOps integration for public demo | 10% | 10% | Backend calls the verified public KoopCare MLOps Credit Scoring API; write-test verification confirms `source=ml_api`. |
 | Public URL verification | 10% | 10% | Railway public URL exists. Read-only verification and write-test verification both pass. |
 | Security boundary | 10% | 9% | Advisory AI messaging, validation, and decision note rules exist. Authentication/authorization still missing. |
 
 Total:
 
 ```text
-97 / 100
+98 / 100
 ```
 
 ## What Is Already Ready
@@ -71,6 +72,7 @@ Ready:
 - user can submit financing application;
 - backend validates and stores application;
 - backend asks the public MLOps API and receives trained model scoring;
+- public UI has an Indonesian-first `ID/EN` toggle for the main hero, Apply, Status, Admin, and System explanation;
 - System page explains 14 product fields -> 19 MLOps request fields -> 25 model columns;
 - backend keeps clearly labeled fallback as a resilience path if the public MLOps API is unavailable;
 - admin can inspect application;
@@ -150,13 +152,13 @@ The public URL exists now.
 
 The remaining public-demo polish tasks are:
 
-1. Project 13 public ML API is already verified:
+1. The public KoopCare MLOps Credit Scoring API is already verified:
 
 ```text
 https://koopcare-mlops-credit-scoring-api-production.up.railway.app
 ```
 
-2. Project 14 Railway variable is now connected:
+2. KoopCare Fullstack Demo Platform Railway variable is now connected:
 
 ```text
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
@@ -216,7 +218,7 @@ ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.
 ```
 
 `optional_fallback` is still intentionally kept during early public testing. If
-the project 13 ML API has a temporary outage, the product can still stay usable
+the KoopCare MLOps Credit Scoring API has a temporary outage, the product can still stay usable
 while marking fallback scores clearly.
 
 It is not acceptable to present fallback scores as trained-model scores.
@@ -249,7 +251,7 @@ fallback scoring is no longer the only public scoring path
 
 Output:
 
-- KoopCare MLOps API has a public URL from the prepared project 13 Docker/Railway deployment;
+- KoopCare MLOps Credit Scoring API has a public URL from its Docker/Railway deployment;
 - `/health` on the ML API public URL works;
 - `/model-info` on the ML API public URL works;
 - `npm run verify:ml-api -- https://koopcare-mlops-credit-scoring-api-production.up.railway.app` passes;
@@ -274,7 +276,7 @@ make the model-field change understandable for teammates and reviewers
 Output:
 
 - System page explains the 14 -> 19 -> 25 field flow;
-- `docs/feature_mapping.md` records every project 14 to project 13 mapping;
+- `docs/feature_mapping.md` records every KoopCare Fullstack Demo Platform to KoopCare MLOps Credit Scoring API mapping;
 - README and ML integration docs link to the mapping document;
 - build, deployment config check, local public smoke, public ML API verification, and public write-test verification pass.
 
