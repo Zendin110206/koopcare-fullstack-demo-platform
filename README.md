@@ -60,7 +60,7 @@ npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.
 npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
 ```
 
-This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and connected public trained MLOps API scoring remain planned milestones.
+This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and project 14 connection to the verified public trained MLOps API remain planned milestones.
 
 ## Product Principle
 
@@ -321,7 +321,13 @@ ML_SCORING_MODE=optional_fallback
 ML_SCORING_MODE=strict_ml
 ```
 
-The public Railway demo currently uses `optional_fallback` because the separate Python MLOps API public URL is not connected to this service yet. Project 13 is now prepared for public Docker/Railway deployment with the approved model artifact included. Switch to `strict_ml` only after `ML_API_BASE_URL` points to a reachable deployed MLOps API and `verify:public --expect-ml-api` passes.
+The public Railway demo currently uses `optional_fallback` because project 14 has not yet been pointed to the verified project 13 public ML API URL. Use this value next:
+
+```text
+ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
+```
+
+Switch to `strict_ml` only after `ML_API_BASE_URL` points to that deployed MLOps API and `verify:public --expect-ml-api` passes.
 
 Security audit:
 

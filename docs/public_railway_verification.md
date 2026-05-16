@@ -61,6 +61,26 @@ That requires new public submissions to be scored with `source=ml_api`.
 
 The public service is currently using labeled fallback scoring.
 
+The separate project 13 public MLOps API is already verified:
+
+```text
+https://koopcare-mlops-credit-scoring-api-production.up.railway.app
+```
+
+Verified command:
+
+```powershell
+npm run verify:ml-api -- https://koopcare-mlops-credit-scoring-api-production.up.railway.app
+```
+
+Verified result:
+
+```text
+model_loaded=true
+artifact_status=available
+POST /predict returns recommendation=LAYAK
+```
+
 Reason:
 
 ```text
@@ -68,9 +88,9 @@ ML_SCORING_MODE=optional_fallback
 ML_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-On Railway, `127.0.0.1:8000` points inside the Railway service container, not to the developer laptop. Project 13 is now prepared as a deployable public ML API image, but this fullstack service has not yet been pointed to a public project 13 URL.
+On Railway, `127.0.0.1:8000` points inside the Railway service container, not to the developer laptop. Project 13 now has a verified public ML API URL, but this fullstack service has not yet been pointed to that URL.
 
-This does not mean the public web/API deployment failed. It means the next checkpoint is deploying the prepared Python MLOps API publicly, then updating Railway `ML_API_BASE_URL`.
+This does not mean the public web/API deployment failed. It means the next checkpoint is updating project 14 Railway `ML_API_BASE_URL`.
 
 See:
 
