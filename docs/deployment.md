@@ -99,7 +99,13 @@ For real public demo review, prefer:
 ML_SCORING_MODE=optional_fallback
 ```
 
-Use `optional_fallback` until the separate Python MLOps API is also deployed and reachable from the public service. After that, consider:
+For the current Railway public demo, use the verified project 13 public ML API:
+
+```text
+ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
+```
+
+Keep `optional_fallback` during early public testing so fallback remains clearly labeled if the ML service has a temporary outage. After more monitoring, consider:
 
 ```text
 ML_SCORING_MODE=strict_ml

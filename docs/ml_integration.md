@@ -34,6 +34,12 @@ The backend is responsible for:
 - storing AI assessment metadata;
 - returning product-safe response fields to the frontend.
 
+For the current 19 request fields to 25 model columns mapping, see:
+
+```text
+docs/feature_mapping.md
+```
+
 ## Current MVP Behavior
 
 The current Express API already attempts to call:

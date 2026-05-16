@@ -324,13 +324,13 @@ ML_SCORING_MODE=optional_fallback
 ML_SCORING_MODE=strict_ml
 ```
 
-The public Railway demo currently uses `optional_fallback` because project 14 has not yet been pointed to the verified project 13 public ML API URL. Use this value next:
+The public Railway demo currently keeps `optional_fallback` as a resilience mode while it points to the verified project 13 public ML API URL:
 
 ```text
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
 ```
 
-Switch to `strict_ml` only after `ML_API_BASE_URL` points to that deployed MLOps API and `verify:public --expect-ml-api` passes.
+Switch to `strict_ml` only after more public monitoring confirms the ML API should be mandatory for every scoring request.
 
 Security audit:
 
@@ -345,6 +345,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 - [Product Scope](docs/product_scope.md)
 - [Architecture](docs/architecture.md)
 - [ML Integration Plan](docs/ml_integration.md)
+- [Feature Mapping](docs/feature_mapping.md)
 - [Roadmap](docs/roadmap.md)
 - [Deployment Guide](docs/deployment.md)
 - [Public Deployment Readiness](docs/public_deployment_readiness.md)

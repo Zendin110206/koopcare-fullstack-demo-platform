@@ -117,6 +117,19 @@ type DecisionDraft = {
   note: string;
 };
 
+type MlFeatureMapRow = {
+  requestField: string;
+  source: string;
+  mapping: string;
+  modelColumns: string;
+};
+
+type DerivedFeatureRow = {
+  modelColumn: string;
+  formula: string;
+  reason: string;
+};
+
 function resolveApiBaseUrl() {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -176,6 +189,161 @@ const views: Array<{ key: ViewKey; label: string; icon: ReactNode }> = [
   { key: "status", label: "Status", icon: <FileCheck2 aria-hidden="true" size={17} /> },
   { key: "admin", label: "Admin", icon: <LayoutDashboard aria-hidden="true" size={17} /> },
   { key: "system", label: "System", icon: <Database aria-hidden="true" size={17} /> }
+];
+
+const mlFeatureMapRows: MlFeatureMapRow[] = [
+  {
+    requestField: "code_gender",
+    source: "gender",
+    mapping: "Direct mapping from member form.",
+    modelColumns: "CODE_GENDER"
+  },
+  {
+    requestField: "name_income_type",
+    source: "Backend default",
+    mapping: "Fixed to Working for this portfolio demo.",
+    modelColumns: "NAME_INCOME_TYPE"
+  },
+  {
+    requestField: "name_education_type",
+    source: "Backend default",
+    mapping: "Fixed to Secondary / secondary special until the public form collects education.",
+    modelColumns: "NAME_EDUCATION_TYPE"
+  },
+  {
+    requestField: "name_family_status",
+    source: "familyMembers",
+    mapping: "More than one family member becomes Married; otherwise Single / not married.",
+    modelColumns: "NAME_FAMILY_STATUS"
+  },
+  {
+    requestField: "occupation_type",
+    source: "Backend default",
+    mapping: "Fixed to Laborers until the public form collects occupation.",
+    modelColumns: "OCCUPATION_TYPE"
+  },
+  {
+    requestField: "flag_own_car",
+    source: "Backend default",
+    mapping: "Fixed to N because the current KoopCare form does not collect car ownership.",
+    modelColumns: "FLAG_OWN_CAR"
+  },
+  {
+    requestField: "flag_own_realty",
+    source: "hasCollateral",
+    mapping: "Collateral is treated as property/realty ownership signal for the prototype contract.",
+    modelColumns: "FLAG_OWN_REALTY"
+  },
+  {
+    requestField: "cnt_children",
+    source: "children",
+    mapping: "Direct mapping from member form.",
+    modelColumns: "CNT_CHILDREN"
+  },
+  {
+    requestField: "cnt_fam_members",
+    source: "familyMembers",
+    mapping: "Direct mapping from member form.",
+    modelColumns: "CNT_FAM_MEMBERS"
+  },
+  {
+    requestField: "amt_income_total",
+    source: "monthlyIncome",
+    mapping: "Monthly cooperative income is sent as total income for this demo contract.",
+    modelColumns: "AMT_INCOME_TOTAL, DEBT_TO_INCOME"
+  },
+  {
+    requestField: "amt_credit",
+    source: "requestedAmount",
+    mapping: "Requested financing amount.",
+    modelColumns: "AMT_CREDIT, DEBT_TO_INCOME, PAYMENT_RATE"
+  },
+  {
+    requestField: "amt_annuity",
+    source: "requestedAmount, tenorMonths",
+    mapping: "Calculated as requestedAmount / tenorMonths, with minimum value 1.",
+    modelColumns: "AMT_ANNUITY, PAYMENT_RATE"
+  },
+  {
+    requestField: "amt_goods_price",
+    source: "requestedAmount",
+    mapping: "Mirrors requestedAmount because the demo does not separate goods price from financing amount.",
+    modelColumns: "AMT_GOODS_PRICE"
+  },
+  {
+    requestField: "days_birth",
+    source: "age",
+    mapping: "Calculated as -round(age * 365.25). Used only to derive AGE_YEARS.",
+    modelColumns: "AGE_YEARS"
+  },
+  {
+    requestField: "days_employed",
+    source: "yearsInBusiness",
+    mapping: "Calculated as -round(yearsInBusiness * 365.25).",
+    modelColumns: "DAYS_EMPLOYED, DAYS_EMPLOYED_ANOM"
+  },
+  {
+    requestField: "days_last_phone_change",
+    source: "Backend default",
+    mapping: "Fixed to -365 until the public form collects phone-change history.",
+    modelColumns: "DAYS_LAST_PHONE_CHANGE"
+  },
+  {
+    requestField: "ext_source_1",
+    source: "hasCollateral",
+    mapping: "0.62 when collateral exists, otherwise 0.48.",
+    modelColumns: "EXT_SOURCE_1, EXT_SOURCE_MEAN, EXT_SOURCE_MIN, EXT_SOURCE_PROD"
+  },
+  {
+    requestField: "ext_source_2",
+    source: "yearsInBusiness",
+    mapping: "clamp(0.42 + yearsInBusiness * 0.025, 0.25, 0.85).",
+    modelColumns: "EXT_SOURCE_2, EXT_SOURCE_MEAN, EXT_SOURCE_MIN, EXT_SOURCE_PROD"
+  },
+  {
+    requestField: "ext_source_3",
+    source: "existingLoanCount",
+    mapping: "clamp(0.58 - existingLoanCount * 0.04, 0.25, 0.8).",
+    modelColumns: "EXT_SOURCE_3, EXT_SOURCE_MEAN, EXT_SOURCE_MIN, EXT_SOURCE_PROD"
+  }
+];
+
+const derivedFeatureRows: DerivedFeatureRow[] = [
+  {
+    modelColumn: "AGE_YEARS",
+    formula: "abs(days_birth) / 365",
+    reason: "The model uses age in years instead of raw negative birth-day offset."
+  },
+  {
+    modelColumn: "DAYS_EMPLOYED_ANOM",
+    formula: "days_employed == 365243 ? 1 : 0",
+    reason: "Keeps the Home Credit anomaly flag explicit before replacing the anomaly with missing value."
+  },
+  {
+    modelColumn: "EXT_SOURCE_MEAN",
+    formula: "mean(ext_source_1, ext_source_2, ext_source_3)",
+    reason: "Summarizes external/proxy score strength."
+  },
+  {
+    modelColumn: "EXT_SOURCE_MIN",
+    formula: "min(ext_source_1, ext_source_2, ext_source_3)",
+    reason: "Keeps the weakest external/proxy signal visible to the model."
+  },
+  {
+    modelColumn: "EXT_SOURCE_PROD",
+    formula: "ext_source_1 * ext_source_2 * ext_source_3",
+    reason: "Captures combined strength across all external/proxy scores."
+  },
+  {
+    modelColumn: "DEBT_TO_INCOME",
+    formula: "amt_credit / (amt_income_total + 1)",
+    reason: "Measures requested financing size relative to income."
+  },
+  {
+    modelColumn: "PAYMENT_RATE",
+    formula: "amt_annuity / (amt_credit + 1)",
+    reason: "Measures installment burden relative to requested financing."
+  }
 ];
 
 function formatStatus(value: string) {
@@ -320,6 +488,18 @@ function formatMlApiTargetCaption(value?: string) {
   }
 
   return value;
+}
+
+function formatScoringModeCaption(summary: DemoSummary | null) {
+  if (summary?.integration.ml_api === "ready") {
+    return "Trained scoring available; fallback stays labeled if needed";
+  }
+
+  if (summary?.integration.ml_scoring_mode === "strict_ml") {
+    return "Requests fail clearly if the ML API is unavailable";
+  }
+
+  return "Fallback remains labeled until trained scoring is reachable";
 }
 
 function fallbackScoringMessage(summary: DemoSummary | null) {
@@ -1704,7 +1884,7 @@ function SystemView({
       <section className="system-grid">
         <MetricTile icon={<Database aria-hidden="true" size={20} />} label="Storage" value={formatStorageMode(summary?.integration.database)} caption="Current MVP persistence" />
         <MetricTile icon={<Sparkles aria-hidden="true" size={20} />} label="ML API" value={formatMlIntegration(summary?.integration.ml_api)} caption={formatMlApiTargetCaption(summary?.integration.ml_api_base_url)} />
-        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Scoring Mode" value={formatScoringMode(summary?.integration.ml_scoring_mode)} caption="Fallback until the public ML API is deployed" />
+        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Scoring Mode" value={formatScoringMode(summary?.integration.ml_scoring_mode)} caption={formatScoringModeCaption(summary)} />
         <MetricTile icon={<LayoutDashboard aria-hidden="true" size={20} />} label="Web App" value={formatWebAppMode(summary?.integration.web_app)} caption={summary?.integration.web_dist_available ? "Build output available" : "Development mode"} />
         <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Auth" value={formatAuthMode(summary?.integration.auth)} caption="Demo mode for now" />
         <MetricTile icon={<Activity aria-hidden="true" size={20} />} label="API URL" value={apiBaseUrl === "Same origin" ? "Same origin" : "Local API"} caption={apiBaseUrl} />
@@ -1727,6 +1907,99 @@ function SystemView({
           <FlowNode icon={<Sparkles aria-hidden="true" size={18} />} label="MLOps API" />
           <FlowArrow />
           <FlowNode icon={<ShieldCheck aria-hidden="true" size={18} />} label="Officer Review" />
+        </div>
+      </section>
+
+      <section className="feature-map-panel">
+        <div className="feature-map-heading">
+          <div>
+            <p className="eyebrow">Feature mapping</p>
+            <h2>From 19 request fields to 25 model columns</h2>
+            <p>
+              The member form stays product-friendly. The backend translates it into the project 13 API request, then the
+              FastAPI service builds the exact XGBoost feature columns expected by `best_model.pkl`.
+            </p>
+          </div>
+          <Badge tone="positive">Public ML path verified</Badge>
+        </div>
+
+        <div className="feature-count-strip" aria-label="Feature mapping counts">
+          <div>
+            <span>Product form</span>
+            <strong>14 fields</strong>
+            <small>member/admin workflow data</small>
+          </div>
+          <ArrowRight aria-hidden="true" size={18} />
+          <div>
+            <span>MLOps request</span>
+            <strong>19 fields</strong>
+            <small>payload sent to project 13</small>
+          </div>
+          <ArrowRight aria-hidden="true" size={18} />
+          <div>
+            <span>Model frame</span>
+            <strong>25 columns</strong>
+            <small>XGBoost artifact contract</small>
+          </div>
+        </div>
+
+        <div className="mapping-note">
+          <FileText aria-hidden="true" size={19} />
+          <p>
+            Identity and workflow fields such as applicant name, phone number, business type, and purpose are stored for
+            review, but they are not sent directly to the model. Some model fields are temporary prototype defaults until
+            KoopCare retrains a BMT-native model.
+          </p>
+        </div>
+
+        <div className="mapping-table-wrap">
+          <table className="mapping-table">
+            <caption>Project 14 backend payload mapping into project 13 request fields</caption>
+            <thead>
+              <tr>
+                <th>MLOps request field</th>
+                <th>Source in project 14</th>
+                <th>Mapping rule</th>
+                <th>Project 13 model column impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mlFeatureMapRows.map((row) => (
+                <tr key={row.requestField}>
+                  <td>
+                    <code>{row.requestField}</code>
+                  </td>
+                  <td>{row.source}</td>
+                  <td>{row.mapping}</td>
+                  <td>{row.modelColumns}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="feature-map-panel compact">
+        <div className="feature-map-heading">
+          <div>
+            <p className="eyebrow">Derived columns</p>
+            <h2>Why 19 becomes 25</h2>
+            <p>
+              Project 13 keeps most raw request fields, drops raw `DAYS_BIRTH` after converting it to age, and adds seven
+              engineered columns before the model predicts default risk.
+            </p>
+          </div>
+          <Badge tone="neutral">7 engineered columns</Badge>
+        </div>
+
+        <div className="derived-grid">
+          {derivedFeatureRows.map((row) => (
+            <article key={row.modelColumn}>
+              <strong>{row.modelColumn}</strong>
+              <code>{row.formula}</code>
+              <p>{row.reason}</p>
+            </article>
+          ))}
         </div>
       </section>
     </section>

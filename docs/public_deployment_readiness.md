@@ -13,9 +13,9 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 Current status after the Railway public URL was created and verified:
 
 ```text
-Public demo readiness: 96%
+Public demo readiness: 97%
 Actual public URL availability: 100%
-Full product readiness: 74%
+Full product readiness: 75%
 ```
 
 Live public demo:
@@ -35,17 +35,18 @@ Meaning:
 - SPA route fallback works.
 - The public URL verifier passes.
 - The public write-test verifier passes: create application, trained ML score, read status, save officer decision, and read decided status.
+- The System page now explains how project 14 product fields become project 13 request fields and final model columns.
 - The full product is still not production-ready because authentication, real database persistence, and production hardening are still unfinished.
 - Project 13 is now live on a public Railway URL and has passed the ML API verifier.
 - Project 14 is now connected to the project 13 public ML API, and the write-test verifier confirms `source=ml_api`.
 
-## Why 96% for Public Demo Readiness?
+## Why 97% for Public Demo Readiness?
 
 This percentage is for a portfolio public demo, not a real financial production system.
 
 | Area | Weight | Current | Notes |
 | --- | ---: | ---: | --- |
-| Local user-to-admin workflow | 15% | 14% | User apply, backend store, AI/fallback score, admin decision, and status tracker exist. |
+| Local user-to-admin workflow | 15% | 15% | User apply, backend store, trained ML score, admin decision, status tracker, and feature-mapping explanation exist. |
 | Single-service public runtime | 15% | 15% | Express serves React build and API from one Railway public origin. |
 | Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
@@ -57,7 +58,7 @@ This percentage is for a portfolio public demo, not a real financial production 
 Total:
 
 ```text
-96 / 100
+97 / 100
 ```
 
 ## What Is Already Ready
@@ -70,6 +71,7 @@ Ready:
 - user can submit financing application;
 - backend validates and stores application;
 - backend asks the public MLOps API and receives trained model scoring;
+- System page explains 14 product fields -> 19 MLOps request fields -> 25 model columns;
 - backend keeps clearly labeled fallback as a resilience path if the public MLOps API is unavailable;
 - admin can inspect application;
 - admin can approve or reject with reviewer name and decision note;
@@ -261,7 +263,28 @@ Status:
 completed
 ```
 
-### Checkpoint 19 - Public Demo Polish
+### Checkpoint 23 - Feature Mapping Handoff
+
+Goal:
+
+```text
+make the model-field change understandable for teammates and reviewers
+```
+
+Output:
+
+- System page explains the 14 -> 19 -> 25 field flow;
+- `docs/feature_mapping.md` records every project 14 to project 13 mapping;
+- README and ML integration docs link to the mapping document;
+- build, deployment config check, local public smoke, public ML API verification, and public write-test verification pass.
+
+Status:
+
+```text
+completed
+```
+
+### Checkpoint 24 - Public Demo Polish
 
 Goal:
 
@@ -277,7 +300,7 @@ Output:
 - better empty/loading/error states;
 - public demo limitations shown clearly.
 
-### Checkpoint 20 - Auth and Role Separation
+### Checkpoint 25 - Auth and Role Separation
 
 Goal:
 
@@ -293,7 +316,7 @@ Output:
 - route protection;
 - user status lookup scoped by owner.
 
-### Checkpoint 21 - Database Milestone
+### Checkpoint 26 - Database Milestone
 
 Goal:
 
