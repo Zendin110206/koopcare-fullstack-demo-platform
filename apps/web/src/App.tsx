@@ -251,7 +251,7 @@ function formatScoringMode(mode?: DemoSummary["integration"]["ml_scoring_mode"])
     return "Strict ML";
   }
 
-  return "Local fallback";
+  return "Fallback allowed";
 }
 
 function formatMlIntegration(value?: string) {
@@ -284,6 +284,52 @@ function formatWebAppMode(value?: DemoSummary["integration"]["web_app"]) {
   }
 
   return "loading";
+}
+
+function isLocalHostname(hostname?: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0" || hostname === "::1";
+}
+
+function isPublicBrowserRuntime() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.location.protocol.startsWith("http") && !isLocalHostname(window.location.hostname);
+}
+
+function isLocalServiceUrl(value?: string) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    return isLocalHostname(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function formatMlApiTargetCaption(value?: string) {
+  if (!value) {
+    return "Checking target";
+  }
+
+  if (isPublicBrowserRuntime() && isLocalServiceUrl(value)) {
+    return "No public ML API configured yet";
+  }
+
+  return value;
+}
+
+function fallbackScoringMessage(summary: DemoSummary | null) {
+  const mlApiBaseUrl = summary?.integration.ml_api_base_url;
+
+  if (isPublicBrowserRuntime() && isLocalServiceUrl(mlApiBaseUrl)) {
+    return "The trained Python MLOps API is not deployed or reachable from this public service yet, so this public demo is using clearly labeled fallback scoring. Deploy the MLOps API and set ML_API_BASE_URL on Railway to activate the trained model path.";
+  }
+
+  return `The Python MLOps API is not currently returning scores, so this workflow demo is using clearly labeled fallback scoring. Start or connect the MLOps API at ${mlApiBaseUrl ?? "the configured ML API URL"} to activate the trained model path.`;
 }
 
 function formatAuthMode(value?: string) {
@@ -1304,7 +1350,7 @@ function AdminView({
               {isStrictMlMode
                 ? "The backend will require the Python MLOps API for scoring. If the model service is unavailable, new scoring requests return a clear service-unavailable error instead of using fallback."
                 : isFallbackActive
-                ? `The Python MLOps API is not currently returning scores, so this local demo is using a transparent fallback. Start the MLOps API at ${summary?.integration.ml_api_base_url ?? "the configured ML API URL"} to activate the trained model path.`
+                ? fallbackScoringMessage(summary)
                 : hasMixedScoring
                   ? "Some records were scored while the trained model was unavailable. Refresh a selected score after the MLOps API is running to replace fallback assessments."
                 : "Applications can show trained MLOps scores when the Python service responds. Fallback remains labeled if the service is unavailable."}
@@ -1657,8 +1703,8 @@ function SystemView({
 
       <section className="system-grid">
         <MetricTile icon={<Database aria-hidden="true" size={20} />} label="Storage" value={formatStorageMode(summary?.integration.database)} caption="Current MVP persistence" />
-        <MetricTile icon={<Sparkles aria-hidden="true" size={20} />} label="ML API" value={formatMlIntegration(summary?.integration.ml_api)} caption={summary?.integration.ml_api_base_url ?? "Checking target"} />
-        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Scoring Mode" value={formatScoringMode(summary?.integration.ml_scoring_mode)} caption="Fallback locally, strict for production-like deploys" />
+        <MetricTile icon={<Sparkles aria-hidden="true" size={20} />} label="ML API" value={formatMlIntegration(summary?.integration.ml_api)} caption={formatMlApiTargetCaption(summary?.integration.ml_api_base_url)} />
+        <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Scoring Mode" value={formatScoringMode(summary?.integration.ml_scoring_mode)} caption="Fallback until the public ML API is deployed" />
         <MetricTile icon={<LayoutDashboard aria-hidden="true" size={20} />} label="Web App" value={formatWebAppMode(summary?.integration.web_app)} caption={summary?.integration.web_dist_available ? "Build output available" : "Development mode"} />
         <MetricTile icon={<ShieldCheck aria-hidden="true" size={20} />} label="Auth" value={formatAuthMode(summary?.integration.auth)} caption="Demo mode for now" />
         <MetricTile icon={<Activity aria-hidden="true" size={20} />} label="API URL" value={apiBaseUrl === "Same origin" ? "Same origin" : "Local API"} caption={apiBaseUrl} />

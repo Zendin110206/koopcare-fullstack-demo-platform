@@ -343,13 +343,13 @@ npm run preflight:deploy:docker
 After Railway provides a public URL, verify it with:
 
 ```powershell
-npm run verify:public -- https://your-railway-url
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/
 ```
 
 Use the optional write test only when you are fine with adding a demo application to the public runtime:
 
 ```powershell
-npm run verify:public -- https://your-railway-url --write-test
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
 ```
 
 For the current readiness score and remaining blockers, see:

@@ -248,13 +248,13 @@ In Railway, find the networking/domain section.
 
 Generate a public domain if Railway has not generated one automatically.
 
-The URL may look like:
+The current KoopCare public URL is:
 
 ```text
 https://koopcare-fullstack-demo-platform-production.up.railway.app
 ```
 
-Your actual URL can be different.
+If you create a new Railway service later, your URL can be different.
 
 ### Step 9 - Manual Browser Checks
 
@@ -277,16 +277,16 @@ Expected:
 Back in this project folder, run:
 
 ```powershell
-npm run verify:public -- https://your-railway-url
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/
 ```
 
 If you want to test real write behavior too, run:
 
 ```powershell
-npm run verify:public -- https://your-railway-url --write-test
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
 ```
 
-The write test creates a real demo application on the public runtime.
+The write test creates a real demo application, checks status lookup, saves an officer approval decision, then checks that the decided status can still be read.
 
 ### Step 11 - Save the Public URL
 

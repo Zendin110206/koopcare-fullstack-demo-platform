@@ -2,7 +2,7 @@
 
 # KoopCare Fullstack Demo Platform
 
-[![Project Status](https://img.shields.io/badge/status-local%20MVP-success)](#project-status)
+[![Project Status](https://img.shields.io/badge/status-public%20demo-success)](#project-status)
 [![CI](https://github.com/Zendin110206/koopcare-fullstack-demo-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Zendin110206/koopcare-fullstack-demo-platform/actions/workflows/ci.yml)
 [![Stack](https://img.shields.io/badge/stack-React%20%2B%20Express%20%2B%20JSON%20MVP-informational)](#stack)
 [![AI Integration](https://img.shields.io/badge/AI-FastAPI%20ML%20Inference-success)](#ml-integration)
@@ -33,7 +33,7 @@ This repository is intentionally separate from the team repositories. It is a co
 Current phase:
 
 ```text
-Local MVP financing workflow with product-grade web experience.
+Verified Railway public demo with product-grade financing workflow.
 ```
 
 The repository currently contains a runnable React web app and Express API with an end-to-end local demo flow:
@@ -47,7 +47,20 @@ The repository currently contains a runnable React web app and Express API with 
 - an admin can search, filter, inspect detail, rescore, approve, or reject applications;
 - a system page explains the current service boundaries and runtime status.
 
-This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and a verified public URL remain planned milestones.
+Public demo URL:
+
+```text
+https://koopcare-fullstack-demo-platform-production.up.railway.app/
+```
+
+Verified with:
+
+```powershell
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
+```
+
+This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and deployed trained MLOps API scoring remain planned milestones.
 
 ## Product Principle
 
@@ -289,7 +302,13 @@ npm run preflight:deploy
 After deployment, verify the public URL:
 
 ```powershell
-npm run verify:public -- https://your-public-url
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/
+```
+
+To verify the full write workflow on the public service:
+
+```powershell
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
 ```
 
 ML scoring mode:
@@ -302,7 +321,7 @@ ML_SCORING_MODE=optional_fallback
 ML_SCORING_MODE=strict_ml
 ```
 
-The default is `optional_fallback` so the local demo remains easy to run. Use `strict_ml` before public deployment when fallback scores should not be created if the Python model service is unavailable.
+The public Railway demo currently uses `optional_fallback` because the separate Python MLOps API is not deployed on a public URL yet. Switch to `strict_ml` only after `ML_API_BASE_URL` points to a reachable deployed MLOps API.
 
 Security audit:
 
@@ -320,6 +339,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 - [Roadmap](docs/roadmap.md)
 - [Deployment Guide](docs/deployment.md)
 - [Public Deployment Readiness](docs/public_deployment_readiness.md)
+- [Public Railway Verification](docs/public_railway_verification.md)
 - [Railway Beginner Walkthrough](docs/railway_beginner_walkthrough.md)
 - [Render Beginner Walkthrough](docs/render_beginner_walkthrough.md)
 - [Reviewer Quickstart](docs/reviewer_quickstart.md)

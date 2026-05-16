@@ -10,42 +10,52 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 
 ## Short Answer
 
-Current status after switching the main deployment path away from Render:
+Current status after the Railway public URL was created and verified:
 
 ```text
-Public demo readiness: 88%
-Actual public URL availability: 0%
-Full product readiness: 65%
+Public demo readiness: 92%
+Actual public URL availability: 100%
+Full product readiness: 66%
+```
+
+Live public demo:
+
+```text
+https://koopcare-fullstack-demo-platform-production.up.railway.app/
 ```
 
 Meaning:
 
-- The codebase is ready enough to attempt a public portfolio deployment.
-- Latest commits can be pushed to GitHub and checked by CI.
-- Render is no longer treated as the main path because it is blocked for the project owner.
-- Railway is now the recommended main public deployment path.
-- The repository does not yet have a live public URL because the Railway project still has to be created in the owner's Railway account.
-- The full product is not production-ready because authentication, real database persistence, and deployed strict MLOps integration are still unfinished.
+- The public web app opens successfully.
+- `/health` returns healthy JSON.
+- `/ready` returns ready JSON.
+- `/api/v1/demo/summary` works.
+- `/api/v1/applications` works.
+- SPA route fallback works.
+- The public URL verifier passes.
+- The public write-test verifier passes: create application, read status, save officer decision, and read decided status.
+- The full product is still not production-ready because authentication, real database persistence, and deployed strict MLOps integration are still unfinished.
+- The current live ML behavior is honest fallback scoring because the separate Python MLOps API is not deployed/reachable from Railway yet.
 
-## Why 88% for Public Demo Readiness?
+## Why 92% for Public Demo Readiness?
 
 This percentage is for a portfolio public demo, not a real financial production system.
 
 | Area | Weight | Current | Notes |
 | --- | ---: | ---: | --- |
 | Local user-to-admin workflow | 15% | 14% | User apply, backend store, AI/fallback score, admin decision, and status tracker exist. |
-| Single-service public runtime | 15% | 15% | Express can serve React build and API from one origin. |
+| Single-service public runtime | 15% | 15% | Express serves React build and API from one Railway public origin. |
 | Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
 | Runtime persistence bridge | 10% | 8% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
 | MLOps integration for public demo | 10% | 6% | Backend supports optional fallback and strict mode. Python MLOps API is not deployed together yet. |
-| Public URL verification | 10% | 6% | `verify:public` exists and can verify any deployed URL, but no deployed URL has been verified yet. |
+| Public URL verification | 10% | 10% | Railway public URL exists. Read-only verification and write-test verification both pass. |
 | Security boundary | 10% | 9% | Advisory AI messaging, validation, and decision note rules exist. Authentication/authorization still missing. |
 
 Total:
 
 ```text
-88 / 100
+92 / 100
 ```
 
 ## What Is Already Ready
@@ -54,11 +64,11 @@ Total:
 
 Ready:
 
-- user can open the web app locally or through single-service preview;
+- user can open the web app through a public Railway URL;
 - user can submit financing application;
 - backend validates and stores application;
 - backend asks MLOps API when available;
-- backend uses clearly labeled fallback when local MLOps API is unavailable;
+- backend uses clearly labeled fallback when the public MLOps API is unavailable;
 - admin can inspect application;
 - admin can approve or reject with reviewer name and decision note;
 - user can track status;
@@ -74,8 +84,8 @@ Ready:
 - `/status` works as SPA fallback;
 - `/health` exists;
 - `/ready` exists;
-- frontend can use same-origin API in production build;
-- API now prefers platform `PORT` before local `API_PORT`.
+- frontend uses same-origin API in production build;
+- API prefers platform `PORT` before local `API_PORT`.
 
 ### Deployment Config
 
@@ -103,45 +113,59 @@ npm run smoke:public
 npm run check:deploy-config
 npm run preflight:deploy
 npm run preflight:deploy:docker
-npm run verify:public -- https://your-public-url
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
 ```
 
-## What Is Still Missing Before Public URL
+The normal public verifier checks:
 
-These are the remaining steps before reviewers can open a real public URL:
+- root web app;
+- SPA status route;
+- `/health`;
+- `/ready`;
+- web build readiness;
+- JSON storage readiness;
+- summary API;
+- applications API;
+- JSON 404 behavior.
 
-1. Create a Railway project from the GitHub repository.
-2. Confirm Railway uses `Dockerfile` and `railway.toml`.
-3. Add Railway variables:
+The write-test verifier has passed for:
+
+- create application;
+- read status;
+- save officer approval decision;
+- read decided status again.
+
+## What Is Still Missing After Public URL
+
+The public URL exists now.
+
+The remaining public-demo polish tasks are:
+
+1. Deploy or expose the Python KoopCare MLOps API on a public URL.
+2. Set Railway variable:
 
 ```text
-APP_ENV=production
-SERVE_WEB_APP=true
-ML_SCORING_MODE=optional_fallback
-ML_API_TIMEOUT_MS=1500
-DATA_FILE_PATH=/data/koopcare/applications.json
+ML_API_BASE_URL=https://your-ml-api-public-url
 ```
 
-4. Create a Railway volume mounted at:
+3. Keep `ML_SCORING_MODE=optional_fallback` during early testing.
+4. Rescore one public application and confirm source becomes:
 
 ```text
-/data
+ml_api
 ```
 
-5. Wait for Railway build and `/ready` healthcheck to pass.
-6. Open the generated Railway URL.
-7. Run:
+5. Only after that, consider:
+
+```text
+ML_SCORING_MODE=strict_ml
+```
+
+6. Re-run:
 
 ```powershell
-npm run verify:public -- https://your-railway-url
-```
-
-8. Save the public URL in README and portfolio notes.
-
-Until those are done, public URL availability remains:
-
-```text
-0%
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
 ```
 
 ## What Is Still Missing Before Full Product
@@ -162,6 +186,23 @@ These are not blockers for a portfolio demo, but they are blockers for a serious
 - better secret management;
 - legal/compliance review for real credit use.
 
+## Why Fallback Scoring Appears on the Public URL
+
+The public Railway app is running correctly.
+
+The fallback warning appears because this service is currently configured like this:
+
+```text
+ML_SCORING_MODE=optional_fallback
+ML_API_BASE_URL=http://127.0.0.1:8000
+```
+
+Inside Railway, `127.0.0.1:8000` means "inside the Railway container", not your laptop.
+
+Because the Python MLOps API is not running inside that same public container, the backend cannot get a trained model score. The backend then uses labeled fallback scoring so the product workflow remains testable.
+
+This is acceptable for the portfolio demo as long as the UI says it clearly. It is not acceptable to present fallback scores as trained-model scores.
+
 ## Why Railway Instead of Vercel Right Now?
 
 Railway fits the current app shape:
@@ -180,25 +221,24 @@ So Vercel is not rejected forever. It is just not the fastest safe deployment pa
 
 ## Recommended Next Checkpoints
 
-### Checkpoint 17 - Deploy to Railway
+### Checkpoint 18 - Public MLOps API Deployment
 
 Goal:
 
 ```text
-public link exists and passes verify:public
+fallback scoring is no longer the only public scoring path
 ```
 
 Output:
 
-- Railway project created;
-- Railway service deployed from GitHub;
-- Railway volume mounted at `/data`;
-- public Railway URL documented;
-- `/ready` passes on public URL;
-- public verification report saved;
-- README includes public demo URL.
+- KoopCare MLOps API has a public URL;
+- `/health` on the ML API public URL works;
+- `/model-info` on the ML API public URL works if supported;
+- Railway `ML_API_BASE_URL` points to the deployed ML API;
+- new/rescored applications show `source=ml_api`;
+- fallback remains available only as a clearly labeled resilience path.
 
-### Checkpoint 18 - Public Demo Polish
+### Checkpoint 19 - Public Demo Polish
 
 Goal:
 
@@ -210,11 +250,11 @@ Output:
 
 - public demo banner explaining portfolio/demo status;
 - sample reviewer path;
-- seed data reset policy;
+- seed data/reset policy;
 - better empty/loading/error states;
 - public demo limitations shown clearly.
 
-### Checkpoint 19 - Auth and Role Separation
+### Checkpoint 20 - Auth and Role Separation
 
 Goal:
 
@@ -230,7 +270,7 @@ Output:
 - route protection;
 - user status lookup scoped by owner.
 
-### Checkpoint 20 - Database Milestone
+### Checkpoint 21 - Database Milestone
 
 Goal:
 
@@ -247,50 +287,12 @@ Output:
 - seed script;
 - backup/restore notes.
 
-## Preflight Command
-
-Before any deployment attempt, run:
-
-```powershell
-npm run preflight:deploy
-```
-
-This writes a local report to:
-
-```text
-local_context/runtime_logs/deploy-preflight-report.md
-```
-
-For Docker-inclusive preflight:
-
-```powershell
-npm run preflight:deploy:docker
-```
-
-## Public URL Verification
-
-After deployment, run:
-
-```powershell
-npm run verify:public -- https://your-public-url
-```
-
-Optional write test:
-
-```powershell
-npm run verify:public -- https://your-public-url --write-test
-```
-
-The write test creates a real demo application on the public service, so use it only when you are okay with adding test data.
-
 ## Current Verdict
 
-The project is no longer just a local MVP.
-
-It is now:
+The project is now:
 
 ```text
-Railway-ready public demo candidate
+verified public Railway demo
 ```
 
-The next meaningful jump is not another local-only feature. The next meaningful jump is creating the Railway service, mounting `/data`, opening the public Railway URL, and verifying that URL with `verify:public`.
+The next meaningful jump is connecting a deployed public MLOps API so public applications can use the trained model path instead of only the labeled fallback scorer.

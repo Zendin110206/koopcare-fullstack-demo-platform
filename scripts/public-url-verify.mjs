@@ -157,6 +157,32 @@ async function runVerification() {
         statusLookup.status === 200 && statusLookup.body?.data?.id === createdId,
         `HTTP ${statusLookup.status}`
       );
+
+      const decisionResponse = await requestJson(`/api/v1/applications/${createdId}/decision`, {
+        body: JSON.stringify({
+          decision: "APPROVED",
+          note: "Public deployment verification decision was saved successfully.",
+          reviewerName: "Public Verify Officer"
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        method: "POST"
+      });
+      assertCheck(
+        checks,
+        "Write test officer decision",
+        decisionResponse.status === 200 && decisionResponse.body?.data?.decision?.decision === "APPROVED",
+        `HTTP ${decisionResponse.status}`
+      );
+
+      const decidedStatusLookup = await requestJson(`/api/v1/applications/${createdId}/status`);
+      assertCheck(
+        checks,
+        "Write test decided status lookup",
+        decidedStatusLookup.status === 200 && decidedStatusLookup.body?.data?.decision?.reviewerName === "Public Verify Officer",
+        `HTTP ${decidedStatusLookup.status}`
+      );
     }
   }
 
