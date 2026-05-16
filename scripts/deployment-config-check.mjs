@@ -15,13 +15,16 @@ async function readProjectFile(relativePath) {
   return readFile(path.join(repoRoot, relativePath), "utf8");
 }
 
-const [renderYaml, dockerfile, packageJsonText, deploymentGuide, envExample] = await Promise.all([
-  readProjectFile("render.yaml"),
-  readProjectFile("Dockerfile"),
-  readProjectFile("package.json"),
-  readProjectFile("docs/deployment.md"),
-  readProjectFile(".env.example")
-]);
+const [renderYaml, dockerfile, packageJsonText, deploymentGuide, envExample, ciWorkflow, renderWalkthrough] =
+  await Promise.all([
+    readProjectFile("render.yaml"),
+    readProjectFile("Dockerfile"),
+    readProjectFile("package.json"),
+    readProjectFile("docs/deployment.md"),
+    readProjectFile(".env.example"),
+    readProjectFile(".github/workflows/ci.yml"),
+    readProjectFile("docs/render_beginner_walkthrough.md")
+  ]);
 
 const packageJson = JSON.parse(packageJsonText);
 
@@ -64,5 +67,10 @@ assert(deploymentGuide.includes("verify:public"), "Deployment guide must mention
 
 assert(envExample.includes("DATA_FILE_PATH="), ".env.example must document DATA_FILE_PATH.");
 assert(envExample.includes("PORT="), ".env.example must document platform PORT.");
+
+assert(ciWorkflow.includes("actions/checkout@v5"), "CI must use actions/checkout@v5.");
+assert(ciWorkflow.includes("actions/setup-node@v5"), "CI must use actions/setup-node@v5.");
+assert(renderWalkthrough.includes("Step-by-Step Render Deployment"), "Render beginner walkthrough must include step-by-step deployment.");
+assert(renderWalkthrough.includes("What I Cannot Do Without Your Account"), "Render beginner walkthrough must explain manual account actions.");
 
 console.log("Deployment configuration check passed.");

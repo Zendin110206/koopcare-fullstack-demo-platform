@@ -253,6 +253,12 @@ For the current readiness score and remaining blockers, see:
 docs/public_deployment_readiness.md
 ```
 
+For a click-by-click beginner walkthrough, see:
+
+```text
+docs/render_beginner_walkthrough.md
+```
+
 ## Current Limitations
 
 - JSON storage is still local runtime state.

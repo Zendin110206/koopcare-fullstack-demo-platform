@@ -320,6 +320,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 - [Roadmap](docs/roadmap.md)
 - [Deployment Guide](docs/deployment.md)
 - [Public Deployment Readiness](docs/public_deployment_readiness.md)
+- [Render Beginner Walkthrough](docs/render_beginner_walkthrough.md)
 - [Reviewer Quickstart](docs/reviewer_quickstart.md)
 - [Decision Log](docs/decision_log.md)
 - [Development Log](docs/development_log.md)

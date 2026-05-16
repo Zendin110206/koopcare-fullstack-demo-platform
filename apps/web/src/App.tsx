@@ -1470,6 +1470,15 @@ function ApplicationDetailPanel({
     );
   }
 
+  async function saveDecision() {
+    if (!application || !decisionDraft || !canSubmitDecision) {
+      return;
+    }
+
+    await onDecide(application.id, decisionDraft.decision, decisionDraft.reviewerName, decisionDraft.note);
+    setDecisionDraft(null);
+  }
+
   return (
     <aside className="detail-panel">
       <div className="detail-header">
@@ -1590,7 +1599,7 @@ function ApplicationDetailPanel({
               className={decisionDraft.decision === "APPROVED" ? "decision-button approve" : "decision-button reject"}
               disabled={isDeciding || !canSubmitDecision}
               type="button"
-              onClick={() => onDecide(application.id, decisionDraft.decision, decisionDraft.reviewerName, decisionDraft.note)}
+              onClick={() => void saveDecision()}
             >
               {isDeciding ? "Saving..." : `Confirm ${formatStatus(decisionDraft.decision)}`}
             </button>

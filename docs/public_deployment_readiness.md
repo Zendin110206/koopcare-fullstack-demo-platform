@@ -10,17 +10,19 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 
 ## Short Answer
 
-Current status:
+Current status after the latest GitHub push and CI pass:
 
 ```text
-Public demo readiness: 82%
+Public demo readiness: 86%
 Actual public URL availability: 0%
-Full product readiness: 63%
+Full product readiness: 64%
 ```
 
 Meaning:
 
 - The codebase is mostly ready to deploy as a public portfolio demo.
+- Latest commits have been pushed to GitHub.
+- GitHub Actions passed on `main`.
 - The repository does not yet have a live public URL because the Render service has not been created from the Blueprint.
 - The full product is not production-ready because authentication, real database persistence, and deployed strict MLOps integration are still unfinished.
 
@@ -32,17 +34,17 @@ This percentage is for a portfolio public demo, not a real financial production 
 | --- | ---: | ---: | --- |
 | Local user-to-admin workflow | 15% | 14% | User apply, backend store, AI/fallback score, admin decision, and status tracker exist. |
 | Single-service public runtime | 15% | 15% | Express can serve React build and API from one origin. |
-| Deployment config | 15% | 13% | `render.yaml`, Dockerfile, `/ready`, and persistent disk path exist. Actual Render service still needs creation. |
+| Deployment config | 15% | 15% | `render.yaml`, Dockerfile, `/ready`, persistent disk path, GitHub push, and CI pass are done. Actual Render service still needs creation. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, and preflight command exist. |
 | Runtime persistence bridge | 10% | 7% | Render disk path exists, but this is still JSON storage, not MySQL. |
 | MLOps integration for public demo | 10% | 6% | Backend supports optional fallback and strict mode. Python MLOps API is not deployed together yet. |
-| Public URL verification | 10% | 5% | `verify:public` exists, but no deployed URL has been verified yet. |
+| Public URL verification | 10% | 6% | `verify:public` exists and passed against local public preview, but no deployed URL has been verified yet. |
 | Security boundary | 10% | 7% | Advisory AI messaging and validation exist. Authentication/authorization still missing. |
 
 Total:
 
 ```text
-82 / 100
+86 / 100
 ```
 
 ## What Is Already Ready
@@ -104,18 +106,16 @@ npm run verify:public -- https://your-public-url
 
 These are the remaining steps before reviewers can open a real public URL:
 
-1. Push the latest commits to GitHub.
-2. Confirm GitHub Actions pass on GitHub, not only locally.
-3. Create Render Blueprint service from `render.yaml`.
-4. Wait for Render build and `/ready` health check to pass.
-5. Open the generated Render URL.
-6. Run:
+1. Create Render Blueprint service from `render.yaml`.
+2. Wait for Render build and `/ready` health check to pass.
+3. Open the generated Render URL.
+4. Run:
 
 ```powershell
 npm run verify:public -- https://your-render-url.onrender.com
 ```
 
-7. Save the public URL in README and portfolio notes.
+5. Save the public URL in README and portfolio notes.
 
 Until those are done, public URL availability remains:
 
