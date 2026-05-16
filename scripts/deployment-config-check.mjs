@@ -15,15 +15,29 @@ async function readProjectFile(relativePath) {
   return readFile(path.join(repoRoot, relativePath), "utf8");
 }
 
-const [renderYaml, dockerfile, packageJsonText, deploymentGuide, envExample, ciWorkflow, renderWalkthrough] =
+const [
+  renderYaml,
+  railwayToml,
+  dockerfile,
+  apiEntryPoint,
+  packageJsonText,
+  deploymentGuide,
+  envExample,
+  ciWorkflow,
+  renderWalkthrough,
+  railwayWalkthrough
+] =
   await Promise.all([
     readProjectFile("render.yaml"),
+    readProjectFile("railway.toml"),
     readProjectFile("Dockerfile"),
+    readProjectFile("apps/api/src/index.ts"),
     readProjectFile("package.json"),
     readProjectFile("docs/deployment.md"),
     readProjectFile(".env.example"),
     readProjectFile(".github/workflows/ci.yml"),
-    readProjectFile("docs/render_beginner_walkthrough.md")
+    readProjectFile("docs/render_beginner_walkthrough.md"),
+    readProjectFile("docs/railway_beginner_walkthrough.md")
   ]);
 
 const packageJson = JSON.parse(packageJsonText);
@@ -41,9 +55,24 @@ assert(renderYaml.includes("value: /var/data/koopcare/applications.json"), "rend
 assert(renderYaml.includes("disk:"), "render.yaml must attach persistent storage for the JSON MVP runtime.");
 assert(renderYaml.includes("mountPath: /var/data"), "render.yaml disk must mount at /var/data.");
 
+assert(railwayToml.includes('builder = "DOCKERFILE"'), "railway.toml must use the Dockerfile builder.");
+assert(railwayToml.includes('dockerfilePath = "Dockerfile"'), "railway.toml must point to the root Dockerfile.");
+assert(railwayToml.includes('startCommand = "npm start"'), "railway.toml must start through the public demo entrypoint.");
+assert(railwayToml.includes('healthcheckPath = "/ready"'), "railway.toml must use /ready as the healthcheck path.");
+assert(railwayToml.includes("healthcheckTimeout = 300"), "railway.toml must allow enough readiness startup time.");
+assert(railwayToml.includes('restartPolicyType = "ON_FAILURE"'), "railway.toml must use an explicit restart policy.");
+
 assert(dockerfile.includes("ENV DATA_FILE_PATH=/data/koopcare/applications.json"), "Dockerfile must use a container data path.");
 assert(dockerfile.includes("HEALTHCHECK"), "Dockerfile must define a readiness healthcheck.");
 assert(dockerfile.includes("/ready"), "Dockerfile healthcheck must call /ready.");
+assert(
+  dockerfile.includes("process.env.PORT || process.env.API_PORT || 5002"),
+  "Dockerfile healthcheck must prefer platform PORT before API_PORT."
+);
+assert(
+  apiEntryPoint.includes("process.env.PORT ?? process.env.API_PORT"),
+  "API server must prefer platform PORT before API_PORT."
+);
 
 assert(packageJson.scripts?.start === "node scripts/start-public-demo.mjs", "npm start must run the public demo entrypoint.");
 assert(
@@ -59,11 +88,13 @@ assert(
   "package.json must expose verify:public."
 );
 
-assert(deploymentGuide.includes("render.yaml"), "Deployment guide must mention render.yaml.");
+assert(deploymentGuide.includes("railway.toml"), "Deployment guide must mention railway.toml.");
+assert(deploymentGuide.includes("render.yaml"), "Deployment guide must mention render.yaml as fallback/history.");
 assert(deploymentGuide.includes("Persistent Runtime Data"), "Deployment guide must explain persistent runtime data.");
 assert(deploymentGuide.includes("/ready"), "Deployment guide must mention the readiness endpoint.");
 assert(deploymentGuide.includes("preflight:deploy"), "Deployment guide must mention deployment preflight.");
 assert(deploymentGuide.includes("verify:public"), "Deployment guide must mention public URL verification.");
+assert(deploymentGuide.includes("Vercel"), "Deployment guide must explain why Vercel is not the primary current target.");
 
 assert(envExample.includes("DATA_FILE_PATH="), ".env.example must document DATA_FILE_PATH.");
 assert(envExample.includes("PORT="), ".env.example must document platform PORT.");
@@ -72,5 +103,17 @@ assert(ciWorkflow.includes("actions/checkout@v5"), "CI must use actions/checkout
 assert(ciWorkflow.includes("actions/setup-node@v5"), "CI must use actions/setup-node@v5.");
 assert(renderWalkthrough.includes("Step-by-Step Render Deployment"), "Render beginner walkthrough must include step-by-step deployment.");
 assert(renderWalkthrough.includes("What I Cannot Do Without Your Account"), "Render beginner walkthrough must explain manual account actions.");
+assert(
+  railwayWalkthrough.includes("Step-by-Step Railway Deployment"),
+  "Railway beginner walkthrough must include step-by-step deployment."
+);
+assert(
+  railwayWalkthrough.includes("What I Cannot Do Without Your Account"),
+  "Railway beginner walkthrough must explain manual account actions."
+);
+assert(
+  railwayWalkthrough.includes("DATA_FILE_PATH=/data/koopcare/applications.json"),
+  "Railway beginner walkthrough must document the persistent data path."
+);
 
 console.log("Deployment configuration check passed.");

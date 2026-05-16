@@ -10,23 +10,24 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 
 ## Short Answer
 
-Current status after the latest GitHub push and CI pass:
+Current status after switching the main deployment path away from Render:
 
 ```text
-Public demo readiness: 86%
+Public demo readiness: 88%
 Actual public URL availability: 0%
-Full product readiness: 64%
+Full product readiness: 65%
 ```
 
 Meaning:
 
-- The codebase is mostly ready to deploy as a public portfolio demo.
-- Latest commits have been pushed to GitHub.
-- GitHub Actions passed on `main`.
-- The repository does not yet have a live public URL because the Render service has not been created from the Blueprint.
+- The codebase is ready enough to attempt a public portfolio deployment.
+- Latest commits can be pushed to GitHub and checked by CI.
+- Render is no longer treated as the main path because it is blocked for the project owner.
+- Railway is now the recommended main public deployment path.
+- The repository does not yet have a live public URL because the Railway project still has to be created in the owner's Railway account.
 - The full product is not production-ready because authentication, real database persistence, and deployed strict MLOps integration are still unfinished.
 
-## Why 82% for Public Demo Readiness?
+## Why 88% for Public Demo Readiness?
 
 This percentage is for a portfolio public demo, not a real financial production system.
 
@@ -34,17 +35,17 @@ This percentage is for a portfolio public demo, not a real financial production 
 | --- | ---: | ---: | --- |
 | Local user-to-admin workflow | 15% | 14% | User apply, backend store, AI/fallback score, admin decision, and status tracker exist. |
 | Single-service public runtime | 15% | 15% | Express can serve React build and API from one origin. |
-| Deployment config | 15% | 15% | `render.yaml`, Dockerfile, `/ready`, persistent disk path, GitHub push, and CI pass are done. Actual Render service still needs creation. |
-| Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, and preflight command exist. |
-| Runtime persistence bridge | 10% | 7% | Render disk path exists, but this is still JSON storage, not MySQL. |
+| Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
+| Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
+| Runtime persistence bridge | 10% | 8% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
 | MLOps integration for public demo | 10% | 6% | Backend supports optional fallback and strict mode. Python MLOps API is not deployed together yet. |
-| Public URL verification | 10% | 6% | `verify:public` exists and passed against local public preview, but no deployed URL has been verified yet. |
-| Security boundary | 10% | 7% | Advisory AI messaging and validation exist. Authentication/authorization still missing. |
+| Public URL verification | 10% | 6% | `verify:public` exists and can verify any deployed URL, but no deployed URL has been verified yet. |
+| Security boundary | 10% | 9% | Advisory AI messaging, validation, and decision note rules exist. Authentication/authorization still missing. |
 
 Total:
 
 ```text
-86 / 100
+88 / 100
 ```
 
 ## What Is Already Ready
@@ -73,21 +74,23 @@ Ready:
 - `/status` works as SPA fallback;
 - `/health` exists;
 - `/ready` exists;
-- frontend can use same-origin API in production build.
+- frontend can use same-origin API in production build;
+- API now prefers platform `PORT` before local `API_PORT`.
 
 ### Deployment Config
 
 Ready:
 
-- `render.yaml`;
-- Render Node web service;
-- `healthCheckPath: /ready`;
-- `autoDeployTrigger: checksPass`;
-- persistent disk mounted at `/var/data`;
-- `DATA_FILE_PATH=/var/data/koopcare/applications.json`;
+- `railway.toml`;
+- Railway Docker service shape;
+- Railway `/ready` healthcheck;
+- Railway volume mount target `/data`;
+- `DATA_FILE_PATH=/data/koopcare/applications.json`;
+- `render.yaml` retained as fallback/history;
+- Render persistent disk path `/var/data`;
 - Dockerfile;
 - Docker healthcheck;
-- platform `PORT` fallback.
+- platform `PORT` compatibility.
 
 ### Verification
 
@@ -99,6 +102,7 @@ npm run smoke:api
 npm run smoke:public
 npm run check:deploy-config
 npm run preflight:deploy
+npm run preflight:deploy:docker
 npm run verify:public -- https://your-public-url
 ```
 
@@ -106,16 +110,33 @@ npm run verify:public -- https://your-public-url
 
 These are the remaining steps before reviewers can open a real public URL:
 
-1. Create Render Blueprint service from `render.yaml`.
-2. Wait for Render build and `/ready` health check to pass.
-3. Open the generated Render URL.
-4. Run:
+1. Create a Railway project from the GitHub repository.
+2. Confirm Railway uses `Dockerfile` and `railway.toml`.
+3. Add Railway variables:
 
-```powershell
-npm run verify:public -- https://your-render-url.onrender.com
+```text
+APP_ENV=production
+SERVE_WEB_APP=true
+ML_SCORING_MODE=optional_fallback
+ML_API_TIMEOUT_MS=1500
+DATA_FILE_PATH=/data/koopcare/applications.json
 ```
 
-5. Save the public URL in README and portfolio notes.
+4. Create a Railway volume mounted at:
+
+```text
+/data
+```
+
+5. Wait for Railway build and `/ready` healthcheck to pass.
+6. Open the generated Railway URL.
+7. Run:
+
+```powershell
+npm run verify:public -- https://your-railway-url
+```
+
+8. Save the public URL in README and portfolio notes.
 
 Until those are done, public URL availability remains:
 
@@ -141,9 +162,25 @@ These are not blockers for a portfolio demo, but they are blockers for a serious
 - better secret management;
 - legal/compliance review for real credit use.
 
+## Why Railway Instead of Vercel Right Now?
+
+Railway fits the current app shape:
+
+```text
+Docker service + Express server + React build + writable /data folder
+```
+
+Vercel would be a bigger architecture checkpoint:
+
+```text
+serverless functions + external database + adjusted API structure
+```
+
+So Vercel is not rejected forever. It is just not the fastest safe deployment path for the current codebase.
+
 ## Recommended Next Checkpoints
 
-### Checkpoint 15 - Deploy to Render
+### Checkpoint 17 - Deploy to Railway
 
 Goal:
 
@@ -153,13 +190,15 @@ public link exists and passes verify:public
 
 Output:
 
-- Render service created;
-- URL documented;
+- Railway project created;
+- Railway service deployed from GitHub;
+- Railway volume mounted at `/data`;
+- public Railway URL documented;
 - `/ready` passes on public URL;
-- public smoke verification report saved;
+- public verification report saved;
 - README includes public demo URL.
 
-### Checkpoint 16 - Public Demo Polish
+### Checkpoint 18 - Public Demo Polish
 
 Goal:
 
@@ -175,7 +214,7 @@ Output:
 - better empty/loading/error states;
 - public demo limitations shown clearly.
 
-### Checkpoint 17 - Auth and Role Separation
+### Checkpoint 19 - Auth and Role Separation
 
 Goal:
 
@@ -191,7 +230,7 @@ Output:
 - route protection;
 - user status lookup scoped by owner.
 
-### Checkpoint 18 - Database Milestone
+### Checkpoint 20 - Database Milestone
 
 Goal:
 
@@ -251,7 +290,7 @@ The project is no longer just a local MVP.
 It is now:
 
 ```text
-deployment-prepared public demo candidate
+Railway-ready public demo candidate
 ```
 
-The next meaningful jump is not another local-only feature. The next meaningful jump is creating the Render service and verifying the generated public URL.
+The next meaningful jump is not another local-only feature. The next meaningful jump is creating the Railway service, mounting `/data`, opening the public Railway URL, and verifying that URL with `verify:public`.

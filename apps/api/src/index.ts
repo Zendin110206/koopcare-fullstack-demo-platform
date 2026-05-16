@@ -102,7 +102,7 @@ type ReadinessCheck = {
 
 const app = express();
 
-const port = parseEnvNumber(process.env.API_PORT ?? process.env.PORT, 5002);
+const port = parseEnvNumber(process.env.PORT ?? process.env.API_PORT, 5002);
 const environment = process.env.APP_ENV ?? "development";
 const mlApiBaseUrl = process.env.ML_API_BASE_URL ?? "http://127.0.0.1:8000";
 const mlApiTimeoutMs = parseEnvNumber(process.env.ML_API_TIMEOUT_MS, 5000);

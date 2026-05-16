@@ -47,7 +47,7 @@ The repository currently contains a runnable React web app and Express API with 
 - an admin can search, filter, inspect detail, rescore, approve, or reject applications;
 - a system page explains the current service boundaries and runtime status.
 
-This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and public hosting remain planned milestones.
+This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and a verified public URL remain planned milestones.
 
 ## Product Principle
 
@@ -278,7 +278,7 @@ Validate deployment configuration:
 npm run check:deploy-config
 ```
 
-This checks the Render Blueprint, Docker healthcheck, persistent runtime data path, and public-demo start command.
+This checks the Railway config, Render fallback Blueprint, Docker healthcheck, persistent runtime data paths, and public-demo start command.
 
 Run the full deployment preflight:
 
@@ -289,7 +289,7 @@ npm run preflight:deploy
 After deployment, verify the public URL:
 
 ```powershell
-npm run verify:public -- https://your-public-url.onrender.com
+npm run verify:public -- https://your-public-url
 ```
 
 ML scoring mode:
@@ -320,6 +320,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 - [Roadmap](docs/roadmap.md)
 - [Deployment Guide](docs/deployment.md)
 - [Public Deployment Readiness](docs/public_deployment_readiness.md)
+- [Railway Beginner Walkthrough](docs/railway_beginner_walkthrough.md)
 - [Render Beginner Walkthrough](docs/render_beginner_walkthrough.md)
 - [Reviewer Quickstart](docs/reviewer_quickstart.md)
 - [Decision Log](docs/decision_log.md)

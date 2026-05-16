@@ -96,4 +96,4 @@ WEB_DIST_PATH=
 
 Set `SERVE_WEB_APP=true` after `npm run build` when the API should also serve the built React app from `apps/web/dist`. This is used by the root `npm start` public-demo script.
 
-The API reads `API_PORT` first and falls back to `PORT` for public platforms that inject a port automatically.
+The API reads `PORT` first, then falls back to `API_PORT`. This matters on public platforms that inject the externally routed port automatically.

@@ -21,6 +21,6 @@ ENV NODE_ENV=production
 
 EXPOSE 5002
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD node -e "fetch('http://127.0.0.1:' + (process.env.API_PORT || process.env.PORT || 5002) + '/ready').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || process.env.API_PORT || 5002) + '/ready').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["npm", "start"]
