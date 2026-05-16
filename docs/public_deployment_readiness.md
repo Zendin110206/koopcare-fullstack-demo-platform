@@ -13,9 +13,9 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 Current status after the Railway public URL was created and verified:
 
 ```text
-Public demo readiness: 94%
+Public demo readiness: 96%
 Actual public URL availability: 100%
-Full product readiness: 70%
+Full product readiness: 74%
 ```
 
 Live public demo:
@@ -34,12 +34,12 @@ Meaning:
 - `/api/v1/applications` works.
 - SPA route fallback works.
 - The public URL verifier passes.
-- The public write-test verifier passes: create application, read status, save officer decision, and read decided status.
-- The full product is still not production-ready because authentication, real database persistence, and strict MLOps integration are still unfinished.
+- The public write-test verifier passes: create application, trained ML score, read status, save officer decision, and read decided status.
+- The full product is still not production-ready because authentication, real database persistence, and production hardening are still unfinished.
 - Project 13 is now live on a public Railway URL and has passed the ML API verifier.
-- The current live project 14 behavior is still honest fallback scoring because this service has not yet been pointed to the project 13 public URL.
+- Project 14 is now connected to the project 13 public ML API, and the write-test verifier confirms `source=ml_api`.
 
-## Why 94% for Public Demo Readiness?
+## Why 96% for Public Demo Readiness?
 
 This percentage is for a portfolio public demo, not a real financial production system.
 
@@ -50,14 +50,14 @@ This percentage is for a portfolio public demo, not a real financial production 
 | Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
 | Runtime persistence bridge | 10% | 8% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
-| MLOps integration for public demo | 10% | 8% | Backend supports optional fallback and strict mode. Project 13 public ML API is verified, but project 14 Railway variables are not connected yet. |
+| MLOps integration for public demo | 10% | 10% | Backend calls the verified public project 13 ML API; write-test verification confirms `source=ml_api`. |
 | Public URL verification | 10% | 10% | Railway public URL exists. Read-only verification and write-test verification both pass. |
 | Security boundary | 10% | 9% | Advisory AI messaging, validation, and decision note rules exist. Authentication/authorization still missing. |
 
 Total:
 
 ```text
-94 / 100
+96 / 100
 ```
 
 ## What Is Already Ready
@@ -69,8 +69,8 @@ Ready:
 - user can open the web app through a public Railway URL;
 - user can submit financing application;
 - backend validates and stores application;
-- backend asks MLOps API when available;
-- backend uses clearly labeled fallback when the public MLOps API is unavailable;
+- backend asks the public MLOps API and receives trained model scoring;
+- backend keeps clearly labeled fallback as a resilience path if the public MLOps API is unavailable;
 - admin can inspect application;
 - admin can approve or reject with reviewer name and decision note;
 - user can track status;
@@ -154,29 +154,29 @@ The remaining public-demo polish tasks are:
 https://koopcare-mlops-credit-scoring-api-production.up.railway.app
 ```
 
-2. Set project 14 Railway variable:
+2. Project 14 Railway variable is now connected:
 
 ```text
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
 ```
 
 3. Keep `ML_SCORING_MODE=optional_fallback` during early testing.
-4. Rescore one public application and confirm source becomes:
+4. Public write verification confirms source is:
 
 ```text
 ml_api
 ```
 
-5. Only after that, consider:
+5. Only after more monitoring, consider:
 
 ```text
 ML_SCORING_MODE=strict_ml
 ```
 
-6. Re-run:
+6. Keep using this command before demos:
 
 ```powershell
-npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test --expect-ml-api
 ```
 
 ## What Is Still Missing Before Full Product
@@ -190,29 +190,34 @@ These are not blockers for a portfolio demo, but they are blockers for a serious
 - MySQL or PostgreSQL persistence;
 - migration scripts;
 - audit trail/history table;
-- deployed MLOps API with strict mode;
+- stricter production MLOps mode after monitoring;
 - model monitoring and model governance;
 - rate limiting;
 - request logging;
 - better secret management;
 - legal/compliance review for real credit use.
 
-## Why Fallback Scoring Appears on the Public URL
+## Why Fallback Scoring May Still Exist As A Safety Path
 
-The public Railway app is running correctly.
+The public Railway app is running correctly, and the latest public write-test
+verification confirmed trained ML scoring:
 
-The fallback warning appears because this service is currently configured like this:
+```text
+source=ml_api
+```
+
+The service should now be configured like this:
 
 ```text
 ML_SCORING_MODE=optional_fallback
-ML_API_BASE_URL=http://127.0.0.1:8000
+ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
 ```
 
-Inside Railway, `127.0.0.1:8000` means "inside the Railway container", not your laptop.
+`optional_fallback` is still intentionally kept during early public testing. If
+the project 13 ML API has a temporary outage, the product can still stay usable
+while marking fallback scores clearly.
 
-Because the verified Python MLOps API public URL is not connected to project 14 yet, the backend cannot get a trained model score. The backend then uses labeled fallback scoring so the product workflow remains testable.
-
-This is acceptable for the portfolio demo as long as the UI says it clearly. It is not acceptable to present fallback scores as trained-model scores.
+It is not acceptable to present fallback scores as trained-model scores.
 
 ## Why Railway Instead of Vercel Right Now?
 
@@ -249,6 +254,12 @@ Output:
 - Railway `ML_API_BASE_URL` points to the deployed ML API;
 - new/rescored applications show `source=ml_api`;
 - fallback remains available only as a clearly labeled resilience path.
+
+Status:
+
+```text
+completed
+```
 
 ### Checkpoint 19 - Public Demo Polish
 
@@ -306,6 +317,9 @@ The project is now:
 ```text
 verified public Railway demo
 verified public MLOps API
+verified source=ml_api public write workflow
 ```
 
-The next meaningful jump is updating project 14 `ML_API_BASE_URL` so public applications can use the trained model path instead of only the labeled fallback scorer.
+The next meaningful jump is public demo polish, then authentication and database
+milestones. For the current portfolio demo, the trained public ML path is now
+working.

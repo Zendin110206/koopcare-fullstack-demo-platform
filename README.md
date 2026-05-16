@@ -58,9 +58,12 @@ Verified with:
 ```powershell
 npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/
 npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test
+npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test --expect-ml-api
 ```
 
-This is not production deployment yet. Authentication, MySQL persistence, stronger audit logging, and project 14 connection to the verified public trained MLOps API remain planned milestones.
+This is not production deployment yet. Authentication, MySQL persistence, and
+stronger audit logging remain planned milestones. The public trained MLOps API
+path is now connected and verified for the portfolio demo.
 
 ## Product Principle
 

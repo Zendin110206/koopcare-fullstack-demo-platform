@@ -10,13 +10,13 @@ The KoopCare fullstack demo is already public:
 https://koopcare-fullstack-demo-platform-production.up.railway.app/
 ```
 
-The remaining ML blocker is now very narrow:
+The previous ML blocker is now resolved for the public portfolio demo:
 
 ```text
-the Python MLOps API public URL is verified, but it is not connected to this fullstack service yet
+the Python MLOps API public URL is verified and connected to this fullstack service
 ```
 
-Because of that, public web submissions currently use clearly labeled fallback scoring.
+Public web submissions can now use trained ML scoring through project 13.
 
 ## Current Public System
 
@@ -28,16 +28,17 @@ Reviewer browser
   -> Express API
   -> JSON runtime storage
   -> tries ML_API_BASE_URL
-  -> fallback scorer if public ML API is unreachable
+  -> project 13 public ML API
+  -> fallback scorer only if public ML API is unreachable
 ```
 
-Current Railway fullstack variable still appears to behave like:
+Current expected Railway fullstack variable:
 
 ```text
-ML_API_BASE_URL=http://127.0.0.1:8000
+ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
 ```
 
-On Railway, that does not point to your laptop. It points inside the Railway service container. The trained scoring path will become available after project 14 `ML_API_BASE_URL` is changed to the verified project 13 public URL.
+The trained scoring path is verified by the public write-test verifier.
 
 ## Project 13 Reality Check
 
@@ -78,8 +79,9 @@ project 13 Dockerfile now copies models/best_model.pkl into the production image
 project 13 now includes railway.toml
 ```
 
-So the next task is no longer designing a model artifact strategy from zero.
-The next task is connecting project 14 to the verified project 13 public URL.
+The task is no longer designing a model artifact strategy from zero or
+connecting the service. The current task is keeping the public demo verified
+before presentations and future changes.
 
 Verified public project 13 URL:
 
@@ -168,34 +170,25 @@ That last command requires the created public application to be scored with:
 source=ml_api
 ```
 
-## Manual Steps You Must Do in Railway
+## Current Railway State
 
-I can prepare code, docs, scripts, and verification.
-
-You must do these account-level steps if I do not have an authenticated Railway session:
-
-1. Open the project 14 Railway service.
-2. Open Variables.
-3. Set:
+Project 14 should keep:
 
 ```text
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
-```
-
-4. Keep this during first testing:
-
-```text
 ML_SCORING_MODE=optional_fallback
 ```
 
-5. Redeploy/restart the fullstack service.
-6. Run:
+Keep `optional_fallback` during early public testing so the app remains usable if
+the project 13 ML API has a temporary outage.
+
+Before any presentation or important demo, run:
 
 ```powershell
 npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.railway.app/ --write-test --expect-ml-api
 ```
 
-7. Only after that passes, consider:
+Only after more monitoring, consider:
 
 ```text
 ML_SCORING_MODE=strict_ml
@@ -231,13 +224,14 @@ Think of it like this:
 Project 14 public URL is alive.
 Project 14 can already submit, store, approve, reject, and show status.
 Project 13 public trained-model API is alive and verified.
-The missing trained-AI step is putting that Project 13 URL into Project 14 ML_API_BASE_URL.
+Project 14 is connected to that Project 13 URL.
+The public write-test verifier confirms source=ml_api.
 ```
 
 The next professional checkpoint is:
 
 ```text
-verify public ML API
-connect Railway ML_API_BASE_URL
-verify public fullstack scoring source=ml_api
+public demo polish
+auth and role separation
+real database milestone
 ```
