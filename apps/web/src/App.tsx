@@ -380,6 +380,8 @@ export function App() {
           riskSummary={riskSummary}
           summary={summary}
           onOpenAdmin={() => changeView("admin")}
+          onOpenLogin={() => requestLogin("member", "home")}
+          onOpenStatus={() => changeView("status")}
           onStartApplication={() => changeView("apply")}
         />
       ) : null}

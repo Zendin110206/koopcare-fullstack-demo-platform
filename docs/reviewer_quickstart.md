@@ -14,7 +14,8 @@ You can review:
 - repository structure;
 - runnable React web app;
 - runnable Express API;
-- product overview landing page;
+- member-first financing homepage;
+- demo member account screen with create-account, login, and Google-style demo entry points;
 - guided user financing application submission;
 - demo member/admin login gate;
 - member status tracking after submission with application ID and access code;
@@ -63,21 +64,23 @@ http://localhost:5002/ready
 Try the MVP:
 
 1. Open the web app.
-2. Review the `Overview` page to understand the product.
-3. Use `Apply` and login with the member demo role if prompted.
-4. Review the prefilled financing form.
-5. Click `Review Application`.
-6. Confirm the review summary with `Confirm and Submit`.
-7. The app switches to `Status`.
-8. Save the application ID and access code shown after submission.
-9. Use the application ID and access code to review the submitted application status as a member.
-10. Open `Admin` and login with the admin demo role if prompted.
-11. Review the new application through the queue and detail panel.
-12. Inspect the review timeline to see submit and scoring events.
-13. Use search or status filters if needed.
-14. Click `Refresh Score`, `Approve`, or `Reject`.
-15. Confirm that the timeline records the rescore or final decision event.
-16. Open `System` to inspect the runtime boundaries.
+2. Review the `Home` page to understand the member value proposition.
+3. Open `Log in` to see the demo member account screen.
+4. Use `Create account`, `Log in`, or `Continue with Google (demo)` to enter as a member.
+5. Use `Apply` to open the guided financing form.
+6. Review the prefilled financing form.
+7. Click `Review Application`.
+8. Confirm the review summary with `Confirm and Submit`.
+9. The app switches to `Track`.
+10. Save the application ID and access code shown after submission.
+11. Use the application ID and access code to review the submitted application status as a member.
+12. Open `Officer` and login with the admin demo role if prompted.
+13. Review the new application through the queue and detail panel.
+14. Inspect the review timeline to see submit and scoring events.
+15. Use search or status filters if needed.
+16. Click `Refresh Score`, `Approve`, or `Reject`.
+17. Confirm that the timeline records the rescore or final decision event.
+18. Open `System` to inspect the runtime boundaries.
 
 ## Public-Style Preview
 

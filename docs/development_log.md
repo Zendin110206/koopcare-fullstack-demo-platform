@@ -289,3 +289,25 @@ npm run typecheck --workspace @koopcare-demo/web
 ```
 
 This is still not the final database audit table. It is a portfolio-ready audit trail that prepares the shape of the later database milestone.
+
+## 2026-05-17 - Member-First Public UX Polish
+
+Reworked the public-facing member experience so the demo feels closer to a serious financial product.
+
+Changed:
+
+- replaced the technical overview-style hero with a member-first financing homepage;
+- added clearer trust signals for fast application, access-code tracking, and officer-reviewed AI recommendations;
+- added a financial product preview card and member journey preview to the homepage;
+- redesigned the login view into a member account screen with create-account, login, and Google-style demo entry points;
+- kept officer/reviewer access available as a secondary path instead of making admin the primary first impression;
+- updated navigation wording from internal labels to more public-friendly labels such as Home, Track, and Officer;
+- synchronized README, web README, reviewer quickstart, public readiness notes, and roadmap with the new user-facing workflow.
+
+Validation:
+
+```text
+npm run check
+```
+
+This checkpoint is UI/UX polish for the completed public demo. It does not add real OAuth or production authentication; the account screen still uses the existing demo role gate.

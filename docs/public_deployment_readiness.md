@@ -10,7 +10,7 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 
 ## Short Answer
 
-Current status after the Railway public URL, public ML scoring path, demo role gate, access-code member status boundary, and admin review timeline were verified:
+Current status after the Railway public URL, public ML scoring path, demo role gate, access-code member status boundary, admin review timeline, and member-first UI polish were verified:
 
 ```text
 Public demo readiness: 100%
@@ -33,10 +33,12 @@ Meaning:
 - `/api/v1/ml/status` works and explains whether trained ML scoring is connected.
 - `/api/v1/applications` works for the admin demo role only.
 - member status lookup works with application ID plus access code.
+- The public homepage now prioritizes member onboarding instead of looking like an internal dashboard.
+- The login view now has create-account, login, and Google-style demo entry points for members.
 - SPA route fallback works.
 - The public URL verifier passes.
 - The public write-test verifier passes: login, create application, receive access code, trained ML score, read status with access code, save officer decision, and read decided status with access code.
-- The public UI now has an `ID/EN` language toggle for the main hero, navigation, Apply, Status, Admin, and System explanation.
+- The public UI now has an `ID/EN` language toggle for the main hero, navigation, Apply, Track, Officer, and System explanation.
 - The System page now explains how KoopCare Fullstack Demo Platform product fields become KoopCare MLOps Credit Scoring API request fields and final model columns.
 - Member submission and admin decision actions now use a demo role gate.
 - The full application queue is no longer public; it requires the admin demo role.
@@ -76,10 +78,12 @@ This does not mean the product is production-ready for real cooperative financin
 Ready:
 
 - user can open the web app through a public Railway URL;
+- user sees a member-first financing homepage;
+- user can enter through a polished demo account screen;
 - user can submit financing application;
 - backend validates and stores application;
 - backend asks the public MLOps API and receives trained model scoring;
-- public UI has an Indonesian-first `ID/EN` toggle for the main hero, Apply, Status, Admin, and System explanation;
+- public UI has an Indonesian-first `ID/EN` toggle for the main hero, Apply, Track, Officer, and System explanation;
 - System page explains 14 product fields -> 19 MLOps request fields -> 25 model columns;
 - backend keeps clearly labeled fallback as a resilience path if the public MLOps API is unavailable;
 - member/admin demo login exists;
@@ -423,6 +427,7 @@ verified source=ml_api public write workflow
 verified demo member/admin role gate
 verified access-code member status lookup
 verified admin review timeline
+verified member-first public UI polish
 ```
 
 The next meaningful jump is database-backed persistence and owner-scoped status

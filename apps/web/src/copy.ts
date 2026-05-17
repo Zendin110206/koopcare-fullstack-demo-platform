@@ -52,6 +52,9 @@ export const homeCopy: Record<
     title: string;
     lede: string;
     startApplication: string;
+    login: string;
+    createAccount: string;
+    checkStatus: string;
     openAdmin: string;
     proofAi: string;
     proofHuman: string;
@@ -67,15 +70,21 @@ export const homeCopy: Record<
     flowApi: string;
     flowMl: string;
     flowOfficer: string;
+    trustFast: string;
+    trustSecure: string;
+    trustTransparent: string;
   }
 > = {
   en: {
     eyebrow: "AI-assisted cooperative financing",
     title: "KoopCare helps members apply and helps officers decide with clearer risk signals.",
     lede:
-      "A clean public demo for the core KoopCare workflow: members submit financing requests, the backend calls the ML scoring service, and cooperative officers keep the final decision.",
+      "A member-first financing experience for cooperative communities: apply in minutes, receive a transparent AI-assisted review, and keep the final decision with a real officer.",
     startApplication: "Start Member Application",
-    openAdmin: "Open Admin Workspace",
+    login: "Log in",
+    createAccount: "Create demo account",
+    checkStatus: "Check application status",
+    openAdmin: "Officer workspace",
     proofAi: "Backend-owned AI calls",
     proofHuman: "Human final decision",
     proofPublic: "Public demo ready",
@@ -89,15 +98,21 @@ export const homeCopy: Record<
     flowMember: "Member Form",
     flowApi: "API",
     flowMl: "ML",
-    flowOfficer: "Officer"
+    flowOfficer: "Officer",
+    trustFast: "Apply in minutes",
+    trustSecure: "Access-code status tracking",
+    trustTransparent: "AI explained before officer review"
   },
   id: {
     eyebrow: "Pembiayaan koperasi dengan bantuan AI",
     title: "KoopCare membantu anggota mengajukan pembiayaan dan membantu petugas membaca sinyal risiko.",
     lede:
-      "Demo public ini menampilkan alur utama KoopCare: anggota mengisi pengajuan, backend meminta scoring ML, lalu petugas koperasi tetap membuat keputusan final.",
+      "Pengalaman pembiayaan yang fokus ke anggota koperasi: ajukan dalam hitungan menit, dapat review berbantuan AI yang transparan, dan keputusan final tetap di tangan petugas.",
     startApplication: "Mulai Pengajuan Anggota",
-    openAdmin: "Buka Admin",
+    login: "Masuk",
+    createAccount: "Buat akun demo",
+    checkStatus: "Cek status pengajuan",
+    openAdmin: "Ruang petugas",
     proofAi: "AI dipanggil dari backend",
     proofHuman: "Keputusan final oleh manusia",
     proofPublic: "Demo public siap",
@@ -111,7 +126,10 @@ export const homeCopy: Record<
     flowMember: "Form Anggota",
     flowApi: "API",
     flowMl: "ML",
-    flowOfficer: "Petugas"
+    flowOfficer: "Petugas",
+    trustFast: "Pengajuan dalam menit",
+    trustSecure: "Status memakai kode akses",
+    trustTransparent: "AI dijelaskan sebelum review petugas"
   }
 };
 

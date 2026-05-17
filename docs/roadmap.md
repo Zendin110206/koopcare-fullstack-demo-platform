@@ -184,7 +184,30 @@ Output:
 - admin detail timeline;
 - verifier coverage for audit trail presence.
 
-## Progress 09 - Local Database Setup
+## Progress 09 - Member-First Public UX Polish
+
+Status:
+
+```text
+done
+```
+
+Goal:
+
+```text
+Make the public member experience feel like a serious financial product, not an internal test dashboard.
+```
+
+Output:
+
+- member-first home hero;
+- clearer trust signals;
+- create-account and login demo paths;
+- Google-style demo entry point without real OAuth;
+- reviewer/officer access kept as a secondary path;
+- documentation updated to match the public-facing workflow.
+
+## Progress 10 - Local Database Setup
 
 Status:
 
@@ -206,7 +229,7 @@ Planned output:
 - initial migration strategy;
 - seed data plan.
 
-## Progress 10 - Production-Grade Authentication and Ownership
+## Progress 11 - Production-Grade Authentication and Ownership
 
 Goal:
 
@@ -221,7 +244,7 @@ Planned output:
 - owner-scoped application status lookup;
 - safer local secrets.
 
-## Progress 11 - Database-Backed Audit Trail and Review History
+## Progress 12 - Database-Backed Audit Trail and Review History
 
 Goal:
 
@@ -236,7 +259,7 @@ Planned output:
 - reviewer notes history;
 - event timeline query layer.
 
-## Progress 12 - Production-Style ML Integration Hardening
+## Progress 13 - Production-Style ML Integration Hardening
 
 Goal:
 
@@ -251,7 +274,7 @@ Planned output:
 - configurable strict mode with no fallback;
 - richer error states.
 
-## Progress 13 - Public Demo Readiness
+## Progress 14 - Public Demo Readiness
 
 Goal:
 

@@ -1,6 +1,19 @@
-import { Activity, ArrowRight, ChevronRight, FileText, Gauge, LayoutDashboard, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  BadgeCheck,
+  ChevronRight,
+  Clock3,
+  FileCheck2,
+  FileText,
+  LayoutDashboard,
+  LockKeyhole,
+  ShieldCheck,
+  Sparkles,
+  UserRound
+} from "lucide-react";
 
-import { MetricTile, MiniMetric, ProofPill, WorkflowCard } from "../components/ui";
+import { MetricTile, ProofPill, WorkflowCard } from "../components/ui";
 import { homeCopy } from "../copy";
 import { t } from "../formatters";
 import type { AppLanguage, DemoSummary } from "../types";
@@ -10,6 +23,8 @@ export function HomeView({
   riskSummary,
   summary,
   onOpenAdmin,
+  onOpenLogin,
+  onOpenStatus,
   onStartApplication,
 }: {
   averageEligibility: number;
@@ -17,15 +32,21 @@ export function HomeView({
   riskSummary: { low: number; medium: number; high: number };
   summary: DemoSummary | null;
   onOpenAdmin: () => void;
+  onOpenLogin: () => void;
+  onOpenStatus: () => void;
   onStartApplication: () => void;
 }) {
   const copy = homeCopy[language];
 
   return (
     <section className="view-stack">
-      <section className="hero-section">
+      <section className="member-hero">
         <div className="hero-copy">
-          <p className="eyebrow">{copy.eyebrow}</p>
+          <div className="hero-kicker">
+            <span>{copy.eyebrow}</span>
+            <BadgeCheck aria-hidden="true" size={16} />
+            <strong>{copy.liveDemo}</strong>
+          </div>
           <h1>{copy.title}</h1>
           <p className="hero-lede">{copy.lede}</p>
           <div className="hero-actions">
@@ -40,54 +61,61 @@ export function HomeView({
             <button
               className="secondary-action large"
               type="button"
-              onClick={onOpenAdmin}
+              onClick={onOpenLogin}
             >
-              {copy.openAdmin}
-              <LayoutDashboard aria-hidden="true" size={18} />
+              {copy.login}
+              <UserRound aria-hidden="true" size={18} />
             </button>
           </div>
-          <div className="hero-proof">
-            <ProofPill label={copy.proofAi} />
-            <ProofPill label={copy.proofHuman} />
-            <ProofPill label={copy.proofPublic} />
+          <div className="member-trust-row">
+            <ProofPill label={copy.trustFast} />
+            <ProofPill label={copy.trustSecure} />
+            <ProofPill label={copy.trustTransparent} />
           </div>
+          <button className="status-link-button" type="button" onClick={onOpenStatus}>
+            <FileCheck2 aria-hidden="true" size={17} />
+            {copy.checkStatus}
+          </button>
         </div>
 
-        <div className="hero-product" aria-label="KoopCare product snapshot">
-          <div className="snapshot-top">
-            <div>
-              <span>{copy.officerReview}</span>
-              <strong>
-                {summary?.counts.under_review ?? 0} {copy.activeCases}
-              </strong>
+        <div className="hero-finance-preview" aria-label="KoopCare member product preview">
+          <div className="member-card-visual">
+            <div className="member-card-top">
+              <span>KoopCare</span>
+              <strong>Member Pass</strong>
             </div>
-            <span className="live-dot">{copy.liveDemo}</span>
-          </div>
-          <div className="snapshot-score">
-            <Gauge aria-hidden="true" size={24} />
-            <div>
-              <span>{copy.averageEligibility}</span>
-              <strong>{averageEligibility || 0}/100</strong>
+            <div className="member-card-balance">
+              <span>{t(language, "Requested limit", "Limit pengajuan")}</span>
+              <strong>Rp 8.000.000</strong>
+            </div>
+            <div className="member-card-footer">
+              <span>KC-2489</span>
+              <LockKeyhole aria-hidden="true" size={18} />
             </div>
           </div>
-          <div className="snapshot-grid">
-            <MiniMetric
-              label={copy.lowRisk}
-              value={riskSummary.low}
-              tone="positive"
-            />
-            <MiniMetric
-              label={copy.mediumRisk}
-              value={riskSummary.medium}
-              tone="warning"
-            />
-            <MiniMetric
-              label={copy.highRisk}
-              value={riskSummary.high}
-              tone="danger"
-            />
+
+          <div className="member-flow-panel">
+            <div className="flow-panel-header">
+              <span>{t(language, "Application preview", "Preview pengajuan")}</span>
+              <strong>{t(language, "Ready for review", "Siap direview")}</strong>
+            </div>
+            <div className="flow-step-list">
+              <div className="flow-step done">
+                <Clock3 aria-hidden="true" size={16} />
+                <span>{t(language, "2 minute member form", "Form anggota 2 menit")}</span>
+              </div>
+              <div className="flow-step done">
+                <Sparkles aria-hidden="true" size={16} />
+                <span>{t(language, "ML score attached", "Score ML terhubung")}</span>
+              </div>
+              <div className="flow-step">
+                <ShieldCheck aria-hidden="true" size={16} />
+                <span>{t(language, "Officer final decision", "Keputusan final petugas")}</span>
+              </div>
+            </div>
           </div>
-          <div className="snapshot-flow">
+
+          <div className="snapshot-flow member-flow">
             <span>{copy.flowMember}</span>
             <ChevronRight aria-hidden="true" size={16} />
             <span>{copy.flowApi}</span>
@@ -133,46 +161,75 @@ export function HomeView({
         />
       </section>
 
-      <section className="section-band">
+      <section className="member-onboarding-band">
         <div className="section-heading">
-          <p className="eyebrow">{t(language, "Workflow", "Workflow")}</p>
+          <p className="eyebrow">{t(language, "Member journey", "Perjalanan anggota")}</p>
           <h2>
             {t(
               language,
-              "One product path, two clear workspaces.",
-              "Satu alur produk, dua ruang kerja yang jelas.",
+              "A calmer financing flow from first visit to status tracking.",
+              "Alur pembiayaan yang lebih tenang dari kunjungan pertama sampai cek status.",
             )}
           </h2>
         </div>
         <div className="workflow-grid">
           <WorkflowCard
             icon={<UserRound aria-hidden="true" size={22} />}
-            title={t(language, "Member onboarding", "Pengajuan anggota")}
+            title={t(language, "Create or log in", "Buat akun atau masuk")}
             copy={t(
               language,
-              "A member starts from a friendly application flow, fills business and financing details, then submits the request.",
-              "Anggota mulai dari form yang mudah dipahami, mengisi detail usaha dan pembiayaan, lalu mengirim pengajuan.",
+              "The demo account screen feels like a real member onboarding path, including a Google-style option without connecting to Google yet.",
+              "Layar akun demo dibuat seperti onboarding anggota sungguhan, termasuk opsi bergaya Google tanpa koneksi Google dulu.",
             )}
           />
           <WorkflowCard
             icon={<Sparkles aria-hidden="true" size={22} />}
-            title={t(language, "AI assessment", "Assessment AI")}
+            title={t(language, "Apply with guidance", "Ajukan dengan panduan")}
             copy={t(
               language,
-              "The backend maps the request into the MLOps API contract and returns recommendation, risk, confidence, and model metadata.",
-              "Backend memetakan pengajuan ke kontrak API MLOps, lalu mengembalikan rekomendasi, risiko, confidence, dan metadata model.",
+              "The application form stays understandable for non-technical members while still collecting the fields needed by the scoring workflow.",
+              "Form tetap mudah dipahami anggota awam, tetapi tetap mengumpulkan field yang dibutuhkan workflow scoring.",
             )}
           />
           <WorkflowCard
             icon={<ShieldCheck aria-hidden="true" size={22} />}
-            title={t(language, "Officer decision", "Keputusan petugas")}
+            title={t(language, "Track safely", "Cek status dengan aman")}
             copy={t(
               language,
-              "Admin review shows the queue, detail panel, AI signal, and controlled approve/reject actions for the final decision.",
-              "Admin melihat antrean, detail pengajuan, sinyal AI, dan tombol approve/reject yang tetap dikendalikan manusia.",
+              "Members use their application ID and access code to see one status record without exposing the full review queue.",
+              "Anggota memakai ID pengajuan dan kode akses untuk melihat satu status tanpa membuka seluruh antrean review.",
             )}
           />
         </div>
+      </section>
+
+      <section className="member-confidence-band">
+        <div>
+          <p className="eyebrow">{t(language, "Trust signals", "Sinyal kepercayaan")}</p>
+          <h2>{t(language, "Built to reduce financing anxiety.", "Dibuat untuk mengurangi rasa khawatir saat mengajukan pembiayaan.")}</h2>
+        </div>
+        <div className="confidence-grid">
+          <div>
+            <strong>{summary?.counts.total_applications ?? 0}</strong>
+            <span>{t(language, "demo applications stored", "pengajuan demo tersimpan")}</span>
+          </div>
+          <div>
+            <strong>{averageEligibility || 0}/100</strong>
+            <span>{copy.averageEligibility}</span>
+          </div>
+          <div>
+            <strong>{riskSummary.low}</strong>
+            <span>{copy.lowRisk}</span>
+          </div>
+          <div>
+            <strong>AI + Officer</strong>
+            <span>{t(language, "recommendation stays advisory", "rekomendasi tetap sebagai saran")}</span>
+          </div>
+        </div>
+        <button className="secondary-action large" type="button" onClick={onOpenAdmin}>
+          {copy.openAdmin}
+          <LayoutDashboard aria-hidden="true" size={18} />
+        </button>
       </section>
     </section>
   );

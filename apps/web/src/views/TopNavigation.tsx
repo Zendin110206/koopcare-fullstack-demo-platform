@@ -6,7 +6,7 @@ import type { AppLanguage, LocalizedText, StoredAuthSession, ViewKey } from "../
 const views: Array<{ key: ViewKey; label: LocalizedText; icon: ReactNode }> = [
   {
     key: "home",
-    label: { en: "Overview", id: "Ringkasan" },
+    label: { en: "Home", id: "Beranda" },
     icon: <Home aria-hidden="true" size={17} />,
   },
   {
@@ -16,12 +16,12 @@ const views: Array<{ key: ViewKey; label: LocalizedText; icon: ReactNode }> = [
   },
   {
     key: "status",
-    label: { en: "Status", id: "Status" },
+    label: { en: "Track", id: "Lacak" },
     icon: <FileCheck2 aria-hidden="true" size={17} />,
   },
   {
     key: "admin",
-    label: { en: "Admin", id: "Admin" },
+    label: { en: "Officer", id: "Petugas" },
     icon: <LayoutDashboard aria-hidden="true" size={17} />,
   },
   {
@@ -63,7 +63,7 @@ export function TopNavigation({
         </span>
         <span>
           <strong>KoopCare</strong>
-          <small>{t(language, "Fullstack Demo", "Demo Fullstack")}</small>
+          <small>{t(language, "Financing demo", "Demo pembiayaan")}</small>
         </span>
       </button>
 
@@ -114,8 +114,8 @@ export function TopNavigation({
         <button className="account-button" type="button" onClick={onLoginOpen}>
           <UserRound aria-hidden="true" size={17} />
           <span>
-            <strong>{t(language, "Login", "Masuk")}</strong>
-            <small>{t(language, "Demo role", "Role demo")}</small>
+            <strong>{t(language, "Log in", "Masuk")}</strong>
+            <small>{t(language, "Member access", "Akses anggota")}</small>
           </span>
         </button>
       )}
