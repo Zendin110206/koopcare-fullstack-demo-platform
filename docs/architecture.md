@@ -60,6 +60,8 @@ Frontend code organization:
 
 ```text
 apps/web/src/App.tsx = top-level application state and view composition
+apps/web/src/views/ = route-level public-demo views
+apps/web/src/components/ = reusable UI atoms
 apps/web/src/types.ts = shared frontend data contracts
 apps/web/src/config.ts = runtime web config and form defaults
 apps/web/src/copy.ts = bilingual product copy

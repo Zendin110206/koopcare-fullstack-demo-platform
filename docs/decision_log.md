@@ -113,12 +113,12 @@ Rationale:
 Decision:
 
 ```text
-Move frontend types, runtime configuration, copy, ML feature mapping, formatters, and API fetch handling out of App.tsx.
+Move frontend types, runtime configuration, copy, ML feature mapping, formatters, API fetch handling, reusable UI atoms, and route-level views out of App.tsx.
 ```
 
 Rationale:
 
 - the public demo is now portfolio-facing, so the code needs to read like maintainable product work;
-- `App.tsx` had grown too large and mixed view composition with data contracts, copywriting, formatting, and mapping tables;
+- `App.tsx` had grown too large and mixed app orchestration with view composition, data contracts, copywriting, formatting, and mapping tables;
 - future member/admin separation will be easier when shared domain data and helpers already live in dedicated modules;
 - this refactor keeps behavior unchanged while reducing review risk for later feature checkpoints.

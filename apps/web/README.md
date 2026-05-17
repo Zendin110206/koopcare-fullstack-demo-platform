@@ -21,6 +21,20 @@ The current MVP includes:
 
 The current version persists application data through the API's local JSON storage. MySQL persistence and authentication are planned follow-up milestones.
 
+## Source Structure
+
+```text
+src/App.tsx = app state, data loading, submit/score/decision handlers
+src/views/ = top-level product views and navigation
+src/components/ = reusable UI atoms
+src/config.ts = runtime web config and default form values
+src/copy.ts = bilingual product copy
+src/featureMapping.ts = ML feature mapping explanation data
+src/formatters.ts = localized formatting and display helpers
+src/apiClient.ts = JSON fetch helper
+src/types.ts = frontend data contracts
+```
+
 ## Local Development
 
 From the repository root:

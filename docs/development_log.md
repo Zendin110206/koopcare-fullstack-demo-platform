@@ -203,7 +203,9 @@ Changed:
 - moved ML feature mapping and derived feature explanations into `apps/web/src/featureMapping.ts`;
 - moved display formatting, localized labels, tone helpers, and money normalization into `apps/web/src/formatters.ts`;
 - moved JSON fetch handling into `apps/web/src/apiClient.ts`;
-- reduced `apps/web/src/App.tsx` from more than 2,500 lines to roughly 1,700 lines without changing workflow behavior;
+- moved route-level UI into `apps/web/src/views/`;
+- moved shared UI atoms into `apps/web/src/components/ui.tsx`;
+- reduced `apps/web/src/App.tsx` from more than 2,500 lines to roughly 250 lines without changing workflow behavior;
 - updated public-facing documentation wording from folder/development-machine language toward repository/product terminology.
 
 Validation:
