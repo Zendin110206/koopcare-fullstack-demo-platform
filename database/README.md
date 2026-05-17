@@ -8,7 +8,7 @@ Current persistence:
 apps/api/.data/applications.local.json
 ```
 
-The current local MVP intentionally uses JSON file storage so the user and admin workflow can be tested without installing a database.
+The current MVP intentionally uses JSON file storage so the user and admin workflow can be tested before the MySQL milestone.
 
 Planned database milestone:
 

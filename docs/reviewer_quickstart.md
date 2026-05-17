@@ -1,6 +1,6 @@
 # Reviewer Quickstart
 
-This repository currently includes a runnable local MVP for the KoopCare financing workflow.
+This repository currently includes a runnable public-demo MVP for the KoopCare financing workflow.
 
 ## What You Can Review Now
 
@@ -29,7 +29,6 @@ The project does not yet include:
 
 - MySQL-backed persistence;
 - real authentication and authorization;
-- deployed public demo URL;
 - production-grade credit decision governance.
 
 ## Local Run
@@ -72,7 +71,7 @@ Try the MVP:
 9. Review the new application through the queue and detail panel.
 10. Use search or status filters if needed.
 11. Click `Refresh Score`, `Approve`, or `Reject`.
-12. Open `System` to inspect the local runtime boundaries.
+12. Open `System` to inspect the runtime boundaries.
 
 ## Public-Style Preview
 

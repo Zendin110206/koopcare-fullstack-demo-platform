@@ -361,8 +361,8 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 
 1. Bootstrap repository and documentation.
 2. Scaffold React web and Express API apps.
-3. Build local MVP financing workflow with JSON persistence.
-4. Harden the local MVP runtime and validation behavior.
+3. Build the JSON-backed MVP financing workflow.
+4. Harden the MVP runtime and validation behavior.
 5. Upgrade the web experience into a product-grade landing, member, status, admin, and system workspace.
 6. Add MySQL development database and migration strategy.
 7. Add authentication and role separation.

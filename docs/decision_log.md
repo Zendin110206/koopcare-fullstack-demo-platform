@@ -61,7 +61,7 @@ Rationale:
 - English README files are more accessible to wider reviewers;
 - local Indonesian learning notes can still live under ignored `local_context/`.
 
-## 2026-05-14 - Use Local JSON Storage for the First MVP Workflow
+## 2026-05-14 - Use JSON File Storage for the First MVP Workflow
 
 Decision:
 
@@ -71,14 +71,14 @@ Use local JSON file storage before adding MySQL.
 
 Rationale:
 
-- the user-to-admin workflow can be tested immediately on any laptop;
+- the user-to-admin workflow can be tested before a database is installed;
 - reviewers do not need a database installation for the first demo;
 - the storage boundary remains isolated inside the API;
 - MySQL can replace the JSON adapter in a later milestone without changing the product flow.
 
 This is not the final persistence strategy. MySQL remains the planned production-style storage layer.
 
-## 2026-05-14 - Keep a Transparent Scoring Fallback for Local Demo Reliability
+## 2026-05-14 - Keep a Transparent Scoring Fallback for Demo Reliability
 
 Decision:
 
@@ -103,7 +103,22 @@ Improve the web experience before replacing JSON storage with MySQL.
 
 Rationale:
 
-- the existing API foundation is already stable enough for a local MVP;
+- the existing API foundation is already stable enough for the MVP;
 - a portfolio reviewer should understand the product from the first screen, not only from technical docs;
 - a stronger landing page, member form, admin queue, and detail panel make later database work easier to review;
 - the database milestone remains planned, but user experience now reflects the intended KoopCare product direction.
+
+## 2026-05-17 - Split Frontend Domain Data From App Composition
+
+Decision:
+
+```text
+Move frontend types, runtime configuration, copy, ML feature mapping, formatters, and API fetch handling out of App.tsx.
+```
+
+Rationale:
+
+- the public demo is now portfolio-facing, so the code needs to read like maintainable product work;
+- `App.tsx` had grown too large and mixed view composition with data contracts, copywriting, formatting, and mapping tables;
+- future member/admin separation will be easier when shared domain data and helpers already live in dedicated modules;
+- this refactor keeps behavior unchanged while reducing review risk for later feature checkpoints.

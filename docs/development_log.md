@@ -55,9 +55,9 @@ Both checks pass for the current scaffold.
 
 That checkpoint used in-memory demo data. It was replaced by local JSON storage in the next product workflow milestone.
 
-## 2026-05-14 - Progress 03 - Local MVP Application Workflow
+## 2026-05-14 - Progress 03 - JSON-Backed MVP Application Workflow
 
-Added the first complete local product workflow:
+Added the first complete product workflow:
 
 - user financing application form submits to the API;
 - API validates required application fields;
@@ -68,7 +68,7 @@ Added the first complete local product workflow:
 - admin can refresh scoring;
 - admin can approve or reject an application;
 - web app displays API-backed summary metrics;
-- documentation updated from scaffold status to local MVP status.
+- documentation updated from scaffold status to MVP status.
 
 Current local storage:
 
@@ -86,7 +86,7 @@ The MVP is still not a production system. Authentication, MySQL persistence, dep
 
 ## 2026-05-15 - Maintenance Audit and Runtime Hardening
 
-Audited the local MVP before moving to the next milestone.
+Audited the MVP before moving to the next milestone.
 
 Hardened:
 
@@ -117,7 +117,7 @@ admin decision endpoint still works
 
 ## 2026-05-15 - Progress 05 - Product Experience Upgrade
 
-Upgraded the web app from a basic local MVP dashboard into a more complete product experience.
+Upgraded the web app from a basic MVP dashboard into a more complete product experience.
 
 Changed:
 
@@ -190,3 +190,27 @@ npm run check
 ```
 
 The goal is to make the member flow feel safer and clearer before an application is stored, scored, and sent into admin review.
+
+## 2026-05-17 - Frontend Maintainability Checkpoint
+
+Audited the public-demo frontend after the bilingual UI and feature-mapping work.
+
+Changed:
+
+- split shared TypeScript contracts into `apps/web/src/types.ts`;
+- moved runtime web configuration, money rules, initial form data, and business type options into `apps/web/src/config.ts`;
+- moved bilingual public copy into `apps/web/src/copy.ts`;
+- moved ML feature mapping and derived feature explanations into `apps/web/src/featureMapping.ts`;
+- moved display formatting, localized labels, tone helpers, and money normalization into `apps/web/src/formatters.ts`;
+- moved JSON fetch handling into `apps/web/src/apiClient.ts`;
+- reduced `apps/web/src/App.tsx` from more than 2,500 lines to roughly 1,700 lines without changing workflow behavior;
+- updated public-facing documentation wording from folder/development-machine language toward repository/product terminology.
+
+Validation:
+
+```text
+npm run typecheck --workspace @koopcare-demo/web
+npm run check
+```
+
+Both checks passed. This checkpoint is a structural cleanup, not a product behavior change.

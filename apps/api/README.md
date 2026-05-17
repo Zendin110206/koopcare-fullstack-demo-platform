@@ -17,7 +17,7 @@ POST /api/v1/applications/:id/score
 POST /api/v1/applications/:id/decision
 ```
 
-The current implementation persists demo application data to a local JSON file. This keeps the MVP easy to run on any laptop before the MySQL milestone.
+The current implementation persists demo application data to a JSON file. This keeps the MVP easy to run in development and public-demo environments before the MySQL milestone.
 
 Default local data path:
 

@@ -4,7 +4,7 @@ React + Vite + TypeScript frontend for the KoopCare fullstack demo.
 
 ## Current Surface
 
-The current local MVP includes:
+The current MVP includes:
 
 - product overview landing page;
 - guided member financing application form;

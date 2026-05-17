@@ -41,7 +41,7 @@ Planned output:
 - user/admin workspace shell;
 - workspace scripts.
 
-## Progress 03 - Local MVP Application Workflow
+## Progress 03 - JSON-Backed MVP Application Workflow
 
 Status:
 
@@ -52,7 +52,7 @@ done
 Goal:
 
 ```text
-Make the web and API behave like a real local product demo.
+Make the web and API behave like a real product demo.
 ```
 
 Output:
@@ -77,7 +77,7 @@ done
 Goal:
 
 ```text
-Make the local MVP safer to continue from before adding larger product features.
+Make the MVP safer to continue from before adding larger product features.
 ```
 
 Output:
@@ -101,7 +101,7 @@ done
 Goal:
 
 ```text
-Make the local MVP read like a real KoopCare product, not only a technical demo.
+Make the MVP read like a real KoopCare product, not only a technical demo.
 ```
 
 Output:
