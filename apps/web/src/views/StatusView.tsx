@@ -12,35 +12,27 @@ import {
 } from "../formatters";
 import type { AppLanguage, FinancingApplication } from "../types";
 export function StatusView({
-  applications,
+  accessCode,
+  application,
   isLoading,
   language,
   query,
+  onAccessCodeChange,
+  onLookup,
   onOpenApply,
   onQueryChange,
 }: {
-  applications: FinancingApplication[];
+  accessCode: string;
+  application: FinancingApplication | null;
   isLoading: boolean;
   language: AppLanguage;
   query: string;
+  onAccessCodeChange: (value: string) => void;
+  onLookup: () => void;
   onOpenApply: () => void;
   onQueryChange: (value: string) => void;
 }) {
-  const normalizedQuery = query.trim().toLowerCase();
-  const matches = applications.filter((application) => {
-    if (normalizedQuery.length === 0) {
-      return true;
-    }
-
-    return (
-      application.id.toLowerCase().includes(normalizedQuery) ||
-      application.phoneNumber.toLowerCase().includes(normalizedQuery) ||
-      application.applicantName.toLowerCase().includes(normalizedQuery)
-    );
-  });
-  const visibleApplications =
-    normalizedQuery.length > 0 ? matches : applications.slice(0, 4);
-  const selectedApplication = visibleApplications[0] ?? null;
+  const selectedApplication = application;
 
   return (
     <section className="view-stack">
@@ -76,18 +68,51 @@ export function StatusView({
 
       <section className="status-layout">
         <aside className="status-search-panel">
-          <label className="search-box status-search">
-            <Search aria-hidden="true" size={17} />
-            <input
-              placeholder={t(
+          <form
+            className="status-lookup-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onLookup();
+            }}
+          >
+            <label className="status-lookup-field">
+              <span>{t(language, "Application ID", "ID pengajuan")}</span>
+              <div className="search-box status-search">
+                <Search aria-hidden="true" size={17} />
+                <input
+                  placeholder="APP-2026-..."
+                  value={query}
+                  onChange={(event) => onQueryChange(event.target.value)}
+                />
+              </div>
+            </label>
+
+            <label className="status-lookup-field">
+              <span>{t(language, "Access code", "Kode akses")}</span>
+              <input
+                className="status-access-input"
+                placeholder="KC-XXXXXX"
+                value={accessCode}
+                onChange={(event) => onAccessCodeChange(event.target.value.toUpperCase())}
+              />
+            </label>
+
+            <button className="primary-action" disabled={isLoading} type="submit">
+              <FileCheck2 aria-hidden="true" size={17} />
+              {isLoading ? t(language, "Checking...", "Mengecek...") : t(language, "Check Status", "Cek Status")}
+            </button>
+          </form>
+
+          <div className="status-access-note">
+            <ShieldCheck aria-hidden="true" size={18} />
+            <p>
+              {t(
                 language,
-                "Search by application ID, phone, or name",
-                "Cari ID pengajuan, nomor telepon, atau nama",
+                "For privacy, member status now needs the application ID and access code shown after submission.",
+                "Demi privasi, status anggota sekarang membutuhkan ID pengajuan dan kode akses yang muncul setelah submit."
               )}
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-            />
-          </label>
+            </p>
+          </div>
 
           <div className="status-result-list">
             {isLoading ? (
@@ -99,28 +124,26 @@ export function StatusView({
                 )}
               </p>
             ) : null}
-            {!isLoading && visibleApplications.length === 0 ? (
+            {!isLoading && !selectedApplication ? (
               <p className="empty-copy">
                 {t(
                   language,
-                  "No application matches this lookup.",
-                  "Tidak ada pengajuan yang cocok.",
+                  "Enter an application ID and access code to load one status record.",
+                  "Masukkan ID pengajuan dan kode akses untuk memuat satu status.",
                 )}
               </p>
             ) : null}
-            {!isLoading
-              ? visibleApplications.map((application) => (
-                  <article className="status-result-card" key={application.id}>
-                    <div>
-                      <strong>{application.applicantName}</strong>
-                      <span>{application.id}</span>
-                    </div>
-                    <Badge tone={statusTone(application.status)}>
-                      {formatStatus(application.status, language)}
-                    </Badge>
-                  </article>
-                ))
-              : null}
+            {!isLoading && selectedApplication ? (
+              <article className="status-result-card">
+                <div>
+                  <strong>{selectedApplication.applicantName}</strong>
+                  <span>{selectedApplication.id}</span>
+                </div>
+                <Badge tone={statusTone(selectedApplication.status)}>
+                  {formatStatus(selectedApplication.status, language)}
+                </Badge>
+              </article>
+            ) : null}
           </div>
         </aside>
 

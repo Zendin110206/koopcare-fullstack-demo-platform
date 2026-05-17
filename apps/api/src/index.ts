@@ -1,7 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
-import type { ErrorRequestHandler, RequestHandler } from "express";
+import type { ErrorRequestHandler, Request, RequestHandler } from "express";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -40,6 +40,7 @@ type AiAssessment = {
 
 type FinancingApplication = {
   id: string;
+  memberAccessCode: string;
   applicantName: string;
   phoneNumber: string;
   gender: "M" | "F";
@@ -325,12 +326,17 @@ function parseBoolean(value: unknown) {
   throw new Error("hasCollateral must be true or false.");
 }
 
+function createMemberAccessCode() {
+  return `KC-${randomUUID().slice(0, 6).toUpperCase()}`;
+}
+
 function createSeedApplications(): FinancingApplication[] {
   const timestamp = nowIso();
 
   return [
     {
       id: "APP-2026-001",
+      memberAccessCode: "KC-SEED01",
       applicantName: "Siti Aminah",
       phoneNumber: "081234567001",
       gender: "F",
@@ -353,6 +359,7 @@ function createSeedApplications(): FinancingApplication[] {
     },
     {
       id: "APP-2026-002",
+      memberAccessCode: "KC-SEED02",
       applicantName: "Budi Santoso",
       phoneNumber: "081234567002",
       gender: "M",
@@ -375,6 +382,7 @@ function createSeedApplications(): FinancingApplication[] {
     },
     {
       id: "APP-2026-003",
+      memberAccessCode: "KC-SEED03",
       applicantName: "Nur Hidayah",
       phoneNumber: "081234567003",
       gender: "F",
@@ -439,7 +447,25 @@ async function readApplications() {
     throw new Error("Application data file must contain an array.");
   }
 
-  return parsed as FinancingApplication[];
+  const applications = parsed as FinancingApplication[];
+  let changed = false;
+  const normalizedApplications = applications.map((application) => {
+    if (typeof application.memberAccessCode === "string" && application.memberAccessCode.trim().length > 0) {
+      return application;
+    }
+
+    changed = true;
+    return {
+      ...application,
+      memberAccessCode: createMemberAccessCode()
+    };
+  });
+
+  if (changed) {
+    await writeApplications(normalizedApplications);
+  }
+
+  return normalizedApplications;
 }
 
 async function writeApplications(applications: FinancingApplication[]) {
@@ -607,6 +633,7 @@ function buildApplication(input: CreateApplicationRequest): FinancingApplication
 
   return {
     id: `APP-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
+    memberAccessCode: createMemberAccessCode(),
     applicantName: parseString(input.applicantName, "applicantName"),
     phoneNumber: parseString(input.phoneNumber, "phoneNumber"),
     gender: parseGender(input.gender),
@@ -637,6 +664,25 @@ function summarizeApplications(applications: FinancingApplication[]) {
     approved: applications.filter((item) => item.status === "APPROVED").length,
     rejected: applications.filter((item) => item.status === "REJECTED").length,
     scored: applications.filter((item) => item.aiAssessment !== null).length
+  };
+}
+
+function summarizeApplicationMetrics(applications: FinancingApplication[]) {
+  const scoredApplications = applications.filter((item) => item.aiAssessment !== null);
+
+  return {
+    average_eligibility:
+      scoredApplications.length === 0
+        ? 0
+        : Math.round(
+            scoredApplications.reduce((total, item) => total + (item.aiAssessment?.eligibilityScore ?? 0), 0) /
+              scoredApplications.length
+          ),
+    risk_summary: {
+      low: applications.filter((item) => item.aiAssessment?.riskLevel === "LOW").length,
+      medium: applications.filter((item) => item.aiAssessment?.riskLevel === "MEDIUM").length,
+      high: applications.filter((item) => item.aiAssessment?.riskLevel === "HIGH").length
+    }
   };
 }
 
@@ -789,6 +835,32 @@ function toClientApplication(application: FinancingApplication) {
   };
 }
 
+function getAccessCodeFromRequest(request: Request) {
+  const queryValue = request.query.accessCode;
+
+  if (typeof queryValue === "string") {
+    return queryValue.trim();
+  }
+
+  const headerValue = request.headers["x-koopcare-access-code"];
+
+  if (typeof headerValue === "string") {
+    return headerValue.trim();
+  }
+
+  return "";
+}
+
+function canReadMemberStatus(request: Request, application: FinancingApplication) {
+  const session = readDemoSession(request.headers.authorization);
+
+  if (session?.role === "admin") {
+    return true;
+  }
+
+  return getAccessCodeFromRequest(request).toUpperCase() === application.memberAccessCode.toUpperCase();
+}
+
 app.get("/health", async (_request, response) => {
   const applications = await readApplications();
 
@@ -827,6 +899,7 @@ app.get("/api/v1/demo/summary", async (_request, response) => {
     phase: "Runnable MVP demo",
     product_principle: "AI recommends, cooperative officers decide.",
     counts: summarizeApplications(applications),
+    metrics: summarizeApplicationMetrics(applications),
     integration: {
       database: "json_file_storage",
       ml_api: getMlIntegrationStatus(),
@@ -885,7 +958,7 @@ app.get("/api/v1/ml/status", async (_request, response) => {
   response.json(await buildMlApiStatusReport());
 });
 
-app.get("/api/v1/demo/applications", async (_request, response) => {
+app.get("/api/v1/demo/applications", requireDemoAuth(["admin"]), async (_request, response) => {
   const applications = await readApplications();
 
   response.json({
@@ -893,7 +966,7 @@ app.get("/api/v1/demo/applications", async (_request, response) => {
   });
 });
 
-app.get("/api/v1/applications", async (_request, response) => {
+app.get("/api/v1/applications", requireDemoAuth(["admin"]), async (_request, response) => {
   const applications = await readApplications();
 
   response.json({
@@ -909,6 +982,14 @@ app.get("/api/v1/applications/:id/status", async (request, response) => {
     response.status(404).json({
       error: "Not Found",
       message: "Application not found."
+    });
+    return;
+  }
+
+  if (!canReadMemberStatus(request, application)) {
+    response.status(401).json({
+      error: "Unauthorized",
+      message: "Application ID and access code are required to view member status."
     });
     return;
   }

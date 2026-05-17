@@ -17,7 +17,7 @@ You can review:
 - product overview landing page;
 - guided user financing application submission;
 - demo member/admin login gate;
-- member status tracking after submission;
+- member status tracking after submission with application ID and access code;
 - local JSON-backed persistence;
 - admin queue metrics, search, filters, and detail panel;
 - score refresh, approve, and reject actions;
@@ -68,12 +68,13 @@ Try the MVP:
 5. Click `Review Application`.
 6. Confirm the review summary with `Confirm and Submit`.
 7. The app switches to `Status`.
-8. Review the submitted application status as a member.
-9. Open `Admin` and login with the admin demo role if prompted.
-10. Review the new application through the queue and detail panel.
-11. Use search or status filters if needed.
-12. Click `Refresh Score`, `Approve`, or `Reject`.
-13. Open `System` to inspect the runtime boundaries.
+8. Save the application ID and access code shown after submission.
+9. Use the application ID and access code to review the submitted application status as a member.
+10. Open `Admin` and login with the admin demo role if prompted.
+11. Review the new application through the queue and detail panel.
+12. Use search or status filters if needed.
+13. Click `Refresh Score`, `Approve`, or `Reject`.
+14. Open `System` to inspect the runtime boundaries.
 
 ## Public-Style Preview
 

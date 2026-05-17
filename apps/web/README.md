@@ -11,6 +11,8 @@ The current MVP includes:
 - guided member financing application form;
 - backend-backed application submission;
 - immediate AI assessment creation;
+- generated application ID and access code after submission;
+- member status lookup with application ID and access code;
 - admin queue metrics;
 - admin review queue table with search and status filters;
 - selected application detail panel;
@@ -20,7 +22,7 @@ The current MVP includes:
 - system readiness panel backed by the demo API;
 - clear AI governance copy.
 
-The current version persists application data through the API's local JSON storage and uses a demo role gate for member/admin actions. MySQL persistence and production-grade authentication are planned follow-up milestones.
+The current version persists application data through the API's local JSON storage, uses a demo role gate for member/admin actions, and avoids exposing the full application queue to non-admin visitors. MySQL persistence and production-grade authentication are planned follow-up milestones.
 
 ## Source Structure
 

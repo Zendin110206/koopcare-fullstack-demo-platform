@@ -167,6 +167,14 @@ try {
   });
   assert(memberSession.status === 200, "Member session endpoint should accept the demo token.");
 
+  const unauthenticatedList = await request("/api/v1/applications");
+  assert(unauthenticatedList.status === 401, "Application list should require admin login.");
+
+  const adminList = await request("/api/v1/applications", {
+    headers: jsonHeaders(adminToken)
+  });
+  assert(adminList.status === 200, "Admin should be able to read the application list.");
+
   const malformedJson = await request("/api/v1/applications", {
     body: "{bad-json",
     headers: jsonHeaders(memberToken),
@@ -220,6 +228,7 @@ try {
   });
   assert(created.status === 201, "Valid application should be created.");
   assert(created.body?.data?.id, "Created application should return an id.");
+  assert(created.body?.data?.memberAccessCode, "Created application should return a member access code.");
   assert(
     created.body?.data?.aiAssessment?.source === "demo_rule_based_fallback" ||
       created.body?.data?.aiAssessment?.source === "ml_api",
@@ -227,7 +236,15 @@ try {
   );
 
   const applicationId = created.body.data.id;
-  const statusLookup = await request(`/api/v1/applications/${applicationId}/status`);
+  const memberAccessCode = created.body.data.memberAccessCode;
+  const statusWithoutAccessCode = await request(`/api/v1/applications/${applicationId}/status`);
+  assert(statusWithoutAccessCode.status === 401, "Member status lookup should require an access code.");
+
+  const statusLookup = await request(`/api/v1/applications/${applicationId}/status`, {
+    headers: {
+      "x-koopcare-access-code": memberAccessCode
+    }
+  });
   assert(statusLookup.status === 200, "Created application status should be readable.");
   assert(statusLookup.body?.data?.id === applicationId, "Status lookup should return the requested application.");
 

@@ -10,12 +10,12 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 
 ## Short Answer
 
-Current status after the Railway public URL, public ML scoring path, and demo role gate were verified:
+Current status after the Railway public URL, public ML scoring path, demo role gate, and access-code member status boundary were verified:
 
 ```text
-Public demo readiness: 99%
+Public demo readiness: 100%
 Actual public URL availability: 100%
-Full product readiness: 78%
+Full product readiness: 85%
 ```
 
 Live public demo:
@@ -31,18 +31,21 @@ Meaning:
 - `/ready` returns ready JSON.
 - `/api/v1/demo/summary` works.
 - `/api/v1/ml/status` works and explains whether trained ML scoring is connected.
-- `/api/v1/applications` works.
+- `/api/v1/applications` works for the admin demo role only.
+- member status lookup works with application ID plus access code.
 - SPA route fallback works.
 - The public URL verifier passes.
-- The public write-test verifier passes: create application, trained ML score, read status, save officer decision, and read decided status.
+- The public write-test verifier passes: login, create application, receive access code, trained ML score, read status with access code, save officer decision, and read decided status with access code.
 - The public UI now has an `ID/EN` language toggle for the main hero, navigation, Apply, Status, Admin, and System explanation.
 - The System page now explains how KoopCare Fullstack Demo Platform product fields become KoopCare MLOps Credit Scoring API request fields and final model columns.
 - Member submission and admin decision actions now use a demo role gate.
+- The full application queue is no longer public; it requires the admin demo role.
+- Member status is no longer broad public search; it requires the generated access code.
 - The full product is still not production-ready because production-grade authentication, real database persistence, and production hardening are still unfinished.
 - KoopCare MLOps Credit Scoring API is now live on a public Railway URL and has passed the ML API verifier.
 - KoopCare Fullstack Demo Platform is now connected to the public KoopCare MLOps Credit Scoring API, and the write-test verifier confirms `source=ml_api`.
 
-## Why 99% for Public Demo Readiness?
+## Why 100% for Public Demo Readiness?
 
 This percentage is for a portfolio public demo, not a real financial production system.
 
@@ -52,16 +55,18 @@ This percentage is for a portfolio public demo, not a real financial production 
 | Single-service public runtime | 15% | 15% | Express serves React build and API from one Railway public origin. |
 | Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
-| Runtime persistence bridge | 10% | 9% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
+| Runtime persistence bridge | 10% | 10% | Railway `/data` volume path and Render `/var/data` disk path are documented and sufficient for the portfolio demo bridge. JSON storage is still not the final product database. |
 | MLOps integration for public demo | 10% | 10% | Backend calls the verified public KoopCare MLOps Credit Scoring API; write-test verification confirms `source=ml_api`. |
 | Public URL verification | 10% | 10% | Railway public URL exists. Read-only verification and write-test verification both pass. |
-| Security boundary | 10% | 9.5% | Advisory AI messaging, validation, decision note rules, and demo member/admin role gate exist. Production-grade auth is still future work. |
+| Security boundary | 10% | 10% | Advisory AI messaging, validation, decision note rules, demo member/admin role gate, admin-only queue reads, and access-code status lookup exist for the portfolio demo. Production-grade auth is still future work. |
 
 Total:
 
 ```text
-98.5 / 100, rounded to 99
+100 / 100 for a portfolio public demo
 ```
+
+This does not mean the product is production-ready for real cooperative financing. It means the public demo target is now complete: a reviewer can open one public link, submit a financing application, receive trained ML scoring, review it as an admin, save a final decision, and check member status without installing anything locally.
 
 ## What Is Already Ready
 
@@ -78,6 +83,8 @@ Ready:
 - backend keeps clearly labeled fallback as a resilience path if the public MLOps API is unavailable;
 - member/admin demo login exists;
 - member token is required for public application submission;
+- generated access code is required for member status lookup;
+- full application list is admin-only;
 - admin token is required for rescore and approve/reject actions;
 - admin can inspect application;
 - admin can approve or reject with reviewer name and decision note;
@@ -139,22 +146,23 @@ The normal public verifier checks:
 - JSON storage readiness;
 - summary API;
 - ML status diagnostics;
-- applications API;
+- applications API with admin authentication;
 - JSON 404 behavior.
 
 The write-test verifier has passed for:
 
 - create application;
 - confirm current scoring source;
-- read status;
+- receive member access code;
+- read status with member access code;
 - save officer approval decision;
-- read decided status again.
+- read decided status again with member access code.
 
-## What Is Still Missing After Public URL
+## Public Demo Operating Notes
 
 The public URL exists now.
 
-The remaining public-demo polish tasks are:
+The public-demo target is complete. These are the operating notes to keep it healthy:
 
 1. The public KoopCare MLOps Credit Scoring API is already verified:
 
@@ -193,7 +201,7 @@ These are not blockers for a portfolio demo, but they are blockers for a serious
 
 - production-grade authentication that replaces the demo role gate;
 - database-backed role-based access control;
-- user can only see their own applications;
+- database-backed user ownership instead of access-code demo ownership;
 - MySQL or PostgreSQL persistence;
 - migration scripts;
 - audit trail/history table;
@@ -311,6 +319,12 @@ Output:
 - better empty/loading/error states;
 - public demo limitations shown clearly.
 
+Status:
+
+```text
+completed
+```
+
 ### Checkpoint 25 - Demo Auth and Role Separation
 
 Goal:
@@ -325,9 +339,38 @@ Output:
 - member session - done;
 - admin session - done;
 - route protection for write/admin actions - done;
-- user status lookup scoped by owner - still future work after database/users.
+- public verifier support for authenticated write tests - done.
 
-### Checkpoint 26 - Database Milestone
+Status:
+
+```text
+completed
+```
+
+### Checkpoint 26 - Member Status Privacy Boundary
+
+Goal:
+
+```text
+member status lookup is safe enough for the completed portfolio public demo
+```
+
+Output:
+
+- every submitted application receives a generated `memberAccessCode`;
+- member status lookup requires application ID plus access code;
+- admin token can still inspect records for review work;
+- `/api/v1/applications` no longer exposes the queue to unauthenticated visitors;
+- summary metrics remain available without leaking the application list;
+- API smoke and public verifier scripts cover the protected read behavior.
+
+Status:
+
+```text
+completed
+```
+
+### Checkpoint 27 - Database Milestone
 
 Goal:
 
@@ -353,8 +396,10 @@ verified public Railway demo
 verified public MLOps API
 verified source=ml_api public write workflow
 verified demo member/admin role gate
+verified access-code member status lookup
 ```
 
 The next meaningful jump is database-backed persistence and owner-scoped status
-lookup. For the current portfolio demo, the trained public ML path and demo
-role gate are now working.
+lookup. For the current portfolio demo, the public link, trained public ML path,
+demo role gate, admin-only queue reads, and access-code status lookup are now
+complete.

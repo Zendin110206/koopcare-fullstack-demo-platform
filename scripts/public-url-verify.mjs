@@ -168,7 +168,9 @@ async function runVerification() {
     `HTTP ${adminLogin.status}`
   );
 
-  const applications = await requestJson("/api/v1/applications");
+  const applications = await requestJson("/api/v1/applications", {
+    headers: jsonHeaders(adminToken)
+  });
   assertCheck(checks, "Applications endpoint", applications.status === 200 && Array.isArray(applications.body?.data), `HTTP ${applications.status}`);
 
   const missingApi = await requestJson("/api/v1/does-not-exist");
@@ -197,7 +199,9 @@ async function runVerification() {
     });
 
     const createdId = createResponse.body?.data?.id;
+    const memberAccessCode = createResponse.body?.data?.memberAccessCode;
     assertCheck(checks, "Write test create application", createResponse.status === 201 && Boolean(createdId), `HTTP ${createResponse.status}`);
+    assertCheck(checks, "Write test member access code", Boolean(memberAccessCode), memberAccessCode ? "present" : "missing");
     assertCheck(
       checks,
       "Write test scoring source",
@@ -207,8 +211,12 @@ async function runVerification() {
       `source=${createResponse.body?.data?.aiAssessment?.source ?? "missing"}`
     );
 
-    if (createdId) {
-      const statusLookup = await requestJson(`/api/v1/applications/${createdId}/status`);
+    if (createdId && memberAccessCode) {
+      const statusLookup = await requestJson(`/api/v1/applications/${createdId}/status`, {
+        headers: {
+          "x-koopcare-access-code": memberAccessCode
+        }
+      });
       assertCheck(
         checks,
         "Write test status lookup",
@@ -232,7 +240,11 @@ async function runVerification() {
         `HTTP ${decisionResponse.status}`
       );
 
-      const decidedStatusLookup = await requestJson(`/api/v1/applications/${createdId}/status`);
+      const decidedStatusLookup = await requestJson(`/api/v1/applications/${createdId}/status`, {
+        headers: {
+          "x-koopcare-access-code": memberAccessCode
+        }
+      });
       assertCheck(
         checks,
         "Write test decided status lookup",

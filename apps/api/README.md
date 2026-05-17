@@ -27,6 +27,20 @@ Write actions use a demo role gate:
 - `POST /api/v1/applications/:id/score` accepts admin demo tokens only;
 - `POST /api/v1/applications/:id/decision` accepts admin demo tokens only.
 
+Read actions also have public-demo boundaries:
+
+- `GET /api/v1/applications` and `GET /api/v1/demo/applications` accept admin demo tokens only;
+- `GET /api/v1/applications/:id/status` accepts either an admin demo token or the member access code generated when the application is created. The access code can be sent through the `x-koopcare-access-code` header or `accessCode` query parameter.
+
+Application creation returns:
+
+```text
+id
+memberAccessCode
+```
+
+Members need both values to check their own application status without exposing the full admin queue.
+
 This is portfolio-demo access control, not production account security.
 
 Default local data path:

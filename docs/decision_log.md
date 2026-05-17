@@ -137,3 +137,19 @@ Rationale:
 - full production authentication still needs users, password handling, database persistence, and owner-scoped records;
 - a small signed-token gate keeps the workflow realistic without pretending that the product already has production identity security;
 - public verifiers can now prove that member submission and admin decision actions still work through the public URL.
+
+## 2026-05-17 - Use Access-Code Status Lookup Before Database Ownership
+
+Decision:
+
+```text
+Use a generated member access code for public-demo status lookup until database-backed user ownership is implemented.
+```
+
+Rationale:
+
+- the public demo should not expose the full application queue to every visitor;
+- database-backed accounts and row ownership are a larger milestone that should be implemented separately;
+- an application ID plus access code is simple enough for reviewers to understand and test;
+- the admin demo role can still inspect the full queue for officer review work;
+- this keeps the portfolio demo safer without pretending it is production-grade identity security.

@@ -10,6 +10,14 @@ export type DemoSummary = {
     rejected: number;
     scored: number;
   };
+  metrics: {
+    average_eligibility: number;
+    risk_summary: {
+      low: number;
+      medium: number;
+      high: number;
+    };
+  };
   integration: {
     database: string;
     ml_api: string;
@@ -40,6 +48,7 @@ export type ApplicationStatus = "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJ
 
 export type FinancingApplication = {
   id: string;
+  memberAccessCode: string;
   applicantName: string;
   phoneNumber: string;
   gender: "M" | "F";

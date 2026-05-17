@@ -44,7 +44,7 @@ User surface:
 
 - product overview landing page;
 - application form;
-- application status view;
+- access-code application status view;
 - simple profile/session experience.
 
 Admin surface:
@@ -81,6 +81,8 @@ The backend is the main application authority.
 Responsibilities:
 
 - enforce the current demo member/admin role gate;
+- restrict full application queue reads to the admin demo role;
+- allow member status lookup only with the generated application ID and access code;
 - validate request payloads;
 - manage loan application lifecycle;
 - call the MLOps API;
@@ -208,10 +210,11 @@ The runtime uses JSON file storage for the MVP. MySQL persistence is intentional
 The runtime also uses demo role tokens:
 
 ```text
-member token -> create application
-admin token  -> rescore and save final decision
+member token       -> create application
+member access code -> read one submitted application status
+admin token        -> list applications, rescore, and save final decision
 ```
 
-This is a portfolio-demo control so reviewers can understand the intended separation between member actions and officer actions. It is not a replacement for production authentication, password storage, or row-level authorization.
+This is a portfolio-demo control so reviewers can understand the intended separation between member actions and officer actions. The access code prevents a casual public visitor from browsing the full application list, but it is not a replacement for production authentication, password storage, or database-backed row-level authorization.
 
 In public-demo preview mode, the Express API serves the built React output from `apps/web/dist` so one public URL can host the product interface and the API.

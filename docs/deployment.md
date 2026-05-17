@@ -186,7 +186,8 @@ The platform should expose the Node service over HTTPS. The same public domain s
 /health
 /ready
 /api/v1/demo/summary
-/api/v1/applications
+/api/v1/applications              admin demo token required
+/api/v1/applications/:id/status   admin demo token or x-koopcare-access-code required
 ```
 
 Use `/health` for a lightweight liveness check. Use `/ready` when the platform supports readiness probes. The readiness endpoint verifies JSON storage and, in single-service mode, confirms that the built React app is available.
@@ -323,7 +324,7 @@ Required Vercel-oriented milestones would be:
 
 - split API into Vercel-compatible serverless functions or a Next.js app route layer;
 - move application storage to a real external database;
-- update status/admin reads to query that database;
+- update status/admin reads from access-code demo ownership to database-backed user ownership;
 - adjust public verification for serverless cold starts;
 - deploy the ML API separately or use a public ML endpoint.
 

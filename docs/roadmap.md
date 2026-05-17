@@ -138,7 +138,29 @@ Output:
 - role-based write/admin route protection;
 - public verifier support for authenticated write tests.
 
-## Progress 07 - Local Database Setup
+## Progress 07 - Member Status Privacy Boundary
+
+Status:
+
+```text
+done
+```
+
+Goal:
+
+```text
+Make public member status lookup safer before the database milestone.
+```
+
+Output:
+
+- generated member access code on application creation;
+- member status lookup requires application ID plus access code;
+- full application list requires admin demo token;
+- summary metrics remain available for public dashboards without exposing the full queue;
+- smoke and public verifier scripts cover the protected read behavior.
+
+## Progress 08 - Local Database Setup
 
 Status:
 
@@ -160,7 +182,7 @@ Planned output:
 - initial migration strategy;
 - seed data plan.
 
-## Progress 08 - Production-Grade Authentication and Ownership
+## Progress 09 - Production-Grade Authentication and Ownership
 
 Goal:
 
@@ -175,7 +197,7 @@ Planned output:
 - owner-scoped application status lookup;
 - safer local secrets.
 
-## Progress 09 - Audit Trail and Review History
+## Progress 10 - Audit Trail and Review History
 
 Goal:
 
@@ -190,7 +212,7 @@ Planned output:
 - reviewer notes history;
 - event timeline for scoring and decision changes.
 
-## Progress 10 - Production-Style ML Integration Hardening
+## Progress 11 - Production-Style ML Integration Hardening
 
 Goal:
 
@@ -205,7 +227,7 @@ Planned output:
 - configurable strict mode with no fallback;
 - richer error states.
 
-## Progress 11 - Public Demo Readiness
+## Progress 12 - Public Demo Readiness
 
 Goal:
 

@@ -30,25 +30,31 @@ export function App() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusLookupQuery, setStatusLookupQuery] = useState("");
+  const [statusLookupAccessCode, setStatusLookupAccessCode] = useState("");
+  const [statusApplication, setStatusApplication] = useState<FinancingApplication | null>(null);
   const [form, setForm] = useState<ApplicationFormState>(initialForm);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
+  const [isStatusLookupLoading, setIsStatusLookupLoading] = useState(false);
   const [actionState, setActionState] = useState<ActionState>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const authToken = session?.token ?? null;
 
-  async function loadDemoData() {
+  async function loadDemoData(authSession: StoredAuthSession | null = session) {
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
-      const [summaryData, applicationsData] = await Promise.all([
-        fetchJson<DemoSummary>(`${apiBaseUrl}/api/v1/demo/summary`),
-        fetchJson<{ data: FinancingApplication[] }>(`${apiBaseUrl}/api/v1/applications`)
-      ]);
+      const summaryData = await fetchJson<DemoSummary>(`${apiBaseUrl}/api/v1/demo/summary`);
+      const applicationsData =
+        authSession?.session.role === "admin"
+          ? await fetchJson<{ data: FinancingApplication[] }>(`${apiBaseUrl}/api/v1/applications`, {
+              headers: authHeaders(authSession.token)
+            })
+          : { data: [] };
 
       setSummary(summaryData);
       setApplications(applicationsData.data);
@@ -100,25 +106,29 @@ export function App() {
   }, [applications, searchQuery, statusFilter]);
 
   const riskSummary = useMemo(() => {
+    if (applications.length === 0 && summary?.metrics.risk_summary) {
+      return summary.metrics.risk_summary;
+    }
+
     return {
       low: applications.filter((application) => application.aiAssessment?.riskLevel === "LOW").length,
       medium: applications.filter((application) => application.aiAssessment?.riskLevel === "MEDIUM").length,
       high: applications.filter((application) => application.aiAssessment?.riskLevel === "HIGH").length
     };
-  }, [applications]);
+  }, [applications, summary]);
 
   const averageEligibility = useMemo(() => {
     const scored = applications.filter((application) => application.aiAssessment);
 
     if (scored.length === 0) {
-      return 0;
+      return summary?.metrics.average_eligibility ?? 0;
     }
 
     return Math.round(
       scored.reduce((total, application) => total + (application.aiAssessment?.eligibilityScore ?? 0), 0) /
         scored.length
     );
-  }, [applications]);
+  }, [applications, summary]);
 
   function updateForm<Key extends keyof ApplicationFormState>(key: Key, value: ApplicationFormState[Key]) {
     setForm((current) => ({
@@ -171,7 +181,7 @@ export function App() {
         )
       );
       setActiveView(postLoginView);
-      await loadDemoData();
+      await loadDemoData(response.data);
     } catch (error) {
       const message = error instanceof Error ? error.message : t(language, "Failed to sign in.", "Gagal masuk.");
       setErrorMessage(message);
@@ -183,6 +193,8 @@ export function App() {
   function logout() {
     setSession(null);
     clearStoredAuthSession();
+    setApplications([]);
+    setSelectedApplicationId(null);
     setSuccessMessage(t(language, "Signed out from the demo role.", "Sudah keluar dari role demo."));
 
     if (activeView === "apply" || activeView === "admin") {
@@ -210,15 +222,17 @@ export function App() {
       setApplications((current) => [response.data, ...current.filter((item) => item.id !== response.data.id)]);
       setSelectedApplicationId(response.data.id);
       setStatusLookupQuery(response.data.id);
+      setStatusLookupAccessCode(response.data.memberAccessCode);
+      setStatusApplication(response.data);
       setSuccessMessage(
         t(
           language,
-          `Application ${response.data.id} submitted. The member status tracker is ready.`,
-          `Pengajuan ${response.data.id} berhasil dikirim. Status anggota sudah siap dicek.`
+          `Application ${response.data.id} submitted. Save access code ${response.data.memberAccessCode} for status lookup.`,
+          `Pengajuan ${response.data.id} berhasil dikirim. Simpan kode akses ${response.data.memberAccessCode} untuk cek status.`
         )
       );
       setActiveView("status");
-      await loadDemoData();
+      await loadDemoData(session);
     } catch (error) {
       const message = error instanceof Error ? error.message : t(language, "Failed to submit application.", "Gagal mengirim pengajuan.");
       setErrorMessage(message);
@@ -246,7 +260,7 @@ export function App() {
       setApplications((current) => current.map((item) => (item.id === id ? response.data : item)));
       setSelectedApplicationId(response.data.id);
       setSuccessMessage(t(language, `Application ${id} has a refreshed AI assessment.`, `Assessment AI untuk pengajuan ${id} berhasil diperbarui.`));
-      await loadDemoData();
+      await loadDemoData(session);
     } catch (error) {
       const message = error instanceof Error ? error.message : t(language, "Failed to score application.", "Gagal melakukan scoring pengajuan.");
       setErrorMessage(message);
@@ -281,15 +295,53 @@ export function App() {
 
       setApplications((current) => current.map((item) => (item.id === id ? response.data : item)));
       setSelectedApplicationId(response.data.id);
+      setStatusApplication((current) => (current?.id === id ? response.data : current));
       setSuccessMessage(
         t(language, `Application ${id} marked as ${formatStatus(decision)}.`, `Pengajuan ${id} ditandai sebagai ${formatStatus(decision, language)}.`)
       );
-      await loadDemoData();
+      await loadDemoData(session);
     } catch (error) {
       const message = error instanceof Error ? error.message : t(language, "Failed to save decision.", "Gagal menyimpan keputusan.");
       setErrorMessage(message);
     } finally {
       setActionState(null);
+    }
+  }
+
+  async function lookupApplicationStatus() {
+    const applicationId = statusLookupQuery.trim();
+    const accessCode = statusLookupAccessCode.trim();
+
+    if (!applicationId) {
+      setErrorMessage(t(language, "Application ID is required.", "ID pengajuan wajib diisi."));
+      return;
+    }
+
+    if (!accessCode && session?.session.role !== "admin") {
+      setErrorMessage(t(language, "Access code is required for member status lookup.", "Kode akses wajib diisi untuk cek status anggota."));
+      return;
+    }
+
+    setIsStatusLookupLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetchJson<{ data: FinancingApplication }>(`${apiBaseUrl}/api/v1/applications/${encodeURIComponent(applicationId)}/status`, {
+        headers: {
+          ...authHeaders(authToken),
+          ...(accessCode ? { "x-koopcare-access-code": accessCode } : {})
+        }
+      });
+
+      setStatusApplication(response.data);
+      setSuccessMessage(t(language, "Application status found.", "Status pengajuan ditemukan."));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t(language, "Failed to look up status.", "Gagal mencari status.");
+      setStatusApplication(null);
+      setErrorMessage(message);
+    } finally {
+      setIsStatusLookupLoading(false);
     }
   }
 
@@ -303,7 +355,7 @@ export function App() {
         onLanguageChange={setLanguage}
         onLoginOpen={() => requestLogin("member", "home")}
         onLogout={logout}
-        onRefresh={() => void loadDemoData()}
+        onRefresh={() => void loadDemoData(session)}
         onViewChange={changeView}
       />
 
@@ -356,10 +408,13 @@ export function App() {
 
       {activeView === "status" ? (
         <StatusView
-          applications={applications}
-          isLoading={isLoading}
+          accessCode={statusLookupAccessCode}
+          application={statusApplication}
+          isLoading={isLoading || isStatusLookupLoading}
           language={language}
           query={statusLookupQuery}
+          onAccessCodeChange={setStatusLookupAccessCode}
+          onLookup={() => void lookupApplicationStatus()}
           onOpenApply={() => changeView("apply")}
           onQueryChange={setStatusLookupQuery}
         />

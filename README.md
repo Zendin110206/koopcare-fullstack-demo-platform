@@ -43,7 +43,7 @@ The repository currently contains a runnable React web app and Express API with 
 - the API validates and stores the application in local JSON storage;
 - the API attempts to call the KoopCare MLOps API for scoring;
 - if the ML API is unavailable, the API uses a transparent demo fallback scorer so the workflow remains testable;
-- a member can track the submitted application status from the web app;
+- a member can track a submitted application from the web app with the application ID and generated access code;
 - an admin can search, filter, inspect detail, rescore, approve, or reject applications;
 - a system page explains the current service boundaries and runtime status.
 
@@ -90,13 +90,15 @@ Current user-facing workflow:
 - review the product overview and KoopCare value proposition;
 - complete a financing application form;
 - submit application data to the backend;
+- save the generated application ID and access code after submission;
 - move into the member status tracker after submission;
-- search status by application ID, applicant name, or phone number.
+- look up one application status by application ID and access code.
 
 ### Admin Web
 
 Current admin workflow:
 
+- login with the admin demo role;
 - scan portfolio-level queue metrics;
 - search and filter submitted financing applications;
 - review submitted financing applications;
@@ -114,6 +116,8 @@ Current backend responsibilities:
 - local JSON-backed financing application persistence;
 - ML API integration with timeout handling;
 - transparent rule-based fallback scoring for demo reliability;
+- access-code member status lookup for the public demo;
+- admin-only application list reads;
 - admin decision workflow;
 - safe response shaping for frontend clients.
 
@@ -247,8 +251,8 @@ Web app: http://127.0.0.1:5174
 API health: http://localhost:5002/health
 API readiness: http://localhost:5002/ready
 Demo summary API: http://localhost:5002/api/v1/demo/summary
-Applications API: http://localhost:5002/api/v1/applications
-Application status API: http://localhost:5002/api/v1/applications/:id/status
+Applications API: http://localhost:5002/api/v1/applications (admin demo token required)
+Application status API: http://localhost:5002/api/v1/applications/:id/status (send x-koopcare-access-code)
 ```
 
 Run the production-style single-service preview:
@@ -280,7 +284,7 @@ Run the API smoke check:
 npm run smoke:api
 ```
 
-This builds the API, starts it on an isolated smoke-test port, validates malformed JSON handling, financing amount rules, application creation, and officer decision note validation, then shuts the smoke server down.
+This builds the API, starts it on an isolated smoke-test port, validates malformed JSON handling, financing amount rules, admin-only application reads, application creation, access-code status lookup, and officer decision note validation, then shuts the smoke server down.
 
 Run the public preview smoke check:
 
@@ -377,10 +381,11 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 4. Harden the MVP runtime and validation behavior.
 5. Upgrade the web experience into a product-grade landing, member, status, admin, and system workspace.
 6. Add demo member/admin role separation.
-7. Add MySQL development database and migration strategy.
-8. Strengthen AI assessment persistence and audit logs.
-9. Prepare public demo deployment.
-10. Replace demo auth with production-grade authentication when the product moves beyond portfolio demo mode.
+7. Add access-code member status privacy and admin-only application list reads.
+8. Add MySQL development database and migration strategy.
+9. Strengthen AI assessment persistence and audit logs.
+10. Prepare public demo deployment.
+11. Replace demo auth with production-grade authentication when the product moves beyond portfolio demo mode.
 
 ## Security and Privacy
 

@@ -241,3 +241,27 @@ npm run smoke:public
 ```
 
 All checks passed. This checkpoint improves public-demo workflow realism, but it does not replace the later database-backed production authentication milestone.
+
+## 2026-05-17 - Member Status Access Code Boundary
+
+Closed the last major public-demo privacy gap before the database milestone.
+
+Changed:
+
+- application creation now returns a generated `memberAccessCode`;
+- existing JSON application records are normalized with an access code when read;
+- member status lookup now requires application ID plus access code, unless the caller has an admin demo token;
+- the full application list is protected by the admin demo role;
+- summary metrics are returned from `/api/v1/demo/summary` so public dashboards can still show counts and risk distribution without exposing the queue;
+- the Status page now uses an explicit lookup form instead of broad search by name or phone;
+- API smoke and public URL verifier scripts now prove admin-only list reads and access-code status reads.
+
+Validation:
+
+```text
+npm run check
+npm run smoke:api
+npm run smoke:public
+```
+
+This keeps the public demo easy to try while reducing the chance that a reviewer misunderstands it as an open application database.
