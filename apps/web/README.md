@@ -16,6 +16,7 @@ The current MVP includes:
 - admin queue metrics;
 - admin review queue table with search and status filters;
 - selected application detail panel;
+- review timeline for submission, scoring, rescoring, and final decision events;
 - AI recommendation card with risk, confidence, model source, and human-review note;
 - score refresh action;
 - approve and reject actions;

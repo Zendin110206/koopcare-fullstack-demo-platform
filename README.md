@@ -44,7 +44,7 @@ The repository currently contains a runnable React web app and Express API with 
 - the API attempts to call the KoopCare MLOps API for scoring;
 - if the ML API is unavailable, the API uses a transparent demo fallback scorer so the workflow remains testable;
 - a member can track a submitted application from the web app with the application ID and generated access code;
-- an admin can search, filter, inspect detail, rescore, approve, or reject applications;
+- an admin can search, filter, inspect detail, review the case timeline, rescore, approve, or reject applications;
 - a system page explains the current service boundaries and runtime status.
 
 Public demo URL:
@@ -103,6 +103,7 @@ Current admin workflow:
 - search and filter submitted financing applications;
 - review submitted financing applications;
 - inspect applicant detail, AI recommendation, risk indicators, model source, and human-review note;
+- inspect a review timeline that records submission, scoring, rescoring, and final decision events;
 - approve or reject the application;
 - refresh the scoring result when needed;
 - require the admin demo role before scoring or final-decision actions are saved.
@@ -118,6 +119,7 @@ Current backend responsibilities:
 - transparent rule-based fallback scoring for demo reliability;
 - access-code member status lookup for the public demo;
 - admin-only application list reads;
+- application audit trail events for submit, scoring, rescoring, and final decision actions;
 - admin decision workflow;
 - safe response shaping for frontend clients.
 
@@ -125,7 +127,7 @@ Planned backend responsibilities:
 
 - production-grade authentication and authorization;
 - MySQL-backed persistence;
-- structured audit logs;
+- database-backed structured audit logs;
 - deployment-ready configuration.
 
 ## Architecture
@@ -382,10 +384,11 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 5. Upgrade the web experience into a product-grade landing, member, status, admin, and system workspace.
 6. Add demo member/admin role separation.
 7. Add access-code member status privacy and admin-only application list reads.
-8. Add MySQL development database and migration strategy.
-9. Strengthen AI assessment persistence and audit logs.
-10. Prepare public demo deployment.
-11. Replace demo auth with production-grade authentication when the product moves beyond portfolio demo mode.
+8. Add admin review timeline and JSON-backed audit trail events.
+9. Add MySQL development database and migration strategy.
+10. Strengthen AI assessment persistence and database-backed audit logs.
+11. Prepare public demo deployment.
+12. Replace demo auth with production-grade authentication when the product moves beyond portfolio demo mode.
 
 ## Security and Privacy
 

@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, FileCheck2, Search, Sparkles, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, FileCheck2, Search, Sparkles, XCircle } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
@@ -100,6 +100,10 @@ export function AdminView({
           <SidebarMetric
             label={t(language, "Rejected", "Ditolak")}
             value={summary?.counts.rejected ?? 0}
+          />
+          <SidebarMetric
+            label={t(language, "Audit events", "Event audit")}
+            value={summary?.metrics.audit_events ?? applications.reduce((total, application) => total + application.auditTrail.length, 0)}
           />
         </div>
         <div
@@ -615,6 +619,8 @@ function ApplicationDetailPanel({
         </div>
       ) : null}
 
+      <AuditTrailSection application={application} language={language} />
+
       {decisionDraft ? (
         <section
           className={
@@ -746,4 +752,115 @@ function ApplicationDetailPanel({
       </div>
     </aside>
   );
+}
+
+function AuditTrailSection({
+  application,
+  language,
+}: {
+  application: FinancingApplication;
+  language: AppLanguage;
+}) {
+  const auditTrail = [...application.auditTrail].sort(
+    (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+  );
+
+  return (
+    <div className="audit-section">
+      <div className="audit-heading">
+        <div>
+          <h3>{t(language, "Review timeline", "Timeline review")}</h3>
+          <p>
+            {t(
+              language,
+              "Trace who submitted, scored, refreshed, and saved the final decision.",
+              "Lacak siapa yang submit, scoring, refresh, dan menyimpan keputusan final.",
+            )}
+          </p>
+        </div>
+        <Badge tone="neutral">{auditTrail.length}</Badge>
+      </div>
+      <div className="audit-list">
+        {auditTrail.map((event) => (
+          <article className={`audit-item ${event.actorRole}`} key={event.id}>
+            <span className="audit-dot">
+              <Clock3 aria-hidden="true" size={15} />
+            </span>
+            <div>
+              <div className="audit-item-top">
+                <strong>{formatAuditLabel(event.label, language)}</strong>
+                <time>{formatAuditTime(event.createdAt, language)}</time>
+              </div>
+              <p>{localizeAuditMessage(event.message, language)}</p>
+              <small>
+                {event.actorName} · {formatAuditActor(event.actorRole, language)}
+              </small>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatAuditLabel(label: string, language: AppLanguage) {
+  const labels: Record<string, { en: string; id: string }> = {
+    "AI assessment created": {
+      en: "AI assessment created",
+      id: "Assessment AI dibuat",
+    },
+    "AI assessment refreshed": {
+      en: "AI assessment refreshed",
+      id: "Assessment AI diperbarui",
+    },
+    "Application submitted": {
+      en: "Application submitted",
+      id: "Pengajuan dikirim",
+    },
+    "Final decision saved": {
+      en: "Final decision saved",
+      id: "Keputusan final disimpan",
+    },
+    "Record normalized": {
+      en: "Record normalized",
+      id: "Record dinormalisasi",
+    },
+  };
+
+  const copy = labels[label];
+  return copy ? copy[language] : label;
+}
+
+function formatAuditActor(actorRole: string, language: AppLanguage) {
+  if (actorRole === "admin") {
+    return t(language, "Admin officer", "Petugas admin");
+  }
+
+  if (actorRole === "member") {
+    return t(language, "Member", "Anggota");
+  }
+
+  return t(language, "System", "Sistem");
+}
+
+function formatAuditTime(value: string, language: AppLanguage) {
+  return new Intl.DateTimeFormat(language === "id" ? "id-ID" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function localizeAuditMessage(message: string, language: AppLanguage) {
+  if (language === "en") {
+    return message;
+  }
+
+  return message
+    .replace("submitted financing application", "mengirim pengajuan pembiayaan")
+    .replace("returned", "menghasilkan rekomendasi")
+    .replace("with", "dengan")
+    .replace("risk for", "risk untuk")
+    .replace("saved", "menyimpan keputusan")
+    .replace("decision for", "untuk")
+    .replace("Legacy JSON record was normalized with missing demo metadata.", "Record JSON lama dinormalisasi dengan metadata demo yang sebelumnya belum ada.");
 }

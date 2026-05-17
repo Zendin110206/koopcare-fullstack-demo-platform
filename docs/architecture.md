@@ -88,6 +88,7 @@ Responsibilities:
 - call the MLOps API;
 - translate ML output into product-safe fields;
 - store AI assessments;
+- append audit trail events for submission, scoring, rescoring, and final decision actions;
 - enforce that AI is advisory only.
 
 ### Persistence
@@ -110,6 +111,8 @@ loan_applications
 ai_assessments
 admin_audit_logs
 ```
+
+The current JSON-backed MVP already stores an `auditTrail` array inside each application record. The later database milestone should move that timeline into a dedicated `admin_audit_logs` or event table.
 
 ### MLOps API
 
@@ -212,7 +215,7 @@ The runtime also uses demo role tokens:
 ```text
 member token       -> create application
 member access code -> read one submitted application status
-admin token        -> list applications, rescore, and save final decision
+admin token        -> list applications, rescore, save final decision, and inspect audit timeline
 ```
 
 This is a portfolio-demo control so reviewers can understand the intended separation between member actions and officer actions. The access code prevents a casual public visitor from browsing the full application list, but it is not a replacement for production authentication, password storage, or database-backed row-level authorization.

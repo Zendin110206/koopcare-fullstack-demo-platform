@@ -37,9 +37,11 @@ Application creation returns:
 ```text
 id
 memberAccessCode
+auditTrail
 ```
 
 Members need both values to check their own application status without exposing the full admin queue.
+Admin responses also include `auditTrail` so reviewers can see when the application was submitted, scored, rescored, and decided.
 
 This is portfolio-demo access control, not production account security.
 

@@ -20,6 +20,7 @@ You can review:
 - member status tracking after submission with application ID and access code;
 - local JSON-backed persistence;
 - admin queue metrics, search, filters, and detail panel;
+- admin review timeline for submission, scoring, rescoring, and final decision events;
 - score refresh, approve, and reject actions;
 - system readiness page;
 - ML API integration behavior with transparent fallback.
@@ -72,9 +73,11 @@ Try the MVP:
 9. Use the application ID and access code to review the submitted application status as a member.
 10. Open `Admin` and login with the admin demo role if prompted.
 11. Review the new application through the queue and detail panel.
-12. Use search or status filters if needed.
-13. Click `Refresh Score`, `Approve`, or `Reject`.
-14. Open `System` to inspect the runtime boundaries.
+12. Inspect the review timeline to see submit and scoring events.
+13. Use search or status filters if needed.
+14. Click `Refresh Score`, `Approve`, or `Reject`.
+15. Confirm that the timeline records the rescore or final decision event.
+16. Open `System` to inspect the runtime boundaries.
 
 ## Public-Style Preview
 

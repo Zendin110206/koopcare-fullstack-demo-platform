@@ -200,8 +200,15 @@ async function runVerification() {
 
     const createdId = createResponse.body?.data?.id;
     const memberAccessCode = createResponse.body?.data?.memberAccessCode;
+    const createAuditTrail = createResponse.body?.data?.auditTrail;
     assertCheck(checks, "Write test create application", createResponse.status === 201 && Boolean(createdId), `HTTP ${createResponse.status}`);
     assertCheck(checks, "Write test member access code", Boolean(memberAccessCode), memberAccessCode ? "present" : "missing");
+    assertCheck(
+      checks,
+      "Write test audit trail",
+      Array.isArray(createAuditTrail) && createAuditTrail.length >= 2,
+      Array.isArray(createAuditTrail) ? `${createAuditTrail.length} events` : "missing"
+    );
     assertCheck(
       checks,
       "Write test scoring source",
@@ -236,7 +243,9 @@ async function runVerification() {
       assertCheck(
         checks,
         "Write test officer decision",
-        decisionResponse.status === 200 && decisionResponse.body?.data?.decision?.decision === "APPROVED",
+        decisionResponse.status === 200 &&
+          decisionResponse.body?.data?.decision?.decision === "APPROVED" &&
+          decisionResponse.body?.data?.auditTrail?.some((event) => event.kind === "officer_decision_saved"),
         `HTTP ${decisionResponse.status}`
       );
 

@@ -1696,6 +1696,97 @@ tbody tr.selected {
   line-height: 1.52;
 }
 
+.audit-section {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #f7faf4;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.audit-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.audit-heading h3 {
+  margin-bottom: 4px;
+}
+
+.audit-heading p {
+  color: var(--muted-strong);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.audit-list {
+  display: grid;
+  gap: 10px;
+}
+
+.audit-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.audit-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--blue);
+  background: var(--blue-soft);
+  border: 1px solid #bbdce2;
+  border-radius: 8px;
+}
+
+.audit-item.admin .audit-dot {
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border-color: #bfe2cc;
+}
+
+.audit-item.member .audit-dot {
+  color: var(--gold);
+  background: var(--gold-soft);
+  border-color: #efd18b;
+}
+
+.audit-item-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.audit-item-top strong {
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.audit-item-top time,
+.audit-item small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.audit-item p {
+  margin: 5px 0;
+  color: var(--muted-strong);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .decision-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

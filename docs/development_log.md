@@ -265,3 +265,27 @@ npm run smoke:public
 ```
 
 This keeps the public demo easy to try while reducing the chance that a reviewer misunderstands it as an open application database.
+
+## 2026-05-17 - Admin Review Timeline and Audit Trail
+
+Added a JSON-backed audit trail to make the admin workflow more inspectable.
+
+Changed:
+
+- each application now has an `auditTrail` array;
+- new submissions create submit and AI-scoring audit events;
+- score refresh creates an AI-rescored audit event;
+- approve/reject creates a final-decision audit event;
+- old JSON records are normalized with a migrated timeline when read;
+- admin detail panel now shows a bilingual review timeline;
+- summary metrics include total audit events;
+- smoke and public verifier scripts assert audit trail presence.
+
+Validation:
+
+```text
+npm run typecheck --workspace @koopcare-demo/api
+npm run typecheck --workspace @koopcare-demo/web
+```
+
+This is still not the final database audit table. It is a portfolio-ready audit trail that prepares the shape of the later database milestone.

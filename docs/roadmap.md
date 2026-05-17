@@ -160,7 +160,31 @@ Output:
 - summary metrics remain available for public dashboards without exposing the full queue;
 - smoke and public verifier scripts cover the protected read behavior.
 
-## Progress 08 - Local Database Setup
+## Progress 08 - Admin Review Timeline
+
+Status:
+
+```text
+done
+```
+
+Goal:
+
+```text
+Make admin decisions and scoring changes inspectable before database work.
+```
+
+Output:
+
+- JSON-backed `auditTrail` on each application;
+- submit event;
+- AI scoring event;
+- AI rescore event;
+- final decision event;
+- admin detail timeline;
+- verifier coverage for audit trail presence.
+
+## Progress 09 - Local Database Setup
 
 Status:
 
@@ -182,7 +206,7 @@ Planned output:
 - initial migration strategy;
 - seed data plan.
 
-## Progress 09 - Production-Grade Authentication and Ownership
+## Progress 10 - Production-Grade Authentication and Ownership
 
 Goal:
 
@@ -197,22 +221,22 @@ Planned output:
 - owner-scoped application status lookup;
 - safer local secrets.
 
-## Progress 10 - Audit Trail and Review History
+## Progress 11 - Database-Backed Audit Trail and Review History
 
 Goal:
 
 ```text
-Make admin decisions more inspectable.
+Move demo audit events into a proper database-backed history.
 ```
 
 Planned output:
 
-- audit trail.
+- audit trail table;
 - decision history per application;
 - reviewer notes history;
-- event timeline for scoring and decision changes.
+- event timeline query layer.
 
-## Progress 11 - Production-Style ML Integration Hardening
+## Progress 12 - Production-Style ML Integration Hardening
 
 Goal:
 
@@ -227,7 +251,7 @@ Planned output:
 - configurable strict mode with no fallback;
 - richer error states.
 
-## Progress 12 - Public Demo Readiness
+## Progress 13 - Public Demo Readiness
 
 Goal:
 

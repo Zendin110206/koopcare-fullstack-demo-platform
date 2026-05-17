@@ -38,6 +38,19 @@ type AiAssessment = {
   createdAt: string;
 };
 
+type AuditEventKind = "application_submitted" | "ai_scored" | "ai_rescored" | "officer_decision_saved" | "record_migrated";
+type AuditActorRole = "member" | "admin" | "system";
+type AuditEvent = {
+  id: string;
+  kind: AuditEventKind;
+  label: string;
+  actorRole: AuditActorRole;
+  actorName: string;
+  message: string;
+  createdAt: string;
+  metadata?: Record<string, boolean | number | string | null>;
+};
+
 type FinancingApplication = {
   id: string;
   memberAccessCode: string;
@@ -63,6 +76,7 @@ type FinancingApplication = {
     note: string;
     decidedAt: string;
   } | null;
+  auditTrail: AuditEvent[];
   createdAt: string;
   updatedAt: string;
 };
@@ -330,6 +344,96 @@ function createMemberAccessCode() {
   return `KC-${randomUUID().slice(0, 6).toUpperCase()}`;
 }
 
+function createAuditEvent({
+  actorName,
+  actorRole,
+  createdAt = nowIso(),
+  kind,
+  label,
+  message,
+  metadata
+}: {
+  actorName: string;
+  actorRole: AuditActorRole;
+  createdAt?: string;
+  kind: AuditEventKind;
+  label: string;
+  message: string;
+  metadata?: Record<string, boolean | number | string | null>;
+}): AuditEvent {
+  return {
+    id: `AUD-${randomUUID().slice(0, 10).toUpperCase()}`,
+    kind,
+    label,
+    actorRole,
+    actorName,
+    message,
+    createdAt,
+    ...(metadata ? { metadata } : {})
+  };
+}
+
+function createSubmissionAuditEvent(application: Pick<FinancingApplication, "applicantName" | "id" | "createdAt" | "requestedAmount" | "tenorMonths">) {
+  return createAuditEvent({
+    actorName: application.applicantName,
+    actorRole: "member",
+    createdAt: application.createdAt,
+    kind: "application_submitted",
+    label: "Application submitted",
+    message: `${application.applicantName} submitted financing application ${application.id}.`,
+    metadata: {
+      requestedAmount: application.requestedAmount,
+      tenorMonths: application.tenorMonths
+    }
+  });
+}
+
+function createScoringAuditEvent(application: Pick<FinancingApplication, "id">, assessment: AiAssessment, kind: "ai_scored" | "ai_rescored") {
+  return createAuditEvent({
+    actorName: kind === "ai_scored" ? "KoopCare API" : "Admin reviewer",
+    actorRole: kind === "ai_scored" ? "system" : "admin",
+    createdAt: assessment.createdAt,
+    kind,
+    label: kind === "ai_scored" ? "AI assessment created" : "AI assessment refreshed",
+    message: `${assessment.modelName} returned ${assessment.aiRecommendation} with ${assessment.riskLevel} risk for ${application.id}.`,
+    metadata: {
+      confidence: assessment.confidence,
+      eligibilityScore: assessment.eligibilityScore,
+      modelName: assessment.modelName,
+      modelVersion: assessment.modelVersion,
+      probDefault: assessment.probDefault,
+      source: assessment.source
+    }
+  });
+}
+
+function createDecisionAuditEvent({
+  applicationId,
+  decision,
+  note,
+  reviewerName,
+  timestamp
+}: {
+  applicationId: string;
+  decision: ApplicationDecision;
+  note: string;
+  reviewerName: string;
+  timestamp: string;
+}) {
+  return createAuditEvent({
+    actorName: reviewerName,
+    actorRole: "admin",
+    createdAt: timestamp,
+    kind: "officer_decision_saved",
+    label: "Final decision saved",
+    message: `${reviewerName} saved ${decision} decision for ${applicationId}.`,
+    metadata: {
+      decision,
+      note
+    }
+  });
+}
+
 function createSeedApplications(): FinancingApplication[] {
   const timestamp = nowIso();
 
@@ -354,6 +458,20 @@ function createSeedApplications(): FinancingApplication[] {
       status: "UNDER_REVIEW",
       aiAssessment: null,
       decision: null,
+      auditTrail: [
+        createAuditEvent({
+          actorName: "Siti Aminah",
+          actorRole: "member",
+          createdAt: timestamp,
+          kind: "application_submitted",
+          label: "Application submitted",
+          message: "Siti Aminah submitted financing application APP-2026-001.",
+          metadata: {
+            requestedAmount: 8_000_000,
+            tenorMonths: 10
+          }
+        })
+      ],
       createdAt: timestamp,
       updatedAt: timestamp
     },
@@ -377,6 +495,20 @@ function createSeedApplications(): FinancingApplication[] {
       status: "SUBMITTED",
       aiAssessment: null,
       decision: null,
+      auditTrail: [
+        createAuditEvent({
+          actorName: "Budi Santoso",
+          actorRole: "member",
+          createdAt: timestamp,
+          kind: "application_submitted",
+          label: "Application submitted",
+          message: "Budi Santoso submitted financing application APP-2026-002.",
+          metadata: {
+            requestedAmount: 12_500_000,
+            tenorMonths: 12
+          }
+        })
+      ],
       createdAt: timestamp,
       updatedAt: timestamp
     },
@@ -418,6 +550,48 @@ function createSeedApplications(): FinancingApplication[] {
         note: "Approved as seeded demo data.",
         decidedAt: timestamp
       },
+      auditTrail: [
+        createAuditEvent({
+          actorName: "Nur Hidayah",
+          actorRole: "member",
+          createdAt: timestamp,
+          kind: "application_submitted",
+          label: "Application submitted",
+          message: "Nur Hidayah submitted financing application APP-2026-003.",
+          metadata: {
+            requestedAmount: 5_000_000,
+            tenorMonths: 6
+          }
+        }),
+        createAuditEvent({
+          actorName: "KoopCare API",
+          actorRole: "system",
+          createdAt: timestamp,
+          kind: "ai_scored",
+          label: "AI assessment created",
+          message: "Demo Rule-Based Fallback returned LAYAK with LOW risk for APP-2026-003.",
+          metadata: {
+            confidence: 0.76,
+            eligibilityScore: 76,
+            modelName: "Demo Rule-Based Fallback",
+            modelVersion: "fallback-v1",
+            probDefault: 0.24,
+            source: "demo_rule_based_fallback"
+          }
+        }),
+        createAuditEvent({
+          actorName: "Admin Demo",
+          actorRole: "admin",
+          createdAt: timestamp,
+          kind: "officer_decision_saved",
+          label: "Final decision saved",
+          message: "Admin Demo saved APPROVED decision for APP-2026-003.",
+          metadata: {
+            decision: "APPROVED",
+            note: "Approved as seeded demo data."
+          }
+        })
+      ],
       createdAt: timestamp,
       updatedAt: timestamp
     }
@@ -450,14 +624,21 @@ async function readApplications() {
   const applications = parsed as FinancingApplication[];
   let changed = false;
   const normalizedApplications = applications.map((application) => {
-    if (typeof application.memberAccessCode === "string" && application.memberAccessCode.trim().length > 0) {
+    const auditTrail = Array.isArray(application.auditTrail) ? application.auditTrail : buildMigratedAuditTrail(application);
+    const memberAccessCode =
+      typeof application.memberAccessCode === "string" && application.memberAccessCode.trim().length > 0
+        ? application.memberAccessCode
+        : createMemberAccessCode();
+
+    if (application.memberAccessCode === memberAccessCode && application.auditTrail === auditTrail) {
       return application;
     }
 
     changed = true;
     return {
       ...application,
-      memberAccessCode: createMemberAccessCode()
+      memberAccessCode,
+      auditTrail
     };
   });
 
@@ -466,6 +647,50 @@ async function readApplications() {
   }
 
   return normalizedApplications;
+}
+
+function buildMigratedAuditTrail(application: FinancingApplication): AuditEvent[] {
+  const auditTrail = [
+    createSubmissionAuditEvent({
+      applicantName: application.applicantName,
+      createdAt: application.createdAt,
+      id: application.id,
+      requestedAmount: application.requestedAmount,
+      tenorMonths: application.tenorMonths
+    })
+  ];
+
+  if (application.aiAssessment) {
+    auditTrail.push(createScoringAuditEvent(application, application.aiAssessment, "ai_scored"));
+  }
+
+  if (application.decision) {
+    auditTrail.push(
+      createDecisionAuditEvent({
+        applicationId: application.id,
+        decision: application.decision.decision,
+        note: application.decision.note,
+        reviewerName: application.decision.reviewerName,
+        timestamp: application.decision.decidedAt
+      })
+    );
+  }
+
+  auditTrail.push(
+    createAuditEvent({
+      actorName: "KoopCare API",
+      actorRole: "system",
+      createdAt: nowIso(),
+      kind: "record_migrated",
+      label: "Record normalized",
+      message: "Legacy JSON record was normalized with missing demo metadata.",
+      metadata: {
+        applicationId: application.id
+      }
+    })
+  );
+
+  return auditTrail;
 }
 
 async function writeApplications(applications: FinancingApplication[]) {
@@ -651,6 +876,7 @@ function buildApplication(input: CreateApplicationRequest): FinancingApplication
     status: "SUBMITTED",
     aiAssessment: null,
     decision: null,
+    auditTrail: [],
     createdAt: timestamp,
     updatedAt: timestamp
   };
@@ -682,7 +908,8 @@ function summarizeApplicationMetrics(applications: FinancingApplication[]) {
       low: applications.filter((item) => item.aiAssessment?.riskLevel === "LOW").length,
       medium: applications.filter((item) => item.aiAssessment?.riskLevel === "MEDIUM").length,
       high: applications.filter((item) => item.aiAssessment?.riskLevel === "HIGH").length
-    }
+    },
+    audit_events: applications.reduce((total, item) => total + item.auditTrail.length, 0)
   };
 }
 
@@ -1012,6 +1239,7 @@ app.post("/api/v1/applications", requireDemoAuth(["member", "admin"]), async (re
       ...application,
       status: "UNDER_REVIEW",
       aiAssessment,
+      auditTrail: [createSubmissionAuditEvent(application), createScoringAuditEvent(application, aiAssessment, "ai_scored")],
       updatedAt: nowIso()
     };
 
@@ -1050,6 +1278,7 @@ app.post("/api/v1/applications/:id/score", requireDemoAuth(["admin"]), async (re
     ...application,
     status: application.status === "SUBMITTED" ? "UNDER_REVIEW" : application.status,
     aiAssessment,
+    auditTrail: [...application.auditTrail, createScoringAuditEvent(application, aiAssessment, "ai_rescored")],
     updatedAt: nowIso()
   };
 
@@ -1087,6 +1316,7 @@ app.post("/api/v1/applications/:id/decision", requireDemoAuth(["admin"]), async 
     }
 
     const application = applications[applicationIndex];
+    const decidedAt = nowIso();
     const updatedApplication: FinancingApplication = {
       ...application,
       status: decision,
@@ -1094,8 +1324,18 @@ app.post("/api/v1/applications/:id/decision", requireDemoAuth(["admin"]), async 
         decision,
         reviewerName,
         note,
-        decidedAt: nowIso()
+        decidedAt
       },
+      auditTrail: [
+        ...application.auditTrail,
+        createDecisionAuditEvent({
+          applicationId: application.id,
+          decision,
+          note,
+          reviewerName,
+          timestamp: decidedAt
+        })
+      ],
       updatedAt: nowIso()
     };
 

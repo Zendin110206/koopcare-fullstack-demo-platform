@@ -12,6 +12,7 @@ export type DemoSummary = {
   };
   metrics: {
     average_eligibility: number;
+    audit_events: number;
     risk_summary: {
       low: number;
       medium: number;
@@ -44,6 +45,19 @@ export type AiAssessment = {
   createdAt: string;
 };
 
+export type AuditEventKind = "application_submitted" | "ai_scored" | "ai_rescored" | "officer_decision_saved" | "record_migrated";
+export type AuditActorRole = "member" | "admin" | "system";
+export type AuditEvent = {
+  id: string;
+  kind: AuditEventKind;
+  label: string;
+  actorRole: AuditActorRole;
+  actorName: string;
+  message: string;
+  createdAt: string;
+  metadata?: Record<string, boolean | number | string | null>;
+};
+
 export type ApplicationStatus = "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
 
 export type FinancingApplication = {
@@ -72,6 +86,7 @@ export type FinancingApplication = {
     note: string;
     decidedAt: string;
   } | null;
+  auditTrail: AuditEvent[];
   createdAt: string;
   updatedAt: string;
 };

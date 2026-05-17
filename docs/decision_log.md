@@ -153,3 +153,18 @@ Rationale:
 - an application ID plus access code is simple enough for reviewers to understand and test;
 - the admin demo role can still inspect the full queue for officer review work;
 - this keeps the portfolio demo safer without pretending it is production-grade identity security.
+
+## 2026-05-17 - Store Demo Audit Events Inside Application Records
+
+Decision:
+
+```text
+Store a JSON-backed auditTrail array on each application before introducing the real database event table.
+```
+
+Rationale:
+
+- reviewers should be able to see who submitted, scored, rescored, and decided an application now;
+- the public demo already has a stable JSON persistence bridge, so adding the event array is low risk;
+- the later database milestone can move these events into a dedicated audit table without changing the product workflow;
+- this makes the admin surface closer to a real credit review system while keeping the checkpoint reviewable.

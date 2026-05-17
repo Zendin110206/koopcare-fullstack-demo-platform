@@ -229,6 +229,8 @@ try {
   assert(created.status === 201, "Valid application should be created.");
   assert(created.body?.data?.id, "Created application should return an id.");
   assert(created.body?.data?.memberAccessCode, "Created application should return a member access code.");
+  assert(Array.isArray(created.body?.data?.auditTrail), "Created application should return an audit trail.");
+  assert(created.body.data.auditTrail.length >= 2, "Created application audit trail should include submit and score events.");
   assert(
     created.body?.data?.aiAssessment?.source === "demo_rule_based_fallback" ||
       created.body?.data?.aiAssessment?.source === "ml_api",
@@ -285,6 +287,10 @@ try {
   });
   assert(decision.status === 200, "Valid decision should be saved.");
   assert(decision.body?.data?.decision?.reviewerName === "Smoke Officer", "Decision reviewer should be persisted.");
+  assert(
+    decision.body?.data?.auditTrail?.some((event) => event.kind === "officer_decision_saved"),
+    "Decision audit trail should include officer decision event."
+  );
 
   const strictChild = spawn(process.execPath, ["apps/api/dist/index.js"], {
     cwd: repoRoot,
