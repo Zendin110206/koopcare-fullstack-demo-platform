@@ -1,8 +1,8 @@
-import { Building2, Database, FileCheck2, Home, LayoutDashboard, RefreshCw, UserRound } from "lucide-react";
+import { Building2, Database, FileCheck2, Home, LayoutDashboard, LogOut, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { t } from "../formatters";
-import type { AppLanguage, LocalizedText, ViewKey } from "../types";
+import type { AppLanguage, LocalizedText, StoredAuthSession, ViewKey } from "../types";
 const views: Array<{ key: ViewKey; label: LocalizedText; icon: ReactNode }> = [
   {
     key: "home",
@@ -34,14 +34,20 @@ export function TopNavigation({
   activeView,
   isLoading,
   language,
+  session,
   onLanguageChange,
+  onLoginOpen,
+  onLogout,
   onRefresh,
   onViewChange,
 }: {
   activeView: ViewKey;
   isLoading: boolean;
   language: AppLanguage;
+  session: StoredAuthSession | null;
   onLanguageChange: (language: AppLanguage) => void;
+  onLoginOpen: () => void;
+  onLogout: () => void;
   onRefresh: () => void;
   onViewChange: (view: ViewKey) => void;
 }) {
@@ -94,6 +100,25 @@ export function TopNavigation({
           </button>
         ))}
       </div>
+
+      {session ? (
+        <button className="account-button" type="button" onClick={onLogout}>
+          {session.session.role === "admin" ? <ShieldCheck aria-hidden="true" size={17} /> : <UserRound aria-hidden="true" size={17} />}
+          <span>
+            <strong>{session.session.role === "admin" ? t(language, "Admin", "Admin") : t(language, "Member", "Anggota")}</strong>
+            <small>{t(language, "Sign out", "Keluar")}</small>
+          </span>
+          <LogOut aria-hidden="true" size={16} />
+        </button>
+      ) : (
+        <button className="account-button" type="button" onClick={onLoginOpen}>
+          <UserRound aria-hidden="true" size={17} />
+          <span>
+            <strong>{t(language, "Login", "Masuk")}</strong>
+            <small>{t(language, "Demo role", "Role demo")}</small>
+          </span>
+        </button>
+      )}
 
       <button
         className="utility-button"

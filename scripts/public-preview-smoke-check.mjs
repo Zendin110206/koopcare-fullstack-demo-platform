@@ -9,6 +9,8 @@ const smokePort = 5094;
 const smokeDataDir = path.join(repoRoot, "local_context", "runtime_logs", "public-preview-smoke");
 const smokeDataFile = path.join(smokeDataDir, "applications.public-preview-smoke.json");
 const baseUrl = `http://127.0.0.1:${smokePort}`;
+const demoMemberPassword = "member-demo-2026";
+const demoAdminPassword = "admin-demo-2026";
 
 await rm(smokeDataDir, { recursive: true, force: true });
 await mkdir(smokeDataDir, { recursive: true });
@@ -20,6 +22,7 @@ const child = spawn(process.execPath, ["scripts/start-public-demo.mjs"], {
     API_PORT: String(smokePort),
     APP_ENV: "production",
     DATA_FILE_PATH: smokeDataFile,
+    DEMO_AUTH_SECRET: "public-preview-demo-secret",
     ML_API_TIMEOUT_MS: "200",
     ML_SCORING_MODE: "optional_fallback",
     SERVE_WEB_APP: "true"
@@ -60,6 +63,22 @@ async function requestJson(pathname) {
   return {
     ...response,
     body: JSON.parse(response.text)
+  };
+}
+
+async function postJson(pathname, payload) {
+  const response = await fetch(`${baseUrl}${pathname}`, {
+    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json"
+    },
+    method: "POST"
+  });
+  const text = await response.text();
+
+  return {
+    body: JSON.parse(text),
+    status: response.status
   };
 }
 
@@ -118,6 +137,20 @@ try {
   assert(mlStatus.status === 200, "ML status endpoint should return 200.");
   assert(mlStatus.body?.ml_scoring_mode === "optional_fallback", "ML status should expose optional fallback mode.");
   assert(typeof mlStatus.body?.prediction_ready === "boolean", "ML status should expose a boolean prediction readiness flag.");
+
+  const memberLogin = await postJson("/api/v1/auth/login", {
+    password: demoMemberPassword,
+    role: "member"
+  });
+  assert(memberLogin.status === 200, "Public preview should allow member demo login.");
+  assert(memberLogin.body?.data?.session?.role === "member", "Member login should return a member session.");
+
+  const adminLogin = await postJson("/api/v1/auth/login", {
+    password: demoAdminPassword,
+    role: "admin"
+  });
+  assert(adminLogin.status === 200, "Public preview should allow admin demo login.");
+  assert(adminLogin.body?.data?.session?.role === "admin", "Admin login should return an admin session.");
 
   const missingApiRoute = await requestJson("/api/v1/does-not-exist");
   assert(missingApiRoute.status === 404, "Missing API route should stay a JSON 404.");

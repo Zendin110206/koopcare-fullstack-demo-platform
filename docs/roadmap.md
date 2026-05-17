@@ -116,7 +116,29 @@ Output:
 - system readiness page;
 - version alignment to `0.3.0`.
 
-## Progress 06 - Local Database Setup
+## Progress 06 - Demo Authentication and Roles
+
+Status:
+
+```text
+done
+```
+
+Goal:
+
+```text
+Separate member and admin actions for the public portfolio demo.
+```
+
+Output:
+
+- demo login;
+- member session;
+- admin session;
+- role-based write/admin route protection;
+- public verifier support for authenticated write tests.
+
+## Progress 07 - Local Database Setup
 
 Status:
 
@@ -138,23 +160,22 @@ Planned output:
 - initial migration strategy;
 - seed data plan.
 
-## Progress 07 - Authentication and Roles
+## Progress 08 - Production-Grade Authentication and Ownership
 
 Goal:
 
 ```text
-Separate user and admin access.
+Replace demo auth with database-backed user/admin identity.
 ```
 
 Planned output:
 
-- demo login;
-- user session;
-- admin session;
-- role-based route protection;
+- real user accounts;
+- password/session strategy;
+- owner-scoped application status lookup;
 - safer local secrets.
 
-## Progress 08 - Audit Trail and Review History
+## Progress 09 - Audit Trail and Review History
 
 Goal:
 
@@ -169,7 +190,7 @@ Planned output:
 - reviewer notes history;
 - event timeline for scoring and decision changes.
 
-## Progress 09 - Production-Style ML Integration Hardening
+## Progress 10 - Production-Style ML Integration Hardening
 
 Goal:
 
@@ -184,7 +205,7 @@ Planned output:
 - configurable strict mode with no fallback;
 - richer error states.
 
-## Progress 10 - Public Demo Readiness
+## Progress 11 - Public Demo Readiness
 
 Goal:
 

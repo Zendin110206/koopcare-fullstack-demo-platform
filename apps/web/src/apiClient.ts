@@ -1,10 +1,11 @@
 export async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const { headers, ...restOptions } = options ?? {};
   const response = await fetch(url, {
+    ...restOptions,
     headers: {
       "Content-Type": "application/json",
-      ...options?.headers
-    },
-    ...options
+      ...headers
+    }
   });
 
   if (!response.ok) {
@@ -13,4 +14,14 @@ export async function fetchJson<T>(url: string, options?: RequestInit): Promise<
   }
 
   return (await response.json()) as T;
+}
+
+export function authHeaders(token?: string | null): Record<string, string> {
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`
+  };
 }

@@ -231,7 +231,7 @@ The public write-test verifier confirms source=ml_api.
 The next professional checkpoint is:
 
 ```text
-public demo polish
-auth and role separation
 real database milestone
+owner-scoped status lookup
+production-grade auth replacement
 ```

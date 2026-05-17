@@ -10,6 +10,8 @@ const expectMlApiScoring = process.argv.includes("--expect-ml-api") || process.e
 const urlArgument = cliArguments.find((argument) => !argument.startsWith("--"));
 const publicDemoUrl = normalizeBaseUrl(urlArgument ?? process.env.PUBLIC_DEMO_URL);
 const reportPath = path.join(repoRoot, "local_context", "runtime_logs", "public-url-verify-report.md");
+const demoMemberPassword = process.env.VERIFY_PUBLIC_MEMBER_PASSWORD ?? "member-demo-2026";
+const demoAdminPassword = process.env.VERIFY_PUBLIC_ADMIN_PASSWORD ?? "admin-demo-2026";
 
 if (!publicDemoUrl) {
   console.error("Usage: npm run verify:public -- https://your-public-demo-url");
@@ -72,6 +74,13 @@ function hasPassed(checks) {
   return checks.every((check) => check.status === "passed");
 }
 
+function jsonHeaders(token) {
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
 async function runVerification() {
   const checks = [];
 
@@ -127,6 +136,38 @@ async function runVerification() {
     `prediction_ready=${mlStatus.body?.prediction_ready ?? "unknown"}`
   );
 
+  const memberLogin = await requestJson("/api/v1/auth/login", {
+    body: JSON.stringify({
+      password: demoMemberPassword,
+      role: "member"
+    }),
+    headers: jsonHeaders(),
+    method: "POST"
+  });
+  const memberToken = memberLogin.body?.data?.token;
+  assertCheck(
+    checks,
+    "Member demo login",
+    memberLogin.status === 200 && memberLogin.body?.data?.session?.role === "member" && Boolean(memberToken),
+    `HTTP ${memberLogin.status}`
+  );
+
+  const adminLogin = await requestJson("/api/v1/auth/login", {
+    body: JSON.stringify({
+      password: demoAdminPassword,
+      role: "admin"
+    }),
+    headers: jsonHeaders(),
+    method: "POST"
+  });
+  const adminToken = adminLogin.body?.data?.token;
+  assertCheck(
+    checks,
+    "Admin demo login",
+    adminLogin.status === 200 && adminLogin.body?.data?.session?.role === "admin" && Boolean(adminToken),
+    `HTTP ${adminLogin.status}`
+  );
+
   const applications = await requestJson("/api/v1/applications");
   assertCheck(checks, "Applications endpoint", applications.status === 200 && Array.isArray(applications.body?.data), `HTTP ${applications.status}`);
 
@@ -151,9 +192,7 @@ async function runVerification() {
         tenorMonths: 10,
         yearsInBusiness: 4
       }),
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: jsonHeaders(memberToken),
       method: "POST"
     });
 
@@ -183,9 +222,7 @@ async function runVerification() {
           note: "Public deployment verification decision was saved successfully.",
           reviewerName: "Public Verify Officer"
         }),
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: jsonHeaders(adminToken),
         method: "POST"
       });
       assertCheck(

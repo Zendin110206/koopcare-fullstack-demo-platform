@@ -1,25 +1,31 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { fetchJson } from "./apiClient";
+import { authHeaders, fetchJson } from "./apiClient";
+import { clearStoredAuthSession, readStoredAuthSession, saveStoredAuthSession } from "./authSession";
 import { apiBaseUrl, apiDisplayUrl, initialForm } from "./config";
 import { formatStatus, t } from "./formatters";
 import type {
   ActionState,
   AppLanguage,
   ApplicationFormState,
+  AuthRole,
   DemoSummary,
   FinancingApplication,
   StatusFilter,
+  StoredAuthSession,
   ViewKey
 } from "./types";
-import { AdminView, ApplyView, HomeView, StatusView, SystemView, TopNavigation } from "./views";
+import { AdminView, ApplyView, HomeView, LoginView, StatusView, SystemView, TopNavigation } from "./views";
 
 export function App() {
   const [activeView, setActiveView] = useState<ViewKey>("home");
   const [language, setLanguage] = useState<AppLanguage>("id");
   const [summary, setSummary] = useState<DemoSummary | null>(null);
   const [applications, setApplications] = useState<FinancingApplication[]>([]);
+  const [session, setSession] = useState<StoredAuthSession | null>(() => readStoredAuthSession());
+  const [preferredLoginRole, setPreferredLoginRole] = useState<AuthRole>("member");
+  const [postLoginView, setPostLoginView] = useState<ViewKey>("home");
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,9 +33,12 @@ export function App() {
   const [form, setForm] = useState<ApplicationFormState>(initialForm);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [actionState, setActionState] = useState<ActionState>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const authToken = session?.token ?? null;
 
   async function loadDemoData() {
     setIsLoading(true);
@@ -118,13 +127,82 @@ export function App() {
     }));
   }
 
+  function requestLogin(role: AuthRole, targetView: ViewKey) {
+    setPreferredLoginRole(role);
+    setPostLoginView(targetView);
+    setActiveView("login");
+  }
+
+  function changeView(nextView: ViewKey) {
+    if (nextView === "apply" && !session) {
+      requestLogin("member", "apply");
+      return;
+    }
+
+    if (nextView === "admin" && session?.session.role !== "admin") {
+      requestLogin("admin", "admin");
+      return;
+    }
+
+    setActiveView(nextView);
+  }
+
+  async function login(role: AuthRole, password: string) {
+    setIsAuthSubmitting(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetchJson<{ data: StoredAuthSession }>(`${apiBaseUrl}/api/v1/auth/login`, {
+        method: "POST",
+        body: JSON.stringify({
+          password,
+          role
+        })
+      });
+
+      setSession(response.data);
+      saveStoredAuthSession(response.data);
+      setSuccessMessage(
+        t(
+          language,
+          `Signed in as ${role === "admin" ? "admin officer" : "member"}.`,
+          `Berhasil masuk sebagai ${role === "admin" ? "petugas admin" : "anggota"}.`
+        )
+      );
+      setActiveView(postLoginView);
+      await loadDemoData();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t(language, "Failed to sign in.", "Gagal masuk.");
+      setErrorMessage(message);
+    } finally {
+      setIsAuthSubmitting(false);
+    }
+  }
+
+  function logout() {
+    setSession(null);
+    clearStoredAuthSession();
+    setSuccessMessage(t(language, "Signed out from the demo role.", "Sudah keluar dari role demo."));
+
+    if (activeView === "apply" || activeView === "admin") {
+      setActiveView("home");
+    }
+  }
+
   async function submitApplication() {
+    if (!authToken) {
+      requestLogin("member", "apply");
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
       const response = await fetchJson<{ data: FinancingApplication }>(`${apiBaseUrl}/api/v1/applications`, {
+        headers: authHeaders(authToken),
         method: "POST",
         body: JSON.stringify(form)
       });
@@ -150,12 +228,18 @@ export function App() {
   }
 
   async function scoreApplication(id: string) {
+    if (session?.session.role !== "admin" || !authToken) {
+      requestLogin("admin", "admin");
+      return;
+    }
+
     setActionState({ id, kind: "score" });
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
       const response = await fetchJson<{ data: FinancingApplication }>(`${apiBaseUrl}/api/v1/applications/${id}/score`, {
+        headers: authHeaders(authToken),
         method: "POST"
       });
 
@@ -172,6 +256,11 @@ export function App() {
   }
 
   async function decideApplication(id: string, decision: "APPROVED" | "REJECTED", reviewerName: string, note: string) {
+    if (session?.session.role !== "admin" || !authToken) {
+      requestLogin("admin", "admin");
+      return;
+    }
+
     setActionState({ id, kind: "decision" });
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -180,6 +269,7 @@ export function App() {
       const response = await fetchJson<{ data: FinancingApplication }>(
         `${apiBaseUrl}/api/v1/applications/${id}/decision`,
         {
+          headers: authHeaders(authToken),
           method: "POST",
           body: JSON.stringify({
             decision,
@@ -209,9 +299,12 @@ export function App() {
         activeView={activeView}
         isLoading={isLoading}
         language={language}
+        session={session}
         onLanguageChange={setLanguage}
+        onLoginOpen={() => requestLogin("member", "home")}
+        onLogout={logout}
         onRefresh={() => void loadDemoData()}
-        onViewChange={setActiveView}
+        onViewChange={changeView}
       />
 
       {errorMessage ? (
@@ -234,8 +327,18 @@ export function App() {
           language={language}
           riskSummary={riskSummary}
           summary={summary}
-          onOpenAdmin={() => setActiveView("admin")}
-          onStartApplication={() => setActiveView("apply")}
+          onOpenAdmin={() => changeView("admin")}
+          onStartApplication={() => changeView("apply")}
+        />
+      ) : null}
+
+      {activeView === "login" ? (
+        <LoginView
+          isSubmitting={isAuthSubmitting}
+          language={language}
+          preferredRole={preferredLoginRole}
+          onCancel={() => setActiveView("home")}
+          onLogin={(role, password) => void login(role, password)}
         />
       ) : null}
 
@@ -257,7 +360,7 @@ export function App() {
           isLoading={isLoading}
           language={language}
           query={statusLookupQuery}
-          onOpenApply={() => setActiveView("apply")}
+          onOpenApply={() => changeView("apply")}
           onQueryChange={setStatusLookupQuery}
         />
       ) : null}

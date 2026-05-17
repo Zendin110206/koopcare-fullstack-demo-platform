@@ -8,6 +8,8 @@ Express + TypeScript backend for the KoopCare fullstack demo.
 GET /health
 GET /ready
 GET /api/v1/demo/summary
+POST /api/v1/auth/login
+GET /api/v1/auth/session
 GET /api/v1/ml/status
 GET /api/v1/demo/applications
 GET /api/v1/applications
@@ -18,6 +20,14 @@ POST /api/v1/applications/:id/decision
 ```
 
 The current implementation persists demo application data to a JSON file. This keeps the MVP easy to run in development and public-demo environments before the MySQL milestone.
+
+Write actions use a demo role gate:
+
+- `POST /api/v1/applications` accepts member or admin demo tokens;
+- `POST /api/v1/applications/:id/score` accepts admin demo tokens only;
+- `POST /api/v1/applications/:id/decision` accepts admin demo tokens only.
+
+This is portfolio-demo access control, not production account security.
 
 Default local data path:
 
@@ -100,6 +110,10 @@ ML_SCORING_MODE=optional_fallback
 DATA_FILE_PATH=
 SERVE_WEB_APP=false
 WEB_DIST_PATH=
+DEMO_AUTH_SECRET=change_this_for_shared_demo_environments
+DEMO_MEMBER_PASSWORD=member-demo-2026
+DEMO_ADMIN_PASSWORD=admin-demo-2026
+DEMO_AUTH_TOKEN_TTL_SECONDS=28800
 ```
 
 `DATA_FILE_PATH` is optional. Leave it empty to use the default local JSON file.

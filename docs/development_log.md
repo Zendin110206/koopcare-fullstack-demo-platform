@@ -216,3 +216,28 @@ npm run check
 ```
 
 Both checks passed. This checkpoint is a structural cleanup, not a product behavior change.
+
+## 2026-05-17 - Demo Auth and Role Gate
+
+Added a demo access-control layer so the public workflow no longer treats member and admin workspaces as simple open tabs.
+
+Changed:
+
+- added signed demo auth tokens in the API;
+- added `POST /api/v1/auth/login` and `GET /api/v1/auth/session`;
+- required member or admin demo tokens for application submission;
+- required admin demo tokens for rescore and approve/reject actions;
+- added a web login view with Indonesian/English copy;
+- added account state, sign-out, and protected navigation behavior in the React app;
+- updated smoke and public verification scripts so they login before write actions;
+- updated docs and env examples to describe demo role gate separately from future production authentication.
+
+Validation:
+
+```text
+npm run check
+npm run smoke:api
+npm run smoke:public
+```
+
+All checks passed. This checkpoint improves public-demo workflow realism, but it does not replace the later database-backed production authentication milestone.

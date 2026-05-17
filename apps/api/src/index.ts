@@ -8,6 +8,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { authenticateDemoLogin, getDemoAuthSummary, readDemoSession, requireDemoAuth } from "./auth.js";
+
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFilePath);
 const apiRoot = path.resolve(currentDirectory, "..");
@@ -806,6 +808,7 @@ app.get("/health", async (_request, response) => {
       scoring_mode: mlScoringMode,
       integration_status: getMlIntegrationStatus()
     },
+    auth: getDemoAuthSummary(),
     timestamp: nowIso()
   });
 });
@@ -831,7 +834,49 @@ app.get("/api/v1/demo/summary", async (_request, response) => {
       ml_scoring_mode: mlScoringMode,
       web_app: serveWebApp ? "served_by_api" : "separate_web_server",
       web_dist_available: existsSync(webIndexPath),
-      auth: "demo_mode"
+      auth: getDemoAuthSummary().mode
+    }
+  });
+});
+
+app.post("/api/v1/auth/login", (request, response) => {
+  if (!isObject(request.body)) {
+    response.status(400).json({
+      error: "Bad Request",
+      message: "Request body must be an object."
+    });
+    return;
+  }
+
+  const result = authenticateDemoLogin(request.body.role, request.body.password);
+
+  if (!result) {
+    response.status(401).json({
+      error: "Unauthorized",
+      message: "Invalid demo role or password."
+    });
+    return;
+  }
+
+  response.json({
+    data: result
+  });
+});
+
+app.get("/api/v1/auth/session", (request, response) => {
+  const session = readDemoSession(request.headers.authorization);
+
+  if (!session) {
+    response.status(401).json({
+      error: "Unauthorized",
+      message: "Demo session is missing or expired."
+    });
+    return;
+  }
+
+  response.json({
+    data: {
+      session
     }
   });
 });
@@ -873,7 +918,7 @@ app.get("/api/v1/applications/:id/status", async (request, response) => {
   });
 });
 
-app.post("/api/v1/applications", async (request, response) => {
+app.post("/api/v1/applications", requireDemoAuth(["member", "admin"]), async (request, response) => {
   try {
     if (!isObject(request.body)) {
       throw new Error("Request body must be an object.");
@@ -906,7 +951,7 @@ app.post("/api/v1/applications", async (request, response) => {
   }
 });
 
-app.post("/api/v1/applications/:id/score", async (request, response) => {
+app.post("/api/v1/applications/:id/score", requireDemoAuth(["admin"]), async (request, response) => {
   const applications = await readApplications();
   const applicationIndex = applications.findIndex((item) => item.id === request.params.id);
 
@@ -935,7 +980,7 @@ app.post("/api/v1/applications/:id/score", async (request, response) => {
   });
 });
 
-app.post("/api/v1/applications/:id/decision", async (request, response) => {
+app.post("/api/v1/applications/:id/decision", requireDemoAuth(["admin"]), async (request, response) => {
   try {
     if (!isObject(request.body)) {
       throw new Error("Request body must be an object.");

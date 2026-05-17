@@ -81,6 +81,12 @@ ML_API_BASE_URL=http://127.0.0.1:8000
 ML_API_TIMEOUT_MS=5000
 ML_SCORING_MODE=optional_fallback
 DATA_FILE_PATH=
+DEMO_AUTH_SECRET=change_this_for_shared_demo_environments
+DEMO_MEMBER_PASSWORD=member-demo-2026
+DEMO_ADMIN_PASSWORD=admin-demo-2026
+DEMO_AUTH_TOKEN_TTL_SECONDS=28800
+VITE_DEMO_MEMBER_PASSWORD=member-demo-2026
+VITE_DEMO_ADMIN_PASSWORD=admin-demo-2026
 ```
 
 Port behavior:
@@ -212,6 +218,12 @@ SERVE_WEB_APP=true
 ML_SCORING_MODE=optional_fallback
 ML_API_TIMEOUT_MS=1500
 DATA_FILE_PATH=/data/koopcare/applications.json
+DEMO_AUTH_SECRET=use_a_unique_random_value
+DEMO_MEMBER_PASSWORD=member-demo-2026
+DEMO_ADMIN_PASSWORD=admin-demo-2026
+DEMO_AUTH_TOKEN_TTL_SECONDS=28800
+VITE_DEMO_MEMBER_PASSWORD=member-demo-2026
+VITE_DEMO_ADMIN_PASSWORD=admin-demo-2026
 ```
 
 Do not manually set `PORT` unless Railway logs specifically require it. Railway injects `PORT`, and the API now listens to `PORT` first.
@@ -287,6 +299,7 @@ It also sets:
 SERVE_WEB_APP=true
 DATA_FILE_PATH=/var/data/koopcare/applications.json
 ML_SCORING_MODE=optional_fallback
+DEMO_AUTH_SECRET=use_a_unique_random_value
 ```
 
 The `checksPass` deploy trigger means Render waits for GitHub checks before auto-deploying from `main`.
@@ -379,7 +392,7 @@ docs/public_deployment_readiness.md
 ## Current Limitations
 
 - JSON storage is still local/runtime state.
-- Authentication is not implemented yet.
-- User/admin separation is still a demo UI boundary, not a secure authorization boundary.
+- Authentication is still a demo role gate, not production account security.
+- User/admin write separation exists for demo actions, but owner-scoped records still need the database/auth milestone.
 - Public strict ML mode requires the separate Python MLOps API to be deployed or reachable.
 - Durable production deployment still needs a database milestone.

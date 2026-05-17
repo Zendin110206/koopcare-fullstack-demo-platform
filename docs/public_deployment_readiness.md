@@ -1,6 +1,6 @@
 # Public Deployment Readiness
 
-Last updated: 2026-05-16
+Last updated: 2026-05-17
 
 This document answers the practical question:
 
@@ -10,12 +10,12 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 
 ## Short Answer
 
-Current status after the Railway public URL was created and verified:
+Current status after the Railway public URL, public ML scoring path, and demo role gate were verified:
 
 ```text
-Public demo readiness: 98%
+Public demo readiness: 99%
 Actual public URL availability: 100%
-Full product readiness: 76%
+Full product readiness: 78%
 ```
 
 Live public demo:
@@ -37,11 +37,12 @@ Meaning:
 - The public write-test verifier passes: create application, trained ML score, read status, save officer decision, and read decided status.
 - The public UI now has an `ID/EN` language toggle for the main hero, navigation, Apply, Status, Admin, and System explanation.
 - The System page now explains how KoopCare Fullstack Demo Platform product fields become KoopCare MLOps Credit Scoring API request fields and final model columns.
-- The full product is still not production-ready because authentication, real database persistence, and production hardening are still unfinished.
+- Member submission and admin decision actions now use a demo role gate.
+- The full product is still not production-ready because production-grade authentication, real database persistence, and production hardening are still unfinished.
 - KoopCare MLOps Credit Scoring API is now live on a public Railway URL and has passed the ML API verifier.
 - KoopCare Fullstack Demo Platform is now connected to the public KoopCare MLOps Credit Scoring API, and the write-test verifier confirms `source=ml_api`.
 
-## Why 98% for Public Demo Readiness?
+## Why 99% for Public Demo Readiness?
 
 This percentage is for a portfolio public demo, not a real financial production system.
 
@@ -54,12 +55,12 @@ This percentage is for a portfolio public demo, not a real financial production 
 | Runtime persistence bridge | 10% | 9% | Railway `/data` volume path and Render `/var/data` disk path are documented, but JSON storage is still not a real database. |
 | MLOps integration for public demo | 10% | 10% | Backend calls the verified public KoopCare MLOps Credit Scoring API; write-test verification confirms `source=ml_api`. |
 | Public URL verification | 10% | 10% | Railway public URL exists. Read-only verification and write-test verification both pass. |
-| Security boundary | 10% | 9% | Advisory AI messaging, validation, and decision note rules exist. Authentication/authorization still missing. |
+| Security boundary | 10% | 9.5% | Advisory AI messaging, validation, decision note rules, and demo member/admin role gate exist. Production-grade auth is still future work. |
 
 Total:
 
 ```text
-98 / 100
+98.5 / 100, rounded to 99
 ```
 
 ## What Is Already Ready
@@ -75,6 +76,9 @@ Ready:
 - public UI has an Indonesian-first `ID/EN` toggle for the main hero, Apply, Status, Admin, and System explanation;
 - System page explains 14 product fields -> 19 MLOps request fields -> 25 model columns;
 - backend keeps clearly labeled fallback as a resilience path if the public MLOps API is unavailable;
+- member/admin demo login exists;
+- member token is required for public application submission;
+- admin token is required for rescore and approve/reject actions;
 - admin can inspect application;
 - admin can approve or reject with reviewer name and decision note;
 - user can track status;
@@ -187,10 +191,9 @@ npm run verify:public -- https://koopcare-fullstack-demo-platform-production.up.
 
 These are not blockers for a portfolio demo, but they are blockers for a serious production-style product:
 
-- real authentication;
-- role-based access control;
+- production-grade authentication that replaces the demo role gate;
+- database-backed role-based access control;
 - user can only see their own applications;
-- admin login;
 - MySQL or PostgreSQL persistence;
 - migration scripts;
 - audit trail/history table;
@@ -215,6 +218,12 @@ The service should now be configured like this:
 ```text
 ML_SCORING_MODE=optional_fallback
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
+DEMO_AUTH_SECRET=use_a_unique_random_value
+DEMO_MEMBER_PASSWORD=member-demo-2026
+DEMO_ADMIN_PASSWORD=admin-demo-2026
+DEMO_AUTH_TOKEN_TTL_SECONDS=28800
+VITE_DEMO_MEMBER_PASSWORD=member-demo-2026
+VITE_DEMO_ADMIN_PASSWORD=admin-demo-2026
 ```
 
 `optional_fallback` is still intentionally kept during early public testing. If
@@ -302,7 +311,7 @@ Output:
 - better empty/loading/error states;
 - public demo limitations shown clearly.
 
-### Checkpoint 25 - Auth and Role Separation
+### Checkpoint 25 - Demo Auth and Role Separation
 
 Goal:
 
@@ -312,11 +321,11 @@ member and admin are no longer only UI tabs
 
 Output:
 
-- demo login;
-- member session;
-- admin session;
-- route protection;
-- user status lookup scoped by owner.
+- demo login - done;
+- member session - done;
+- admin session - done;
+- route protection for write/admin actions - done;
+- user status lookup scoped by owner - still future work after database/users.
 
 ### Checkpoint 26 - Database Milestone
 
@@ -343,8 +352,9 @@ The project is now:
 verified public Railway demo
 verified public MLOps API
 verified source=ml_api public write workflow
+verified demo member/admin role gate
 ```
 
-The next meaningful jump is public demo polish, then authentication and database
-milestones. For the current portfolio demo, the trained public ML path is now
-working.
+The next meaningful jump is database-backed persistence and owner-scoped status
+lookup. For the current portfolio demo, the trained public ML path and demo
+role gate are now working.

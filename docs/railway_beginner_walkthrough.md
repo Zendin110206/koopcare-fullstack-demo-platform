@@ -181,6 +181,12 @@ SERVE_WEB_APP=true
 ML_SCORING_MODE=optional_fallback
 ML_API_TIMEOUT_MS=1500
 DATA_FILE_PATH=/data/koopcare/applications.json
+DEMO_AUTH_SECRET=use_a_unique_random_value
+DEMO_MEMBER_PASSWORD=member-demo-2026
+DEMO_ADMIN_PASSWORD=admin-demo-2026
+DEMO_AUTH_TOKEN_TTL_SECONDS=28800
+VITE_DEMO_MEMBER_PASSWORD=member-demo-2026
+VITE_DEMO_ADMIN_PASSWORD=admin-demo-2026
 ```
 
 Do not manually set `PORT` unless Railway support or the logs specifically tell you to. Railway injects `PORT` automatically, and the API now prefers `PORT` first.

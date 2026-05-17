@@ -122,3 +122,18 @@ Rationale:
 - `App.tsx` had grown too large and mixed app orchestration with view composition, data contracts, copywriting, formatting, and mapping tables;
 - future member/admin separation will be easier when shared domain data and helpers already live in dedicated modules;
 - this refactor keeps behavior unchanged while reducing review risk for later feature checkpoints.
+
+## 2026-05-17 - Add Demo Role Gate Before Production Auth
+
+Decision:
+
+```text
+Use a signed demo token gate for member/admin actions before adding database-backed production authentication.
+```
+
+Rationale:
+
+- the public portfolio demo needs a clear difference between member actions and officer actions now;
+- full production authentication still needs users, password handling, database persistence, and owner-scoped records;
+- a small signed-token gate keeps the workflow realistic without pretending that the product already has production identity security;
+- public verifiers can now prove that member submission and admin decision actions still work through the public URL.

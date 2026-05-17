@@ -13,6 +13,8 @@ const strictSmokeDataDir = path.join(repoRoot, "local_context", "runtime_logs", 
 const strictSmokeDataFile = path.join(strictSmokeDataDir, "applications.smoke.json");
 const baseUrl = `http://127.0.0.1:${smokePort}`;
 const strictBaseUrl = `http://127.0.0.1:${strictSmokePort}`;
+const demoMemberPassword = "member-demo-2026";
+const demoAdminPassword = "admin-demo-2026";
 
 await rm(smokeDataDir, { recursive: true, force: true });
 await rm(strictSmokeDataDir, { recursive: true, force: true });
@@ -25,6 +27,7 @@ const child = spawn(process.execPath, ["apps/api/dist/index.js"], {
     ...process.env,
     API_PORT: String(smokePort),
     DATA_FILE_PATH: smokeDataFile,
+    DEMO_AUTH_SECRET: "api-smoke-demo-secret",
     ML_API_TIMEOUT_MS: "200",
     ML_SCORING_MODE: "optional_fallback"
   },
@@ -65,6 +68,13 @@ async function requestTo(targetBaseUrl, pathname, options = {}) {
 
 function request(pathname, options = {}) {
   return requestTo(baseUrl, pathname, options);
+}
+
+function jsonHeaders(token) {
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
 }
 
 async function waitForHealth(targetBaseUrl = baseUrl, getServerOutput = () => serverOutput) {
@@ -127,11 +137,39 @@ try {
   assert(mlStatus.body?.ml_scoring_mode === "optional_fallback", "ML status should expose optional fallback mode.");
   assert(typeof mlStatus.body?.prediction_ready === "boolean", "ML status should expose a boolean prediction readiness flag.");
 
+  const memberLogin = await request("/api/v1/auth/login", {
+    body: JSON.stringify({
+      password: demoMemberPassword,
+      role: "member"
+    }),
+    headers: jsonHeaders(),
+    method: "POST"
+  });
+  assert(memberLogin.status === 200, "Member demo login should return 200.");
+  assert(memberLogin.body?.data?.session?.role === "member", "Member demo login should return a member session.");
+
+  const adminLogin = await request("/api/v1/auth/login", {
+    body: JSON.stringify({
+      password: demoAdminPassword,
+      role: "admin"
+    }),
+    headers: jsonHeaders(),
+    method: "POST"
+  });
+  assert(adminLogin.status === 200, "Admin demo login should return 200.");
+  assert(adminLogin.body?.data?.session?.role === "admin", "Admin demo login should return an admin session.");
+
+  const memberToken = memberLogin.body.data.token;
+  const adminToken = adminLogin.body.data.token;
+
+  const memberSession = await request("/api/v1/auth/session", {
+    headers: jsonHeaders(memberToken)
+  });
+  assert(memberSession.status === 200, "Member session endpoint should accept the demo token.");
+
   const malformedJson = await request("/api/v1/applications", {
     body: "{bad-json",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: jsonHeaders(memberToken),
     method: "POST"
   });
   assert(malformedJson.status === 400, "Malformed JSON should return 400.");
@@ -145,9 +183,7 @@ try {
       ...validApplication,
       monthlyIncome: 6_900_001
     }),
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: jsonHeaders(memberToken),
     method: "POST"
   });
   assert(badIncome.status === 400, "Invalid monthly income should return 400.");
@@ -161,9 +197,7 @@ try {
       ...validApplication,
       requestedAmount: 6_000_000_000
     }),
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: jsonHeaders(memberToken),
     method: "POST"
   });
   assert(badRequestedAmount.status === 400, "Too-large requested amount should return 400.");
@@ -172,11 +206,16 @@ try {
     "Too-large requested amount should explain the max rule."
   );
 
+  const unauthenticatedCreate = await request("/api/v1/applications", {
+    body: JSON.stringify(validApplication),
+    headers: jsonHeaders(),
+    method: "POST"
+  });
+  assert(unauthenticatedCreate.status === 401, "Application creation should require demo login.");
+
   const created = await request("/api/v1/applications", {
     body: JSON.stringify(validApplication),
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: jsonHeaders(memberToken),
     method: "POST"
   });
   assert(created.status === 201, "Valid application should be created.");
@@ -192,15 +231,24 @@ try {
   assert(statusLookup.status === 200, "Created application status should be readable.");
   assert(statusLookup.body?.data?.id === applicationId, "Status lookup should return the requested application.");
 
+  const memberDecisionAttempt = await request(`/api/v1/applications/${applicationId}/decision`, {
+    body: JSON.stringify({
+      decision: "APPROVED",
+      note: "Member accounts must not save officer decisions.",
+      reviewerName: "Smoke Officer"
+    }),
+    headers: jsonHeaders(memberToken),
+    method: "POST"
+  });
+  assert(memberDecisionAttempt.status === 403, "Member role should not save officer decisions.");
+
   const shortDecisionNote = await request(`/api/v1/applications/${applicationId}/decision`, {
     body: JSON.stringify({
       decision: "APPROVED",
       note: "too short",
       reviewerName: "Smoke Officer"
     }),
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: jsonHeaders(adminToken),
     method: "POST"
   });
   assert(shortDecisionNote.status === 400, "Short decision note should return 400.");
@@ -215,9 +263,7 @@ try {
       note: "Cashflow, collateral, and repayment capacity were checked.",
       reviewerName: "Smoke Officer"
     }),
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: jsonHeaders(adminToken),
     method: "POST"
   });
   assert(decision.status === 200, "Valid decision should be saved.");
@@ -229,6 +275,7 @@ try {
       ...process.env,
       API_PORT: String(strictSmokePort),
       DATA_FILE_PATH: strictSmokeDataFile,
+      DEMO_AUTH_SECRET: "api-smoke-demo-secret",
       ML_API_BASE_URL: "http://127.0.0.1:5999",
       ML_API_TIMEOUT_MS: "200",
       ML_SCORING_MODE: "strict_ml"
@@ -261,9 +308,7 @@ try {
 
     const strictCreate = await requestTo(strictBaseUrl, "/api/v1/applications", {
       body: JSON.stringify(validApplication),
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: jsonHeaders(memberToken),
       method: "POST"
     });
     assert(strictCreate.status === 503, "Strict mode should return 503 when the ML API is unavailable.");

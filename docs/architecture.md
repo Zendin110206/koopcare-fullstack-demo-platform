@@ -80,7 +80,7 @@ The backend is the main application authority.
 
 Responsibilities:
 
-- authenticate users and admins;
+- enforce the current demo member/admin role gate;
 - validate request payloads;
 - manage loan application lifecycle;
 - call the MLOps API;
@@ -193,6 +193,8 @@ System readiness page
 GET /health
 GET /ready
 GET /api/v1/demo/summary
+POST /api/v1/auth/login
+GET /api/v1/auth/session
 GET /api/v1/demo/applications
 GET /api/v1/applications
 GET /api/v1/applications/:id/status
@@ -202,5 +204,14 @@ POST /api/v1/applications/:id/decision
 ```
 
 The runtime uses JSON file storage for the MVP. MySQL persistence is intentionally deferred to the next database milestone.
+
+The runtime also uses demo role tokens:
+
+```text
+member token -> create application
+admin token  -> rescore and save final decision
+```
+
+This is a portfolio-demo control so reviewers can understand the intended separation between member actions and officer actions. It is not a replacement for production authentication, password storage, or row-level authorization.
 
 In public-demo preview mode, the Express API serves the built React output from `apps/web/dist` so one public URL can host the product interface and the API.

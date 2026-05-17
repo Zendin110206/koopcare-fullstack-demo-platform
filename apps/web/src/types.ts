@@ -17,7 +17,7 @@ export type DemoSummary = {
     ml_scoring_mode: "optional_fallback" | "strict_ml";
     web_app: "served_by_api" | "separate_web_server";
     web_dist_available: boolean;
-    auth: string;
+    auth: "demo_role_gate" | "demo_mode" | string;
   };
 };
 
@@ -84,7 +84,19 @@ export type ApplicationFormState = {
   hasCollateral: boolean;
 };
 
-export type ViewKey = "home" | "apply" | "status" | "admin" | "system";
+export type AuthRole = "member" | "admin";
+export type AuthSession = {
+  role: AuthRole;
+  displayName: string;
+  issuedAt: string;
+  expiresAt: string;
+};
+export type StoredAuthSession = {
+  session: AuthSession;
+  token: string;
+};
+
+export type ViewKey = "home" | "login" | "apply" | "status" | "admin" | "system";
 export type AppLanguage = "en" | "id";
 export type LocalizedText = Record<AppLanguage, string>;
 export type StatusFilter = "ALL" | ApplicationStatus;

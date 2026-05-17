@@ -15,8 +15,22 @@ function resolveApiBaseUrl() {
   return import.meta.env.DEV ? "http://localhost:5002" : "";
 }
 
+function resolveDemoPassword(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
+}
+
 export const apiBaseUrl = resolveApiBaseUrl();
 export const apiDisplayUrl = apiBaseUrl.length > 0 ? apiBaseUrl : "Same origin";
+export const demoCredentials = {
+  admin: {
+    password: resolveDemoPassword(import.meta.env.VITE_DEMO_ADMIN_PASSWORD, "admin-demo-2026"),
+    role: "admin"
+  },
+  member: {
+    password: resolveDemoPassword(import.meta.env.VITE_DEMO_MEMBER_PASSWORD, "member-demo-2026"),
+    role: "member"
+  }
+} as const;
 
 export const moneyRules = {
   monthlyIncome: {

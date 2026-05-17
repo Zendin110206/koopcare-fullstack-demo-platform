@@ -102,12 +102,14 @@ Current admin workflow:
 - review submitted financing applications;
 - inspect applicant detail, AI recommendation, risk indicators, model source, and human-review note;
 - approve or reject the application;
-- refresh the scoring result when needed.
+- refresh the scoring result when needed;
+- require the admin demo role before scoring or final-decision actions are saved.
 
 ### API Backend
 
 Current backend responsibilities:
 
+- demo member/admin role gate;
 - request validation;
 - local JSON-backed financing application persistence;
 - ML API integration with timeout handling;
@@ -117,7 +119,7 @@ Current backend responsibilities:
 
 Planned backend responsibilities:
 
-- authentication and authorization;
+- production-grade authentication and authorization;
 - MySQL-backed persistence;
 - structured audit logs;
 - deployment-ready configuration.
@@ -330,6 +332,16 @@ The public Railway demo currently keeps `optional_fallback` as a resilience mode
 ML_API_BASE_URL=https://koopcare-mlops-credit-scoring-api-production.up.railway.app
 ```
 
+The public demo role gate uses these variables:
+
+```text
+DEMO_AUTH_SECRET=use_a_unique_random_value
+DEMO_MEMBER_PASSWORD=member-demo-2026
+DEMO_ADMIN_PASSWORD=admin-demo-2026
+VITE_DEMO_MEMBER_PASSWORD=member-demo-2026
+VITE_DEMO_ADMIN_PASSWORD=admin-demo-2026
+```
+
 Switch to `strict_ml` only after more public monitoring confirms the ML API should be mandatory for every scoring request.
 
 Security audit:
@@ -364,11 +376,11 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 3. Build the JSON-backed MVP financing workflow.
 4. Harden the MVP runtime and validation behavior.
 5. Upgrade the web experience into a product-grade landing, member, status, admin, and system workspace.
-6. Add MySQL development database and migration strategy.
-7. Add authentication and role separation.
+6. Add demo member/admin role separation.
+7. Add MySQL development database and migration strategy.
 8. Strengthen AI assessment persistence and audit logs.
 9. Prepare public demo deployment.
-10. Add optional advanced product features such as chatbot assistance.
+10. Replace demo auth with production-grade authentication when the product moves beyond portfolio demo mode.
 
 ## Security and Privacy
 

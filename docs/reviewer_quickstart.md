@@ -16,6 +16,7 @@ You can review:
 - runnable Express API;
 - product overview landing page;
 - guided user financing application submission;
+- demo member/admin login gate;
 - member status tracking after submission;
 - local JSON-backed persistence;
 - admin queue metrics, search, filters, and detail panel;
@@ -28,7 +29,7 @@ You can review:
 The project does not yet include:
 
 - MySQL-backed persistence;
-- real authentication and authorization;
+- production-grade authentication and authorization;
 - production-grade credit decision governance.
 
 ## Local Run
@@ -62,16 +63,17 @@ Try the MVP:
 
 1. Open the web app.
 2. Review the `Overview` page to understand the product.
-3. Use `Apply` to review the prefilled financing form.
-4. Click `Review Application`.
-5. Confirm the review summary with `Confirm and Submit`.
-6. The app switches to `Status`.
-7. Review the submitted application status as a member.
-8. Open `Admin`.
-9. Review the new application through the queue and detail panel.
-10. Use search or status filters if needed.
-11. Click `Refresh Score`, `Approve`, or `Reject`.
-12. Open `System` to inspect the runtime boundaries.
+3. Use `Apply` and login with the member demo role if prompted.
+4. Review the prefilled financing form.
+5. Click `Review Application`.
+6. Confirm the review summary with `Confirm and Submit`.
+7. The app switches to `Status`.
+8. Review the submitted application status as a member.
+9. Open `Admin` and login with the admin demo role if prompted.
+10. Review the new application through the queue and detail panel.
+11. Use search or status filters if needed.
+12. Click `Refresh Score`, `Approve`, or `Reject`.
+13. Open `System` to inspect the runtime boundaries.
 
 ## Public-Style Preview
 

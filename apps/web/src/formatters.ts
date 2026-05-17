@@ -265,6 +265,10 @@ export function fallbackScoringMessage(summary: DemoSummary | null, language: Ap
 }
 
 export function formatAuthMode(value?: string, language: AppLanguage = "en") {
+  if (value === "demo_role_gate") {
+    return language === "id" ? "Role gate demo" : "Demo role gate";
+  }
+
   if (value === "demo_mode") {
     return language === "id" ? "Mode demo" : "Demo mode";
   }

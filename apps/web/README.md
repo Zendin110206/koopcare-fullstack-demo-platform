@@ -7,6 +7,7 @@ React + Vite + TypeScript frontend for the KoopCare fullstack demo.
 The current MVP includes:
 
 - product overview landing page;
+- demo member/admin login screen;
 - guided member financing application form;
 - backend-backed application submission;
 - immediate AI assessment creation;
@@ -19,7 +20,7 @@ The current MVP includes:
 - system readiness panel backed by the demo API;
 - clear AI governance copy.
 
-The current version persists application data through the API's local JSON storage. MySQL persistence and authentication are planned follow-up milestones.
+The current version persists application data through the API's local JSON storage and uses a demo role gate for member/admin actions. MySQL persistence and production-grade authentication are planned follow-up milestones.
 
 ## Source Structure
 
@@ -28,6 +29,7 @@ src/App.tsx = app state, data loading, submit/score/decision handlers
 src/views/ = top-level product views and navigation
 src/components/ = reusable UI atoms
 src/config.ts = runtime web config and default form values
+src/authSession.ts = browser storage helper for demo auth session
 src/copy.ts = bilingual product copy
 src/featureMapping.ts = ML feature mapping explanation data
 src/formatters.ts = localized formatting and display helpers
@@ -59,4 +61,12 @@ Override with:
 
 ```text
 VITE_API_BASE_URL=http://localhost:5002
+```
+
+If the backend demo passwords are changed for a shared environment, align the
+prefilled web login values at build time:
+
+```text
+VITE_DEMO_MEMBER_PASSWORD=member-demo-2026
+VITE_DEMO_ADMIN_PASSWORD=admin-demo-2026
 ```
