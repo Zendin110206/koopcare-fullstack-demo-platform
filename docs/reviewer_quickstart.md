@@ -18,6 +18,7 @@ You can review:
 - dedicated `/login` member account page with create-account, login, and Google-style demo entry points;
 - guided user financing application submission;
 - demo member/admin login gate;
+- member-owned application reads after login;
 - member status tracking after submission with application ID and access code;
 - local JSON-backed persistence;
 - admin queue metrics, search, filters, and detail panel;
@@ -73,7 +74,7 @@ Try the MVP:
 8. Confirm the review summary with `Confirm and Submit`.
 9. The app switches to `Track`.
 10. Save the application ID and access code shown after submission.
-11. Use the application ID and access code to review the submitted application status as a member.
+11. Use the application ID and access code, or stay logged in as the submitting member, to review the submitted application status.
 12. Open `Officer` and login with the admin demo role if prompted.
 13. Review the new application through the queue and detail panel.
 14. Inspect the review timeline to see submit and scoring events.

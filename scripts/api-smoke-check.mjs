@@ -147,6 +147,7 @@ try {
   });
   assert(memberLogin.status === 200, "Member demo login should return 200.");
   assert(memberLogin.body?.data?.session?.role === "member", "Member demo login should return a member session.");
+  assert(memberLogin.body?.data?.session?.userId === "koopcare-demo-member", "Member session should expose stable demo user ownership.");
 
   const adminLogin = await request("/api/v1/auth/login", {
     body: JSON.stringify({
@@ -158,6 +159,7 @@ try {
   });
   assert(adminLogin.status === 200, "Admin demo login should return 200.");
   assert(adminLogin.body?.data?.session?.role === "admin", "Admin demo login should return an admin session.");
+  assert(adminLogin.body?.data?.session?.userId === "koopcare-demo-admin", "Admin session should expose stable demo user ownership.");
 
   const memberToken = memberLogin.body.data.token;
   const adminToken = adminLogin.body.data.token;
@@ -169,6 +171,15 @@ try {
 
   const unauthenticatedList = await request("/api/v1/applications");
   assert(unauthenticatedList.status === 401, "Application list should require admin login.");
+
+  const memberOwnedListBeforeCreate = await request("/api/v1/applications/mine", {
+    headers: jsonHeaders(memberToken)
+  });
+  assert(memberOwnedListBeforeCreate.status === 200, "Member should be able to read owned applications.");
+  assert(
+    memberOwnedListBeforeCreate.body?.data?.every((item) => item.ownerUserId === "koopcare-demo-member"),
+    "Member-owned list should only contain applications owned by the member session."
+  );
 
   const adminList = await request("/api/v1/applications", {
     headers: jsonHeaders(adminToken)
@@ -228,6 +239,8 @@ try {
   });
   assert(created.status === 201, "Valid application should be created.");
   assert(created.body?.data?.id, "Created application should return an id.");
+  assert(created.body?.data?.ownerUserId === "koopcare-demo-member", "Created application should be owned by the member session.");
+  assert(created.body?.data?.ownerRole === "member", "Created application should persist the owner role.");
   assert(created.body?.data?.memberAccessCode, "Created application should return a member access code.");
   assert(Array.isArray(created.body?.data?.auditTrail), "Created application should return an audit trail.");
   assert(created.body.data.auditTrail.length >= 2, "Created application audit trail should include submit and score events.");
@@ -241,6 +254,21 @@ try {
   const memberAccessCode = created.body.data.memberAccessCode;
   const statusWithoutAccessCode = await request(`/api/v1/applications/${applicationId}/status`);
   assert(statusWithoutAccessCode.status === 401, "Member status lookup should require an access code.");
+
+  const ownerSessionStatusLookup = await request(`/api/v1/applications/${applicationId}/status`, {
+    headers: jsonHeaders(memberToken)
+  });
+  assert(ownerSessionStatusLookup.status === 200, "Owning member session should read status without access code.");
+  assert(ownerSessionStatusLookup.body?.data?.id === applicationId, "Owning member session should return the requested application.");
+
+  const memberOwnedListAfterCreate = await request("/api/v1/applications/mine", {
+    headers: jsonHeaders(memberToken)
+  });
+  assert(memberOwnedListAfterCreate.status === 200, "Member-owned application list should remain readable after create.");
+  assert(
+    memberOwnedListAfterCreate.body?.data?.some((item) => item.id === applicationId),
+    "Member-owned application list should include the newly created application."
+  );
 
   const statusLookup = await request(`/api/v1/applications/${applicationId}/status`, {
     headers: {

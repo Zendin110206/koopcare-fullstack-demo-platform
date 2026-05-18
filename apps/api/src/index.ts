@@ -54,6 +54,8 @@ type AuditEvent = {
 type FinancingApplication = {
   id: string;
   memberAccessCode: string;
+  ownerUserId: string;
+  ownerRole: AuditActorRole;
   applicantName: string;
   phoneNumber: string;
   gender: "M" | "F";
@@ -344,6 +346,10 @@ function createMemberAccessCode() {
   return `KC-${randomUUID().slice(0, 6).toUpperCase()}`;
 }
 
+function getLegacyOwnerUserId(application: Pick<FinancingApplication, "id">) {
+  return `legacy-json-owner-${application.id.toLowerCase()}`;
+}
+
 function createAuditEvent({
   actorName,
   actorRole,
@@ -441,6 +447,8 @@ function createSeedApplications(): FinancingApplication[] {
     {
       id: "APP-2026-001",
       memberAccessCode: "KC-SEED01",
+      ownerUserId: "koopcare-demo-member",
+      ownerRole: "member",
       applicantName: "Siti Aminah",
       phoneNumber: "081234567001",
       gender: "F",
@@ -478,6 +486,8 @@ function createSeedApplications(): FinancingApplication[] {
     {
       id: "APP-2026-002",
       memberAccessCode: "KC-SEED02",
+      ownerUserId: "koopcare-demo-member",
+      ownerRole: "member",
       applicantName: "Budi Santoso",
       phoneNumber: "081234567002",
       gender: "M",
@@ -515,6 +525,8 @@ function createSeedApplications(): FinancingApplication[] {
     {
       id: "APP-2026-003",
       memberAccessCode: "KC-SEED03",
+      ownerUserId: "koopcare-demo-member",
+      ownerRole: "member",
       applicantName: "Nur Hidayah",
       phoneNumber: "081234567003",
       gender: "F",
@@ -629,8 +641,18 @@ async function readApplications() {
       typeof application.memberAccessCode === "string" && application.memberAccessCode.trim().length > 0
         ? application.memberAccessCode
         : createMemberAccessCode();
+    const ownerUserId =
+      typeof application.ownerUserId === "string" && application.ownerUserId.trim().length > 0
+        ? application.ownerUserId
+        : getLegacyOwnerUserId(application);
+    const ownerRole = application.ownerRole === "admin" || application.ownerRole === "member" ? application.ownerRole : "member";
 
-    if (application.memberAccessCode === memberAccessCode && application.auditTrail === auditTrail) {
+    if (
+      application.memberAccessCode === memberAccessCode &&
+      application.ownerUserId === ownerUserId &&
+      application.ownerRole === ownerRole &&
+      application.auditTrail === auditTrail
+    ) {
       return application;
     }
 
@@ -638,6 +660,8 @@ async function readApplications() {
     return {
       ...application,
       memberAccessCode,
+      ownerRole,
+      ownerUserId,
       auditTrail
     };
   });
@@ -853,12 +877,14 @@ async function buildMlApiStatusReport() {
   };
 }
 
-function buildApplication(input: CreateApplicationRequest): FinancingApplication {
+function buildApplication(input: CreateApplicationRequest, owner: { role: AuditActorRole; userId: string }): FinancingApplication {
   const timestamp = nowIso();
 
   return {
     id: `APP-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`,
     memberAccessCode: createMemberAccessCode(),
+    ownerRole: owner.role,
+    ownerUserId: owner.userId,
     applicantName: parseString(input.applicantName, "applicantName"),
     phoneNumber: parseString(input.phoneNumber, "phoneNumber"),
     gender: parseGender(input.gender),
@@ -1085,6 +1111,10 @@ function canReadMemberStatus(request: Request, application: FinancingApplication
     return true;
   }
 
+  if (session?.role === "member" && session.userId === application.ownerUserId) {
+    return true;
+  }
+
   return getAccessCodeFromRequest(request).toUpperCase() === application.memberAccessCode.toUpperCase();
 }
 
@@ -1201,6 +1231,24 @@ app.get("/api/v1/applications", requireDemoAuth(["admin"]), async (_request, res
   });
 });
 
+app.get("/api/v1/applications/mine", requireDemoAuth(["member"]), async (request, response) => {
+  const session = readDemoSession(request.headers.authorization);
+
+  if (!session) {
+    response.status(401).json({
+      error: "Unauthorized",
+      message: "Demo session is missing or expired."
+    });
+    return;
+  }
+
+  const applications = await readApplications();
+
+  response.json({
+    data: applications.filter((item) => item.ownerUserId === session.userId).map(toClientApplication)
+  });
+});
+
 app.get("/api/v1/applications/:id/status", async (request, response) => {
   const applications = await readApplications();
   const application = applications.find((item) => item.id === request.params.id);
@@ -1232,8 +1280,17 @@ app.post("/api/v1/applications", requireDemoAuth(["member", "admin"]), async (re
       throw new Error("Request body must be an object.");
     }
 
+    const session = readDemoSession(request.headers.authorization);
+
+    if (!session) {
+      throw createHttpError(401, "Unauthorized", "Demo login is required for this action.");
+    }
+
     const applications = await readApplications();
-    const application = buildApplication(request.body);
+    const application = buildApplication(request.body, {
+      role: session.role,
+      userId: session.userId
+    });
     const aiAssessment = await scoreApplication(application);
     const applicationWithScore: FinancingApplication = {
       ...application,

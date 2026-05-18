@@ -63,6 +63,8 @@ export type ApplicationStatus = "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJ
 export type FinancingApplication = {
   id: string;
   memberAccessCode: string;
+  ownerUserId: string;
+  ownerRole: AuditActorRole;
   applicantName: string;
   phoneNumber: string;
   gender: "M" | "F";
@@ -111,6 +113,7 @@ export type ApplicationFormState = {
 export type AuthRole = "member" | "admin";
 export type AuthSession = {
   role: AuthRole;
+  userId: string;
   displayName: string;
   issuedAt: string;
   expiresAt: string;

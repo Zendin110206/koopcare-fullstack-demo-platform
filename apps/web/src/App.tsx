@@ -75,6 +75,10 @@ export function App() {
           ? await fetchJson<{ data: FinancingApplication[] }>(`${apiBaseUrl}/api/v1/applications`, {
               headers: authHeaders(authSession.token)
             })
+          : authSession?.session.role === "member"
+            ? await fetchJson<{ data: FinancingApplication[] }>(`${apiBaseUrl}/api/v1/applications/mine`, {
+                headers: authHeaders(authSession.token)
+              })
           : { data: [] };
 
       setSummary(summaryData);
@@ -368,8 +372,14 @@ export function App() {
       return;
     }
 
-    if (!accessCode && session?.session.role !== "admin") {
-      setErrorMessage(t(language, "Access code is required for member status lookup.", "Kode akses wajib diisi untuk cek status anggota."));
+    if (!accessCode && !session) {
+      setErrorMessage(
+        t(
+          language,
+          "Access code is required unless you are logged in as the application owner.",
+          "Kode akses wajib diisi kecuali kamu sudah masuk sebagai pemilik pengajuan."
+        )
+      );
       return;
     }
 
@@ -394,6 +404,14 @@ export function App() {
     } finally {
       setIsStatusLookupLoading(false);
     }
+  }
+
+  function openOwnedApplicationStatus(application: FinancingApplication) {
+    setStatusLookupQuery(application.id);
+    setStatusLookupAccessCode("");
+    setStatusApplication(application);
+    setSuccessMessage(t(language, "Owned application opened from your member session.", "Pengajuan milik akunmu dibuka dari session anggota."));
+    setErrorMessage(null);
   }
 
   const showTopNavigation = activeView !== "login";
@@ -469,10 +487,12 @@ export function App() {
           application={statusApplication}
           isLoading={isLoading || isStatusLookupLoading}
           language={language}
+          ownedApplications={session?.session.role === "member" ? applications : []}
           query={statusLookupQuery}
           onAccessCodeChange={setStatusLookupAccessCode}
           onLookup={() => void lookupApplicationStatus()}
           onOpenApply={() => changeView("apply")}
+          onOpenOwnedApplication={openOwnedApplicationStatus}
           onQueryChange={setStatusLookupQuery}
         />
       ) : null}

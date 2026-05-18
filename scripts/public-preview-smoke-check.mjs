@@ -66,6 +66,20 @@ async function requestJson(pathname) {
   };
 }
 
+async function requestJsonWithAuth(pathname, token) {
+  const response = await fetch(`${baseUrl}${pathname}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  const text = await response.text();
+
+  return {
+    body: JSON.parse(text),
+    status: response.status
+  };
+}
+
 async function postJson(pathname, payload) {
   const response = await fetch(`${baseUrl}${pathname}`, {
     body: JSON.stringify(payload),
@@ -148,6 +162,7 @@ try {
   });
   assert(memberLogin.status === 200, "Public preview should allow member demo login.");
   assert(memberLogin.body?.data?.session?.role === "member", "Member login should return a member session.");
+  assert(memberLogin.body?.data?.session?.userId === "koopcare-demo-member", "Member login should return stable owner identity.");
 
   const adminLogin = await postJson("/api/v1/auth/login", {
     password: demoAdminPassword,
@@ -155,6 +170,15 @@ try {
   });
   assert(adminLogin.status === 200, "Public preview should allow admin demo login.");
   assert(adminLogin.body?.data?.session?.role === "admin", "Admin login should return an admin session.");
+  assert(adminLogin.body?.data?.session?.userId === "koopcare-demo-admin", "Admin login should return stable admin identity.");
+
+  const memberApplications = await requestJsonWithAuth("/api/v1/applications/mine", memberLogin.body.data.token);
+  assert(memberApplications.status === 200, "Public preview should allow members to read their own applications.");
+  assert(Array.isArray(memberApplications.body?.data), "Member-owned applications endpoint should return an array.");
+  assert(
+    memberApplications.body.data.every((item) => item.ownerUserId === "koopcare-demo-member"),
+    "Member-owned applications endpoint should stay owner-scoped."
+  );
 
   const missingApiRoute = await requestJson("/api/v1/does-not-exist");
   assert(missingApiRoute.status === 404, "Missing API route should stay a JSON 404.");

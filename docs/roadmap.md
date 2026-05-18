@@ -233,17 +233,30 @@ Planned output:
 
 ## Progress 11 - Production-Grade Authentication and Ownership
 
+Status:
+
+```text
+in progress
+```
+
 Goal:
 
 ```text
 Replace demo auth with database-backed user/admin identity.
 ```
 
-Planned output:
+Completed bridge:
+
+- stable demo `userId` in member/admin sessions;
+- `ownerUserId` stored on newly submitted applications;
+- member-owned applications endpoint;
+- member status lookup can use owner session before falling back to access code.
+
+Remaining output:
 
 - real user accounts;
 - password/session strategy;
-- owner-scoped application status lookup;
+- database-backed owner-scoped application status lookup;
 - safer local secrets.
 
 ## Progress 12 - Database-Backed Audit Trail and Review History

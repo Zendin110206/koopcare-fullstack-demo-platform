@@ -16,20 +16,24 @@ export function StatusView({
   application,
   isLoading,
   language,
+  ownedApplications,
   query,
   onAccessCodeChange,
   onLookup,
   onOpenApply,
+  onOpenOwnedApplication,
   onQueryChange,
 }: {
   accessCode: string;
   application: FinancingApplication | null;
   isLoading: boolean;
   language: AppLanguage;
+  ownedApplications: FinancingApplication[];
   query: string;
   onAccessCodeChange: (value: string) => void;
   onLookup: () => void;
   onOpenApply: () => void;
+  onOpenOwnedApplication: (application: FinancingApplication) => void;
   onQueryChange: (value: string) => void;
 }) {
   const selectedApplication = application;
@@ -108,13 +112,28 @@ export function StatusView({
             <p>
               {t(
                 language,
-                "For privacy, member status now needs the application ID and access code shown after submission.",
-                "Demi privasi, status anggota sekarang membutuhkan ID pengajuan dan kode akses yang muncul setelah submit."
+                "For privacy, public lookup needs the application ID and access code. Logged-in members can also open applications owned by their demo account.",
+                "Demi privasi, pencarian public membutuhkan ID pengajuan dan kode akses. Anggota yang sudah masuk juga bisa membuka pengajuan milik akun demonya."
               )}
             </p>
           </div>
 
           <div className="status-result-list">
+            {ownedApplications.length > 0 ? (
+              <div className="owned-status-list">
+                <strong>{t(language, "Your applications", "Pengajuan milik akunmu")}</strong>
+                {ownedApplications.map((item) => (
+                  <button key={item.id} className="owned-status-button" type="button" onClick={() => onOpenOwnedApplication(item)}>
+                    <span>
+                      <strong>{item.applicantName}</strong>
+                      <small>{item.id}</small>
+                    </span>
+                    <Badge tone={statusTone(item.status)}>{formatStatus(item.status, language)}</Badge>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
             {isLoading ? (
               <p className="empty-copy">
                 {t(
@@ -128,8 +147,8 @@ export function StatusView({
               <p className="empty-copy">
                 {t(
                   language,
-                  "Enter an application ID and access code to load one status record.",
-                  "Masukkan ID pengajuan dan kode akses untuk memuat satu status.",
+                  "Enter an application ID and access code, or log in as the owner, to load one status record.",
+                  "Masukkan ID pengajuan dan kode akses, atau masuk sebagai pemilik, untuk memuat satu status.",
                 )}
               </p>
             ) : null}

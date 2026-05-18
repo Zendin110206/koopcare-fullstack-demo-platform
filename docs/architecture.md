@@ -202,6 +202,7 @@ POST /api/v1/auth/login
 GET /api/v1/auth/session
 GET /api/v1/demo/applications
 GET /api/v1/applications
+GET /api/v1/applications/mine
 GET /api/v1/applications/:id/status
 POST /api/v1/applications
 POST /api/v1/applications/:id/score
@@ -214,10 +215,13 @@ The runtime also uses demo role tokens:
 
 ```text
 member token       -> create application
-member access code -> read one submitted application status
+member token       -> read owned applications and owned application status
+member access code -> public fallback for reading one submitted application status
 admin token        -> list applications, rescore, save final decision, and inspect audit timeline
 ```
 
-This is a portfolio-demo control so reviewers can understand the intended separation between member actions and officer actions. The access code prevents a casual public visitor from browsing the full application list, but it is not a replacement for production authentication, password storage, or database-backed row-level authorization.
+Each newly submitted application stores an `ownerUserId` from the demo session. This is still not production authentication, but it mirrors the row-ownership boundary that the database milestone will need. The access code remains a public fallback for reviewers who want to check one status record without staying logged in.
+
+This is a portfolio-demo control so reviewers can understand the intended separation between member actions and officer actions. The access code prevents a casual public visitor from browsing the full application list, but it is not a replacement for production password storage, OAuth, or database-backed row-level authorization.
 
 In public-demo preview mode, the Express API serves the built React output from `apps/web/dist` so one public URL can host the product interface and the API.

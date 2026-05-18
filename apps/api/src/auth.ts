@@ -5,6 +5,7 @@ export type DemoAuthRole = "member" | "admin";
 
 export type DemoAuthSession = {
   role: DemoAuthRole;
+  userId: string;
   displayName: string;
   issuedAt: string;
   expiresAt: string;
@@ -26,6 +27,11 @@ const defaultPasswords: Record<DemoAuthRole, string> = {
 const displayNames: Record<DemoAuthRole, string> = {
   admin: "Demo Cooperative Officer",
   member: "Demo Member"
+};
+
+const demoUserIds: Record<DemoAuthRole, string> = {
+  admin: "koopcare-demo-admin",
+  member: "koopcare-demo-member"
 };
 
 function parsePositiveNumber(value: string | undefined, fallback: number) {
@@ -86,7 +92,8 @@ function toSession(payload: DemoTokenPayload): DemoAuthSession {
     displayName: payload.displayName,
     expiresAt: new Date(payload.exp * 1000).toISOString(),
     issuedAt: new Date(payload.iat * 1000).toISOString(),
-    role: payload.role
+    role: payload.role,
+    userId: payload.sub
   };
 }
 
@@ -98,7 +105,7 @@ function createDemoToken(role: DemoAuthRole) {
     exp: issuedAtSeconds + tokenTtlSeconds,
     iat: issuedAtSeconds,
     role,
-    sub: `koopcare-demo-${role}`
+    sub: demoUserIds[role]
   };
   const encodedPayload = encodeJson(payload);
   const signature = signTokenPayload(encodedPayload);
@@ -135,7 +142,7 @@ export function readDemoSession(authorizationHeader: string | undefined) {
 
   const payload = decodeJson<DemoTokenPayload>(encodedPayload);
 
-  if (!payload || !isDemoAuthRole(payload.role) || payload.exp <= Math.floor(Date.now() / 1000)) {
+  if (!payload || !isDemoAuthRole(payload.role) || typeof payload.sub !== "string" || payload.exp <= Math.floor(Date.now() / 1000)) {
     return null;
   }
 

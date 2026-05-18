@@ -15,7 +15,7 @@ Current status after the Railway public URL, public ML scoring path, demo role g
 ```text
 Public demo readiness: 100%
 Actual public URL availability: 100%
-Full product readiness: 90%
+Full product readiness: 92%
 ```
 
 Live public demo:
@@ -33,6 +33,8 @@ Meaning:
 - `/api/v1/ml/status` works and explains whether trained ML scoring is connected.
 - `/api/v1/applications` works for the admin demo role only.
 - member status lookup works with application ID plus access code.
+- member sessions carry a stable demo `userId`, and newly submitted applications store `ownerUserId` for the production ownership bridge.
+- logged-in members can read their own applications through `/api/v1/applications/mine`.
 - The public homepage now uses a simpler finance-style landing page instead of looking like an internal dashboard.
 - The login view is now a dedicated `/login` route with create-account, login, and Google-style demo entry points for members.
 - SPA route fallback works.
@@ -61,7 +63,7 @@ This percentage is for a portfolio public demo, not a real financial production 
 | Runtime persistence bridge | 10% | 10% | Railway `/data` volume path and Render `/var/data` disk path are documented and sufficient for the portfolio demo bridge. JSON storage is still not the final product database. |
 | MLOps integration for public demo | 10% | 10% | Backend calls the verified public KoopCare MLOps Credit Scoring API; write-test verification confirms `source=ml_api`. |
 | Public URL verification | 10% | 10% | Railway public URL exists. Read-only verification and write-test verification both pass. |
-| Security boundary | 10% | 10% | Advisory AI messaging, validation, decision note rules, demo member/admin role gate, admin-only queue reads, and access-code status lookup exist for the portfolio demo. Production-grade auth is still future work. |
+| Security boundary | 10% | 10% | Advisory AI messaging, validation, decision note rules, demo member/admin role gate, owner-scoped member reads, admin-only queue reads, and access-code fallback lookup exist for the portfolio demo. Production-grade auth is still future work. |
 
 Total:
 
@@ -88,7 +90,8 @@ Ready:
 - backend keeps clearly labeled fallback as a resilience path if the public MLOps API is unavailable;
 - member/admin demo login exists;
 - member token is required for public application submission;
-- generated access code is required for member status lookup;
+- generated access code is still available for public member status lookup;
+- logged-in members can read owned applications without exposing the full queue;
 - full application list is admin-only;
 - admin token is required for rescore and approve/reject actions;
 - admin can inspect application;
@@ -105,6 +108,7 @@ Ready:
 - `/` serves React;
 - `/api/v1/...` serves JSON API;
 - `/status` works as SPA fallback;
+- `/api/v1/applications/mine` returns only applications owned by the member session;
 - `/health` exists;
 - `/ready` exists;
 - frontend uses same-origin API in production build;
@@ -154,6 +158,7 @@ The normal public verifier checks:
 - summary API;
 - ML status diagnostics;
 - applications API with admin authentication;
+- member-owned applications API with member authentication;
 - JSON 404 behavior.
 
 The write-test verifier has passed for:

@@ -11,9 +11,11 @@ The current MVP includes:
 - compact reviewer access switch for officer/admin review;
 - guided member financing application form;
 - backend-backed application submission;
+- member-owned application list after login;
 - immediate AI assessment creation;
 - generated application ID and access code after submission;
 - member status lookup with application ID and access code;
+- member status lookup through owner session for applications created by the logged-in demo member;
 - admin queue metrics;
 - admin review queue table with search and status filters;
 - selected application detail panel;

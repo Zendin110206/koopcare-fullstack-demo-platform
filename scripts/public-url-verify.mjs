@@ -156,7 +156,10 @@ async function runVerification() {
   assertCheck(
     checks,
     "Member demo login",
-    memberLogin.status === 200 && memberLogin.body?.data?.session?.role === "member" && Boolean(memberToken),
+    memberLogin.status === 200 &&
+      memberLogin.body?.data?.session?.role === "member" &&
+      memberLogin.body?.data?.session?.userId === "koopcare-demo-member" &&
+      Boolean(memberToken),
     `HTTP ${memberLogin.status}`
   );
 
@@ -172,7 +175,10 @@ async function runVerification() {
   assertCheck(
     checks,
     "Admin demo login",
-    adminLogin.status === 200 && adminLogin.body?.data?.session?.role === "admin" && Boolean(adminToken),
+    adminLogin.status === 200 &&
+      adminLogin.body?.data?.session?.role === "admin" &&
+      adminLogin.body?.data?.session?.userId === "koopcare-demo-admin" &&
+      Boolean(adminToken),
     `HTTP ${adminLogin.status}`
   );
 
@@ -180,6 +186,18 @@ async function runVerification() {
     headers: jsonHeaders(adminToken)
   });
   assertCheck(checks, "Applications endpoint", applications.status === 200 && Array.isArray(applications.body?.data), `HTTP ${applications.status}`);
+
+  const memberApplications = await requestJson("/api/v1/applications/mine", {
+    headers: jsonHeaders(memberToken)
+  });
+  assertCheck(
+    checks,
+    "Member owned applications endpoint",
+    memberApplications.status === 200 &&
+      Array.isArray(memberApplications.body?.data) &&
+      memberApplications.body.data.every((item) => item.ownerUserId === "koopcare-demo-member"),
+    `HTTP ${memberApplications.status}`
+  );
 
   const missingApi = await requestJson("/api/v1/does-not-exist");
   assertCheck(checks, "Missing API JSON 404", missingApi.status === 404 && missingApi.body?.error === "Not Found", `HTTP ${missingApi.status}`);
@@ -208,8 +226,10 @@ async function runVerification() {
 
     const createdId = createResponse.body?.data?.id;
     const memberAccessCode = createResponse.body?.data?.memberAccessCode;
+    const ownerUserId = createResponse.body?.data?.ownerUserId;
     const createAuditTrail = createResponse.body?.data?.auditTrail;
     assertCheck(checks, "Write test create application", createResponse.status === 201 && Boolean(createdId), `HTTP ${createResponse.status}`);
+    assertCheck(checks, "Write test owner identity", ownerUserId === "koopcare-demo-member", `ownerUserId=${ownerUserId ?? "missing"}`);
     assertCheck(checks, "Write test member access code", Boolean(memberAccessCode), memberAccessCode ? "present" : "missing");
     assertCheck(
       checks,
@@ -227,6 +247,16 @@ async function runVerification() {
     );
 
     if (createdId && memberAccessCode) {
+      const ownerStatusLookup = await requestJson(`/api/v1/applications/${createdId}/status`, {
+        headers: jsonHeaders(memberToken)
+      });
+      assertCheck(
+        checks,
+        "Write test owner status lookup",
+        ownerStatusLookup.status === 200 && ownerStatusLookup.body?.data?.id === createdId,
+        `HTTP ${ownerStatusLookup.status}`
+      );
+
       const statusLookup = await requestJson(`/api/v1/applications/${createdId}/status`, {
         headers: {
           "x-koopcare-access-code": memberAccessCode

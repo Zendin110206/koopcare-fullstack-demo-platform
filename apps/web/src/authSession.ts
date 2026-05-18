@@ -16,7 +16,12 @@ export function readStoredAuthSession(): StoredAuthSession | null {
 
     const parsed = JSON.parse(rawValue) as StoredAuthSession;
 
-    if (!parsed?.token || !parsed.session?.role || new Date(parsed.session.expiresAt).getTime() <= Date.now()) {
+    if (
+      !parsed?.token ||
+      !parsed.session?.role ||
+      !parsed.session?.userId ||
+      new Date(parsed.session.expiresAt).getTime() <= Date.now()
+    ) {
       clearStoredAuthSession();
       return null;
     }

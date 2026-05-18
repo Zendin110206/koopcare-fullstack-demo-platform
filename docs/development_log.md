@@ -339,3 +339,26 @@ local Chrome screenshot review for landing and login
 ```
 
 The screenshots are stored under `local_context/runtime_logs/` and are not committed.
+
+## 2026-05-18 - Member Ownership Bridge
+
+Added a production-auth bridge before the full database milestone.
+
+Changed:
+
+- member/admin demo sessions now expose stable `userId` values;
+- new applications now persist `ownerUserId` and `ownerRole`;
+- legacy JSON records are normalized with owner metadata when read;
+- added `GET /api/v1/applications/mine` for member-owned application reads;
+- member status lookup now accepts the owner session before falling back to application ID plus access code;
+- the web status page shows logged-in member applications without exposing the admin queue;
+- API smoke, public preview smoke, and public URL verifier now assert owner identity and owner-scoped reads.
+
+Validation:
+
+```text
+npm run typecheck --workspace @koopcare-demo/api
+npm run typecheck --workspace @koopcare-demo/web
+```
+
+This is not production authentication yet. It is the row-ownership shape needed before replacing JSON storage and demo passwords with a real database-backed account system.

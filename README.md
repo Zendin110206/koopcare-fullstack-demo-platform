@@ -42,6 +42,7 @@ The repository currently contains a runnable React web app and Express API with 
 - a member can open a separate `/login` demo account page with create-account, login, and Google-style demo entry points;
 - a member can move into a guided financing application flow;
 - the API validates and stores the application in local JSON storage;
+- new applications store demo owner identity so member-owned reads can be separated from admin queue reads;
 - the API attempts to call the KoopCare MLOps API for scoring;
 - if the ML API is unavailable, the API uses a transparent demo fallback scorer so the workflow remains testable;
 - a member can track a submitted application from the web app with the application ID and generated access code;
@@ -94,7 +95,7 @@ Current user-facing workflow:
 - submit application data to the backend;
 - save the generated application ID and access code after submission;
 - move into the member status tracker after submission;
-- look up one application status by application ID and access code.
+- look up one application status by owner session or by application ID and access code.
 
 ### Admin Web
 
@@ -115,11 +116,13 @@ Current admin workflow:
 Current backend responsibilities:
 
 - demo member/admin role gate;
+- stable demo user IDs for the member/admin ownership bridge;
 - request validation;
 - local JSON-backed financing application persistence;
 - ML API integration with timeout handling;
 - transparent rule-based fallback scoring for demo reliability;
 - access-code member status lookup for the public demo;
+- member-owned application reads through the demo session;
 - admin-only application list reads;
 - application audit trail events for submit, scoring, rescoring, and final decision actions;
 - admin decision workflow;
