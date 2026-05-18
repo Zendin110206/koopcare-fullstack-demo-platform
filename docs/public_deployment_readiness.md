@@ -1,6 +1,6 @@
 # Public Deployment Readiness
 
-Last updated: 2026-05-17
+Last updated: 2026-05-18
 
 This document answers the practical question:
 
@@ -10,7 +10,7 @@ How close is KoopCare Fullstack Demo Platform to a public link that reviewers ca
 
 ## Short Answer
 
-Current status after the Railway public URL, public ML scoring path, demo role gate, access-code member status boundary, admin review timeline, and member-first UI polish were verified:
+Current status after the Railway public URL, public ML scoring path, demo role gate, access-code member status boundary, admin review timeline, separate `/login` route, and simple finance-style public UI polish were verified:
 
 ```text
 Public demo readiness: 100%
@@ -33,8 +33,8 @@ Meaning:
 - `/api/v1/ml/status` works and explains whether trained ML scoring is connected.
 - `/api/v1/applications` works for the admin demo role only.
 - member status lookup works with application ID plus access code.
-- The public homepage now prioritizes member onboarding instead of looking like an internal dashboard.
-- The login view now has create-account, login, and Google-style demo entry points for members.
+- The public homepage now uses a simpler finance-style landing page instead of looking like an internal dashboard.
+- The login view is now a dedicated `/login` route with create-account, login, and Google-style demo entry points for members.
 - SPA route fallback works.
 - The public URL verifier passes.
 - The public write-test verifier passes: login, create application, receive access code, trained ML score, read status with access code, save officer decision, and read decided status with access code.
@@ -54,7 +54,7 @@ This percentage is for a portfolio public demo, not a real financial production 
 
 | Area | Weight | Current | Notes |
 | --- | ---: | ---: | --- |
-| User-to-admin workflow | 15% | 15% | User apply, backend store, trained ML score, admin decision, status tracker, bilingual public UI, and feature-mapping explanation exist. |
+| User-to-admin workflow | 15% | 15% | User apply, backend store, trained ML score, admin decision, status tracker, bilingual public UI, dedicated login route, and feature-mapping explanation exist. |
 | Single-service public runtime | 15% | 15% | Express serves React build and API from one Railway public origin. |
 | Deployment config | 15% | 15% | `railway.toml`, `render.yaml`, Dockerfile, `/ready`, GitHub push path, and CI validation exist. |
 | Automated verification | 15% | 15% | `check`, API smoke, public smoke, deploy-config check, preflight, Docker preflight, and public URL verifier exist. |
@@ -78,8 +78,8 @@ This does not mean the product is production-ready for real cooperative financin
 Ready:
 
 - user can open the web app through a public Railway URL;
-- user sees a member-first financing homepage;
-- user can enter through a polished demo account screen;
+- user sees a simple finance-style public landing page;
+- user can enter through a polished dedicated demo account page at `/login`;
 - user can submit financing application;
 - backend validates and stores application;
 - backend asks the public MLOps API and receives trained model scoring;
@@ -146,6 +146,7 @@ The normal public verifier checks:
 
 - root web app;
 - SPA status route;
+- SPA login route;
 - `/health`;
 - `/ready`;
 - web build readiness;

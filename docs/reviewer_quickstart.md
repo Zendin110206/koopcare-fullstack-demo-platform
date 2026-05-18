@@ -14,8 +14,8 @@ You can review:
 - repository structure;
 - runnable React web app;
 - runnable Express API;
-- member-first financing homepage;
-- demo member account screen with create-account, login, and Google-style demo entry points;
+- simple finance-style public landing page;
+- dedicated `/login` member account page with create-account, login, and Google-style demo entry points;
 - guided user financing application submission;
 - demo member/admin login gate;
 - member status tracking after submission with application ID and access code;
@@ -65,7 +65,7 @@ Try the MVP:
 
 1. Open the web app.
 2. Review the `Home` page to understand the member value proposition.
-3. Open `Log in` to see the demo member account screen.
+3. Open `Log in` or `/login` to see the dedicated demo member account page.
 4. Use `Create account`, `Log in`, or `Continue with Google (demo)` to enter as a member.
 5. Use `Apply` to open the guided financing form.
 6. Review the prefilled financing form.

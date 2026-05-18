@@ -120,15 +120,17 @@ export function TopNavigation({
         </button>
       )}
 
-      <button
-        className="utility-button"
-        disabled={isLoading}
-        type="button"
-        onClick={onRefresh}
-      >
-        <RefreshCw aria-hidden="true" size={17} />
-        {language === "id" ? "Muat ulang" : "Refresh"}
-      </button>
+      {activeView === "home" ? null : (
+        <button
+          className="utility-button"
+          disabled={isLoading}
+          type="button"
+          onClick={onRefresh}
+        >
+          <RefreshCw aria-hidden="true" size={17} />
+          {language === "id" ? "Muat ulang" : "Refresh"}
+        </button>
+      )}
     </header>
   );
 }

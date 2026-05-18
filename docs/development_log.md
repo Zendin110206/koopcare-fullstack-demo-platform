@@ -311,3 +311,31 @@ npm run check
 ```
 
 This checkpoint is UI/UX polish for the completed public demo. It does not add real OAuth or production authentication; the account screen still uses the existing demo role gate.
+
+## 2026-05-18 - Simple Finance Landing and Login Redesign
+
+Revised the public UI direction after visual review showed the previous polish was still too heavy and too green.
+
+Changed:
+
+- collected reference screenshots from Wise, Revolut, Stripe, and Zopa for finance-site layout and tone comparison;
+- changed the visual direction to a simpler white-first financial interface with restrained KoopCare green accents;
+- replaced the heavy dark product preview with a lighter financing preview card;
+- kept the landing page focused on one public story: member application, ML-assisted review, officer decision, private status tracking;
+- separated the login experience into a full-page `/login` route without the main product topbar;
+- added lightweight URL state so `/`, `/login`, `/apply`, `/status`, `/admin`, and `/system` behave like distinct SPA pages;
+- adjusted the login form so long email values do not visually clip;
+- expanded public preview and public URL verification scripts to assert the `/login` SPA route.
+
+Validation:
+
+```text
+npm run check
+npm run check:deploy-config
+npm run smoke:public
+npm audit --audit-level=moderate
+git diff --check
+local Chrome screenshot review for landing and login
+```
+
+The screenshots are stored under `local_context/runtime_logs/` and are not committed.

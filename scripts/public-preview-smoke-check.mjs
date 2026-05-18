@@ -128,6 +128,10 @@ try {
   assert(statusRoute.status === 200, "SPA route should return 200.");
   assert(statusRoute.text.includes('<div id="root"></div>'), "SPA route should serve the React app shell.");
 
+  const loginRoute = await requestText("/login");
+  assert(loginRoute.status === 200, "Login SPA route should return 200.");
+  assert(loginRoute.text.includes('<div id="root"></div>'), "Login SPA route should serve the React app shell.");
+
   const summary = await requestJson("/api/v1/demo/summary");
   assert(summary.status === 200, "Summary API should return 200.");
   assert(summary.body?.integration?.web_app === "served_by_api", "Summary should expose served_by_api mode.");

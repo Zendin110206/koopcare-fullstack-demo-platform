@@ -38,8 +38,8 @@ Verified Railway public demo with product-grade financing workflow.
 
 The repository currently contains a runnable React web app and Express API with an end-to-end demo flow:
 
-- a reviewer lands on a member-first KoopCare financing homepage;
-- a member can open a demo account screen with create-account, login, and Google-style demo entry points;
+- a reviewer lands on a simple finance-style KoopCare financing homepage;
+- a member can open a separate `/login` demo account page with create-account, login, and Google-style demo entry points;
 - a member can move into a guided financing application flow;
 - the API validates and stores the application in local JSON storage;
 - the API attempts to call the KoopCare MLOps API for scoring;
@@ -89,7 +89,7 @@ The current model artifact is suitable for prototype integration, but it is not 
 Current user-facing workflow:
 
 - review a financial-product style KoopCare homepage with clear trust signals;
-- create a demo member account or log in through the demo access screen;
+- create a demo member account or log in through the separate demo access page;
 - complete a financing application form;
 - submit application data to the backend;
 - save the generated application ID and access code after submission;
@@ -387,7 +387,7 @@ The current dependency set is expected to report zero moderate-or-higher vulnera
 6. Add demo member/admin role separation.
 7. Add access-code member status privacy and admin-only application list reads.
 8. Add admin review timeline and JSON-backed audit trail events.
-9. Polish the member-first landing and demo account experience for public reviewers.
+9. Polish the member-first landing and separate demo account experience for public reviewers.
 10. Add MySQL development database and migration strategy.
 11. Strengthen AI assessment persistence and database-backed audit logs.
 12. Prepare public demo deployment.

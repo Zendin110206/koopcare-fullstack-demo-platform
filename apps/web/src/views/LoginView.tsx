@@ -2,11 +2,14 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
+  Building2,
   CheckCircle2,
   KeyRound,
   LockKeyhole,
   Mail,
   ShieldCheck,
+  Smartphone,
+  Sparkles,
   UserRound
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -48,72 +51,93 @@ export function LoginView({
     setPassword(demoCredentials[nextRole].password);
   }
 
+  const isOfficer = role === "admin";
+
   return (
-    <section className="view-stack auth-view">
-      <section className="auth-hero-layout">
-        <div className="auth-product-panel">
-          <button className="ghost-back-button" type="button" onClick={onCancel}>
-            <ArrowLeft aria-hidden="true" size={17} />
-            {t(language, "Back to home", "Kembali ke beranda")}
-          </button>
-          <p className="eyebrow">{t(language, "Member access", "Akses anggota")}</p>
-          <h1>{t(language, "Start your cooperative financing journey.", "Mulai perjalanan pembiayaan koperasi.")}</h1>
-          <p className="auth-lede">
-            {t(
-              language,
-              "Create a demo member account, submit an application, and track the review status with a simpler flow built for non-technical users.",
-              "Buat akun demo anggota, kirim pengajuan, lalu cek status review dengan alur yang lebih mudah untuk pengguna awam."
-            )}
+    <section className="auth-standalone-page">
+      <header className="auth-standalone-header">
+        <button className="brand-mark auth-brand" type="button" onClick={onCancel}>
+          <span className="brand-logo">
+            <Building2 aria-hidden="true" size={20} />
+          </span>
+          <span>
+            <strong>KoopCare</strong>
+            <small>{t(language, "Member financing", "Pembiayaan anggota")}</small>
+          </span>
+        </button>
+        <button className="ghost-back-button" type="button" onClick={onCancel}>
+          <ArrowLeft aria-hidden="true" size={17} />
+          {t(language, "Back to landing", "Kembali ke landing")}
+        </button>
+      </header>
+
+      <div className="auth-standalone-grid">
+        <section className="auth-story-panel" aria-label={t(language, "Account value", "Nilai akun")}>
+          <div className="landing-kicker">
+            <BadgeCheck aria-hidden="true" size={16} />
+            <span>{t(language, "Secure demo access", "Akses demo aman")}</span>
+          </div>
+          <h1>
+            {isOfficer
+              ? t(language, "Officer review starts from a controlled access point.", "Review petugas dimulai dari akses yang terkontrol.")
+              : t(language, "Create access before submitting financing.", "Buat akses sebelum mengirim pengajuan pembiayaan.")}
+          </h1>
+          <p className="auth-story-lede">
+            {isOfficer
+              ? t(
+                  language,
+                  "Reviewer access is separated from the member journey so the public demo does not feel like an open admin dashboard.",
+                  "Akses reviewer dipisahkan dari perjalanan anggota supaya demo public tidak terasa seperti dashboard admin terbuka."
+                )
+              : t(
+                  language,
+                  "A member gets a clearer path: account access, guided application, ML-assisted review, then private status tracking.",
+                  "Anggota mendapat alur yang lebih jelas: akses akun, pengajuan terpandu, review berbantuan ML, lalu pelacakan status privat."
+                )}
           </p>
 
-          <div className="auth-preview-list">
+          <div className="auth-story-steps">
             <div>
               <span>
-                <CheckCircle2 aria-hidden="true" size={16} />
+                <UserRound aria-hidden="true" size={17} />
               </span>
-              <div>
-                <strong>{t(language, "Guided application", "Pengajuan terpandu")}</strong>
-                <p>{t(language, "Plain-language fields before ML scoring.", "Field bahasa sederhana sebelum scoring ML.")}</p>
-              </div>
+              <strong>{t(language, "Member identity", "Identitas anggota")}</strong>
+              <p>{t(language, "Clear account entry before application data is stored.", "Akses akun jelas sebelum data pengajuan disimpan.")}</p>
             </div>
             <div>
               <span>
-                <LockKeyhole aria-hidden="true" size={16} />
+                <Smartphone aria-hidden="true" size={17} />
               </span>
-              <div>
-                <strong>{t(language, "Private status lookup", "Cek status privat")}</strong>
-                <p>{t(language, "Application ID plus access code for member view.", "ID pengajuan plus kode akses untuk tampilan anggota.")}</p>
-              </div>
+              <strong>{t(language, "App-like flow", "Alur seperti aplikasi")}</strong>
+              <p>{t(language, "Short choices, clear copy, and no technical clutter.", "Pilihan pendek, copy jelas, dan tanpa kerumitan teknis.")}</p>
             </div>
             <div>
               <span>
-                <ShieldCheck aria-hidden="true" size={16} />
+                <LockKeyhole aria-hidden="true" size={17} />
               </span>
-              <div>
-                <strong>{t(language, "Officer remains final", "Petugas tetap final")}</strong>
-                <p>{t(language, "AI recommendation is advisory, not an auto-approval.", "Rekomendasi AI hanya saran, bukan auto-approval.")}</p>
-              </div>
+              <strong>{t(language, "Private status", "Status privat")}</strong>
+              <p>{t(language, "Application status uses ID plus access code.", "Status pengajuan memakai ID plus kode akses.")}</p>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="auth-panel auth-signin-panel">
+        <section className="auth-card-panel" aria-label={t(language, "Demo sign in", "Masuk demo")}>
           <div className="auth-panel-heading">
             <span className="badge positive">
-              <BadgeCheck aria-hidden="true" size={16} />
-              {t(language, "Demo safe mode", "Mode demo aman")}
+              <ShieldCheck aria-hidden="true" size={16} />
+              {isOfficer ? t(language, "Reviewer mode", "Mode reviewer") : t(language, "Member mode", "Mode anggota")}
             </span>
-            <h2>{role === "admin" ? t(language, "Officer demo login", "Login demo petugas") : t(language, "Member account", "Akun anggota")}</h2>
+            <h2>{isOfficer ? t(language, "Officer access", "Akses petugas") : t(language, "Member account", "Akun anggota")}</h2>
             <p>
               {t(
                 language,
-                "This screen behaves like a real sign-in flow, but it still uses local demo credentials so the public demo stays easy to try.",
-                "Layar ini dibuat seperti alur masuk sungguhan, tetapi masih memakai kredensial demo supaya demo public mudah dicoba."
+                "This is still a demo gate, not production authentication. It is designed to make the public prototype feel like a real product flow.",
+                "Ini masih gate demo, bukan authentication production. Tujuannya agar prototipe public terasa seperti alur produk sungguhan."
               )}
             </p>
           </div>
 
-          {role === "member" ? (
+          {!isOfficer ? (
             <div className="auth-mode-tabs" aria-label={t(language, "Account mode", "Mode akun")}>
               <button aria-pressed={mode === "create"} className={mode === "create" ? "active" : ""} type="button" onClick={() => setMode("create")}>
                 {t(language, "Create account", "Buat akun")}
@@ -124,20 +148,19 @@ export function LoginView({
             </div>
           ) : null}
 
-          {role === "member" ? (
+          {!isOfficer ? (
             <>
               <button className="social-login-button" disabled={isSubmitting} type="button" onClick={() => onLogin("member", demoCredentials.member.password)}>
                 <span aria-hidden="true">G</span>
                 {isSubmitting ? t(language, "Signing in...", "Sedang masuk...") : t(language, "Continue with Google (demo)", "Lanjut dengan Google (demo)")}
               </button>
-
               <div className="auth-divider">
-                <span>{t(language, "or use demo details", "atau pakai data demo")}</span>
+                <span>{t(language, "or continue with demo profile", "atau lanjut dengan profil demo")}</span>
               </div>
             </>
           ) : null}
 
-          {role === "member" && mode === "create" ? (
+          {!isOfficer && mode === "create" ? (
             <div className="auth-basic-grid">
               <label className="auth-field">
                 <span>{t(language, "Full name", "Nama lengkap")}</span>
@@ -157,53 +180,50 @@ export function LoginView({
           ) : null}
 
           <label className="auth-field">
-            <span>{role === "admin" ? t(language, "Officer demo password", "Password demo petugas") : t(language, "Demo password", "Password demo")}</span>
+            <span>{isOfficer ? t(language, "Officer demo password", "Password demo petugas") : t(language, "Demo password", "Password demo")}</span>
             <div>
               <KeyRound aria-hidden="true" size={18} />
-              <input
-                autoComplete="off"
-                value={password}
-                type="password"
-                onChange={(event) => setPassword(event.target.value)}
-              />
+              <input autoComplete="off" value={password} type="password" onChange={(event) => setPassword(event.target.value)} />
             </div>
           </label>
 
-          <div className="auth-actions">
-            <button className="primary-action large" disabled={isSubmitting} type="button" onClick={() => onLogin(role, password)}>
-              {isSubmitting
-                ? t(language, "Signing in...", "Sedang masuk...")
-                : role === "admin"
-                  ? t(language, "Enter officer workspace", "Masuk ruang petugas")
-                  : mode === "create"
-                    ? t(language, "Create demo account", "Buat akun demo")
-                    : t(language, "Log in as member", "Masuk sebagai anggota")}
-              <ArrowRight aria-hidden="true" size={18} />
-            </button>
-            <button className="secondary-action large" disabled={isSubmitting} type="button" onClick={onCancel}>
-              {t(language, "Back", "Kembali")}
-            </button>
+          <button className="primary-action auth-submit-button" disabled={isSubmitting} type="button" onClick={() => onLogin(role, password)}>
+            {isSubmitting
+              ? t(language, "Signing in...", "Sedang masuk...")
+              : isOfficer
+                ? t(language, "Enter officer workspace", "Masuk ruang petugas")
+                : mode === "create"
+                  ? t(language, "Create demo account", "Buat akun demo")
+                  : t(language, "Log in as member", "Masuk sebagai anggota")}
+            <ArrowRight aria-hidden="true" size={18} />
+          </button>
+
+          <div className="auth-security-note">
+            <Sparkles aria-hidden="true" size={18} />
+            <p>
+              {t(
+                language,
+                "Google and account registration are simulated for this public prototype. Real OAuth comes with the production authentication milestone.",
+                "Google dan registrasi akun masih disimulasikan untuk prototipe public ini. OAuth sungguhan masuk milestone production authentication."
+              )}
+            </p>
           </div>
 
           <div className="officer-access-strip">
             <div>
-              <strong>{t(language, "Reviewer access", "Akses reviewer")}</strong>
-              <span>{t(language, "Only use this when reviewing applications.", "Pakai ini hanya saat mereview pengajuan.")}</span>
+              <strong>{isOfficer ? t(language, "Back to member flow", "Kembali ke alur anggota") : t(language, "Reviewer access", "Akses reviewer")}</strong>
+              <span>
+                {isOfficer
+                  ? t(language, "Switch back before testing member application.", "Kembali sebelum mencoba pengajuan anggota.")
+                  : t(language, "Only use this when reviewing applications.", "Pakai ini hanya saat mereview pengajuan.")}
+              </span>
             </div>
-            <button type="button" onClick={() => chooseRole(role === "admin" ? "member" : "admin")}>
-              {role === "admin" ? t(language, "Use member account", "Pakai akun anggota") : t(language, "Officer login", "Login petugas")}
+            <button type="button" onClick={() => chooseRole(isOfficer ? "member" : "admin")}>
+              {isOfficer ? t(language, "Use member account", "Pakai akun anggota") : t(language, "Officer login", "Login petugas")}
             </button>
           </div>
-
-          <p className="demo-disclaimer">
-            {t(
-              language,
-              "No real Google account is connected yet. This is a polished demo gate for the current public prototype.",
-              "Belum ada akun Google sungguhan yang terhubung. Ini adalah gate demo yang dibuat rapi untuk prototipe public saat ini."
-            )}
-          </p>
-        </div>
-      </section>
+        </section>
+      </div>
     </section>
   );
 }

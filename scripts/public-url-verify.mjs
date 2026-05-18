@@ -95,6 +95,14 @@ async function runVerification() {
     `HTTP ${statusRoute.status}`
   );
 
+  const loginRoute = await requestText("/login");
+  assertCheck(
+    checks,
+    "SPA login route",
+    loginRoute.status === 200 && loginRoute.text.includes('<div id="root"></div>'),
+    `HTTP ${loginRoute.status}`
+  );
+
   const health = await requestJson("/health");
   assertCheck(
     checks,

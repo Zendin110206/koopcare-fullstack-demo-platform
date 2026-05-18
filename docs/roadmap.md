@@ -201,6 +201,8 @@ Make the public member experience feel like a serious financial product, not an 
 Output:
 
 - member-first home hero;
+- simple finance-style landing visual system;
+- dedicated `/login` route;
 - clearer trust signals;
 - create-account and login demo paths;
 - Google-style demo entry point without real OAuth;

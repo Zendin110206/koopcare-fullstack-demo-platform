@@ -18,8 +18,29 @@ import type {
 } from "./types";
 import { AdminView, ApplyView, HomeView, LoginView, StatusView, SystemView, TopNavigation } from "./views";
 
+const routeToView: Record<string, ViewKey> = {
+  "/": "home",
+  "/admin": "admin",
+  "/apply": "apply",
+  "/login": "login",
+  "/status": "status",
+  "/system": "system"
+};
+
+function readInitialView(): ViewKey {
+  if (typeof window === "undefined") {
+    return "home";
+  }
+
+  return routeToView[window.location.pathname] ?? "home";
+}
+
+function pathForView(view: ViewKey): string {
+  return view === "home" ? "/" : `/${view}`;
+}
+
 export function App() {
-  const [activeView, setActiveView] = useState<ViewKey>("home");
+  const [activeView, setActiveView] = useState<ViewKey>(() => readInitialView());
   const [language, setLanguage] = useState<AppLanguage>("id");
   const [summary, setSummary] = useState<DemoSummary | null>(null);
   const [applications, setApplications] = useState<FinancingApplication[]>([]);
@@ -70,6 +91,36 @@ export function App() {
   useEffect(() => {
     void loadDemoData();
   }, []);
+
+  useEffect(() => {
+    const targetPath = pathForView(activeView);
+
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(null, "", targetPath);
+    }
+  }, [activeView]);
+
+  useEffect(() => {
+    function handlePopState() {
+      setActiveView(readInitialView());
+    }
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeView === "apply" && !session) {
+      requestLogin("member", "apply");
+    }
+
+    if (activeView === "admin" && session?.session.role !== "admin") {
+      requestLogin("admin", "admin");
+    }
+  }, [activeView, session]);
 
   const estimatedInstallment = useMemo(() => {
     if (form.tenorMonths <= 0) {
@@ -345,19 +396,23 @@ export function App() {
     }
   }
 
+  const showTopNavigation = activeView !== "login";
+
   return (
-    <main className="app-shell">
-      <TopNavigation
-        activeView={activeView}
-        isLoading={isLoading}
-        language={language}
-        session={session}
-        onLanguageChange={setLanguage}
-        onLoginOpen={() => requestLogin("member", "home")}
-        onLogout={logout}
-        onRefresh={() => void loadDemoData(session)}
-        onViewChange={changeView}
-      />
+    <main className={activeView === "login" ? "app-shell auth-app-shell" : "app-shell"}>
+      {showTopNavigation ? (
+        <TopNavigation
+          activeView={activeView}
+          isLoading={isLoading}
+          language={language}
+          session={session}
+          onLanguageChange={setLanguage}
+          onLoginOpen={() => requestLogin("member", "home")}
+          onLogout={logout}
+          onRefresh={() => void loadDemoData(session)}
+          onViewChange={changeView}
+        />
+      ) : null}
 
       {errorMessage ? (
         <section className="toast error" role="alert">

@@ -77,9 +77,9 @@ export const homeCopy: Record<
 > = {
   en: {
     eyebrow: "AI-assisted cooperative financing",
-    title: "KoopCare helps members apply and helps officers decide with clearer risk signals.",
+    title: "Clear member financing, reviewed with AI and decided by officers.",
     lede:
-      "A member-first financing experience for cooperative communities: apply in minutes, receive a transparent AI-assisted review, and keep the final decision with a real officer.",
+      "A calmer financing experience for cooperative communities: apply in minutes, receive transparent AI-assisted review, and keep the final decision with a real officer.",
     startApplication: "Start Member Application",
     login: "Log in",
     createAccount: "Create demo account",
@@ -105,9 +105,9 @@ export const homeCopy: Record<
   },
   id: {
     eyebrow: "Pembiayaan koperasi dengan bantuan AI",
-    title: "KoopCare membantu anggota mengajukan pembiayaan dan membantu petugas membaca sinyal risiko.",
+    title: "Pembiayaan anggota yang jelas, dibantu AI, dan diputuskan petugas.",
     lede:
-      "Pengalaman pembiayaan yang fokus ke anggota koperasi: ajukan dalam hitungan menit, dapat review berbantuan AI yang transparan, dan keputusan final tetap di tangan petugas.",
+      "Pengalaman pembiayaan yang lebih tenang untuk koperasi: ajukan dalam hitungan menit, dapat review berbantuan AI yang transparan, dan keputusan final tetap di tangan petugas.",
     startApplication: "Mulai Pengajuan Anggota",
     login: "Masuk",
     createAccount: "Buat akun demo",
